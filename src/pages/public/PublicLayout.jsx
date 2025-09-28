@@ -6,6 +6,7 @@ import IntroBlock from "../../components/IntroBlock";
 import TwoImageGrid from "../../components/TwoImageGrid";
 import FullScreenImage from "../../components/FullScreenImage";
 import Pblock from "../../components/Pblock";
+import TwinImages from "../../components/TwinImages";
 
 function PublicLayout() {
   return (
@@ -21,6 +22,7 @@ function PublicLayout() {
         text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
         align="left"
       />
+      <TwinImages />
     </>
   );
 }
