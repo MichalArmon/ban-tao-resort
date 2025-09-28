@@ -9,6 +9,7 @@ import { AuthProvider } from "./auth.jsx";
 import AppRoutes from "./routes.jsx";
 import rtlCache from "./rtlCache.js";
 import "./index.css";
+import { HashRouter } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -16,9 +17,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <BrowserRouter>
+          <HashRouter>
             <AppRoutes />
-          </BrowserRouter>
+          </HashRouter>
         </AuthProvider>
       </ThemeProvider>
     </CacheProvider>
