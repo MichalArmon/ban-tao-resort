@@ -163,11 +163,12 @@ function PublicNav() {
             }}
           >
             <Button
+              href="https://wa.me/972502136623"
               variant="contained"
               size="small"
               sx={{
                 px: 3,
-                borderRadius: 2,
+                borderRadius: 0,
                 bgcolor: "primary.main",
                 "&:hover": { bgcolor: "primary.dark" },
               }}
