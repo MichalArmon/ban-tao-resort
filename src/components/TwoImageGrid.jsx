@@ -33,6 +33,7 @@ export default function TwoImageFeature() {
     objectFit: "cover",
     display: "block",
   };
+  const base = import.meta.env.BASE_URL;
 
   return (
     <Box maxWidth="xl" sx={{ bgcolor: "background.default", mb: 60, pb: 10 }}>
@@ -48,7 +49,7 @@ export default function TwoImageFeature() {
           <Box sx={bigFrame}>
             <Box
               component="img"
-              src="/portrait.jpg"
+              src={base + "/portrait.jpg"}
               alt="Warm minimal kitchen"
               sx={img}
             />
@@ -77,7 +78,7 @@ export default function TwoImageFeature() {
             <Box sx={smallCard}>
               <Box
                 component="img"
-                src="/landscape.jpg"
+                src={base + "/landscape.jpg"}
                 alt="Cozy beige living room"
                 sx={img}
               />
