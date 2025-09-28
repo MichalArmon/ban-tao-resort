@@ -17,7 +17,7 @@ function PublicLayout() {
       <Fab
         aria-label="Call"
         sx={{
-          position: "absolute",
+          position: "fixed",
           right: 16,
           bottom: 16,
           bgcolor: "#fff",
