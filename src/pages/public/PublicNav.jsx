@@ -80,7 +80,7 @@ function PublicNav() {
             sx={{
               display: { xs: "flex", md: "none" },
               flexGrow: 1,
-              justifyContent: "center",
+              justifyContent: "right",
             }}
           >
             <Typography
