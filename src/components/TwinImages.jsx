@@ -8,7 +8,7 @@ import { Box } from "@mui/material";
 export default function TwinImages() {
   const bigFrame = {
     alignItems: "end",
-    width: "70%",
+    width: { xs: "90%", md: "70%" },
 
     aspectRatio: "9 / 16",
   };
@@ -37,6 +37,7 @@ export default function TwinImages() {
     >
       <Grid
         container
+        spacing={{ xs: 4, md: 0 }}
         disableEqualOverflow
         sx={{
           alignItems: { xs: "stretch", md: "center" },
@@ -45,7 +46,11 @@ export default function TwinImages() {
       >
         <Grid
           size={{ xs: 12, md: 6 }}
-          sx={{ display: "flex", justifyContent: "flex-end", pr: 5 }}
+          sx={{
+            display: "flex",
+            justifyContent: { xs: "center", md: "flex-end" },
+            pr: { xs: 0, md: 5 },
+          }}
         >
           <Box sx={bigFrame}>
             <Box
@@ -58,7 +63,11 @@ export default function TwinImages() {
         </Grid>
         <Grid
           size={{ xs: 12, md: 6 }}
-          sx={{ display: "flex", justifyContent: "flex-start", pl: 5 }}
+          sx={{
+            display: "flex",
+            justifyContent: { xs: "center", md: "flex-start" },
+            pl: { xs: 0, md: 5 },
+          }}
         >
           <Box sx={bigFrame}>
             <Box
