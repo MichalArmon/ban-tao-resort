@@ -4,17 +4,16 @@ import Grid from "@mui/material/Grid";
 // import Grid from "@mui/material/Unstable_Grid2";
 
 import { Box } from "@mui/material";
-import { motion } from "framer-motion";
 
 export default function TwinImages() {
   const bigFrame = {
-    position: "relative",
+    alignItems: "end",
     width: "70%",
-    aspectRatio: "9 / 16", // יחס רחב לתמונה הגדולה
+
+    aspectRatio: "9 / 16",
   };
 
   const img = {
-    position: "absolute",
     inset: 0,
     width: "100%",
     height: "100%",
@@ -30,19 +29,24 @@ export default function TwinImages() {
         bgcolor: "background.default",
         mb: 60,
         pb: 10,
+        mx: "auto",
+        px: 2,
+        overflowX: "hidden", // מבטל את פס הגלילה האופקי
         justifyContent: "center",
       }}
     >
       <Grid
         container
-        maxWidth="lg"
-        spacing={2}
+        disableEqualOverflow
         sx={{
-          alignItems: { xs: "stretch", md: "right" },
+          alignItems: { xs: "stretch", md: "center" },
           justifyContent: "center",
         }}
       >
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid
+          size={{ xs: 12, md: 6 }}
+          sx={{ display: "flex", justifyContent: "flex-end", pr: 5 }}
+        >
           <Box sx={bigFrame}>
             <Box
               component="img"
@@ -52,7 +56,10 @@ export default function TwinImages() {
             />
           </Box>
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid
+          size={{ xs: 12, md: 6 }}
+          sx={{ display: "flex", justifyContent: "flex-start", pl: 5 }}
+        >
           <Box sx={bigFrame}>
             <Box
               component="img"
