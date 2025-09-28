@@ -177,7 +177,7 @@ function PublicNav() {
 
             <IconButton
               component="a"
-              href="https://wa.me/15551234567"
+              href="https://wa.me/972502136623"
               target="_blank"
               rel="noopener"
               aria-label="WhatsApp"
@@ -227,9 +227,10 @@ function PublicNav() {
             paper: {
               sx: {
                 width: "100vw", // לא 100% – תופס את ה-viewport
-                height: "100dvh", // נכון למובייל
+                height: "150dvh", // נכון למובייל
                 maxWidth: "none",
                 m: 0,
+
                 borderRadius: 0,
                 boxShadow: "none",
                 position: "relative",
@@ -299,7 +300,11 @@ function PublicNav() {
             </Button>
 
             <Stack direction="row" spacing={6} alignItems="center" mt={2}>
-              <IconButton sx={{ color: "primary.main" }} aria-label="WhatsApp">
+              <IconButton
+                sx={{ color: "primary.main" }}
+                aria-label="WhatsApp"
+                href="https://wa.me/972502136623"
+              >
                 <WhatsApp sx={{ fontSize: 36 }} />
               </IconButton>
               <IconButton sx={{ color: "primary.main" }} aria-label="Instagram">
