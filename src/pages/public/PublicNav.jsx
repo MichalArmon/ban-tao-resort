@@ -13,8 +13,10 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import AdbIcon from "@mui/icons-material/Adb";
 import { Instagram, WhatsApp } from "@mui/icons-material";
-import { Paper } from "@mui/material";
-Paper;
+import Stack from "@mui/material/Stack";
+import Fab from "@mui/material/Fab";
+import CloseIcon from "@mui/icons-material/Close";
+import PhoneIcon from "@mui/icons-material/Phone";
 
 const pages = ["About", "Construction", "Location", "Atmosphere"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
@@ -212,33 +214,119 @@ function PublicNav() {
         {/* תפריט המבורגר למובייל */}
         <Menu
           id="menu-appbar"
-          anchorEl={anchorElNav}
           open={Boolean(anchorElNav)}
           onClose={handleCloseNavMenu}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          // מסך מלא
+          anchorReference="anchorPosition"
+          anchorPosition={{ top: 0, left: 0 }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           sx={{ display: { xs: "block", md: "none" } }}
           slotProps={{
             paper: {
               sx: {
-                bgcolor: "background.default",
-
-                borderRadius: 2,
-                boxShadow: 6,
+                width: "100%",
+                maxWidth: "none",
+                height: "100dvh",
+                m: 0,
+                borderRadius: 0,
+                boxShadow: "none",
+                position: "relative",
+                bgcolor: "background.default", // הבז' שלך
+                color: "text.primary",
               },
             },
-            list: {
-              sx: { py: 0 }, // שליטה על ריווח פנימי של הרשימה (אופציונלי)
-            },
+            list: { sx: { p: 0 } },
           }}
         >
-          {pages.map((page) => (
-            <MenuItem key={page} onClick={handleCloseNavMenu}>
-              <Typography sx={{ textAlign: "center", textTransform: "none" }}>
-                {page}
-              </Typography>
-            </MenuItem>
-          ))}
+          {/* כפתור X לסגירה */}
+          <IconButton
+            onClick={handleCloseNavMenu}
+            sx={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              color: "primary.main",
+            }}
+            aria-label="Close menu"
+          >
+            <CloseIcon sx={{ fontSize: 32 }} />
+          </IconButton>
+
+          {/* תוכן ממורכז עם רווחים גדולים */}
+          <Box
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              px: 3,
+            }}
+          >
+            {/* קישורי הניווט */}
+            <Stack spacing={6} alignItems="center">
+              {pages.map((page) => (
+                <MenuItem
+                  key={page}
+                  onClick={handleCloseNavMenu}
+                  disableRipple
+                  sx={{
+                    py: 0,
+                    "&:hover": { bgcolor: "transparent" },
+                  }}
+                >
+                  <Typography sx={{ fontSize: 28, letterSpacing: 0.5 }}>
+                    {page}
+                  </Typography>
+                </MenuItem>
+              ))}
+            </Stack>
+
+            {/* כפתור More Info */}
+            <Button
+              variant="contained"
+              onClick={handleCloseNavMenu}
+              sx={{
+                mt: 2,
+                px: 5,
+                py: 1.5,
+                textTransform: "none",
+                fontSize: 20,
+                bgcolor: "primary.main",
+                "&:hover": { bgcolor: "primary.dark" },
+              }}
+            >
+              More Info
+            </Button>
+
+            {/* אייקונים במרכז */}
+            <Stack direction="row" spacing={6} alignItems="center" mt={2}>
+              <IconButton aria-label="WhatsApp" sx={{ color: "primary.main" }}>
+                <WhatsApp sx={{ fontSize: 36 }} />
+              </IconButton>
+              <IconButton aria-label="Instagram" sx={{ color: "primary.main" }}>
+                <Instagram sx={{ fontSize: 36 }} />
+              </IconButton>
+            </Stack>
+          </Box>
+
+          {/* כפתור שיחה צף בפינה */}
+          <Fab
+            aria-label="Call"
+            sx={{
+              position: "absolute",
+              right: 16,
+              bottom: 16,
+              bgcolor: "#fff",
+              color: "primary.main",
+              border: "2px solid",
+              borderColor: "primary.main",
+              "&:hover": { bgcolor: "#fff" },
+            }}
+          >
+            <PhoneIcon />
+          </Fab>
         </Menu>
       </Container>
     </AppBar>
