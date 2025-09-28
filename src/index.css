@@ -1,0 +1,18 @@
+.hero {
+  color: aliceblue;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  align-items: center;
+  gap: 40px;
+  justify-content: center;
+  background: url("/TRY_clean.jpg") center/cover no-repeat;
+
+
+}
+
+.hero-title {
+  /* font-family: "Manrope", sans-serif; */
+  font-family: "Wix Madefor Display", system-ui, sans-serif;
+  font-weight: 800;
+}
