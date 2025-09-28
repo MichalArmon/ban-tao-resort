@@ -49,7 +49,7 @@ export default function TwoImageFeature() {
           <Box sx={bigFrame}>
             <Box
               component="img"
-              src={base + "/portrait.jpg"}
+              src={base + "portrait.jpg"}
               alt="Warm minimal kitchen"
               sx={img}
             />
@@ -78,7 +78,7 @@ export default function TwoImageFeature() {
             <Box sx={smallCard}>
               <Box
                 component="img"
-                src={base + "/landscape.jpg"}
+                src={base + "landscape.jpg"}
                 alt="Cozy beige living room"
                 sx={img}
               />
