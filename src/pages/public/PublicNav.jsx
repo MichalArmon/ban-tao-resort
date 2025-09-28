@@ -13,6 +13,8 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import AdbIcon from "@mui/icons-material/Adb";
 import { Instagram, WhatsApp } from "@mui/icons-material";
+import { Paper } from "@mui/material";
+Paper;
 
 const pages = ["About", "Construction", "Location", "Atmosphere"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
@@ -81,6 +83,7 @@ function PublicNav() {
               display: { xs: "flex", md: "none" },
               flexGrow: 1,
               justifyContent: "right",
+              mr: "1px",
             }}
           >
             <AdbIcon sx={{ color: "primary.main" }} />
@@ -215,6 +218,19 @@ function PublicNav() {
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           sx={{ display: { xs: "block", md: "none" } }}
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: "background.default",
+
+                borderRadius: 2,
+                boxShadow: 6,
+              },
+            },
+            list: {
+              sx: { py: 0 }, // שליטה על ריווח פנימי של הרשימה (אופציונלי)
+            },
+          }}
         >
           {pages.map((page) => (
             <MenuItem key={page} onClick={handleCloseNavMenu}>
