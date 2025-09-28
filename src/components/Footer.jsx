@@ -33,7 +33,6 @@ function Footer() {
         sx={{ justifyContent: "space-between" }}
         value={value}
         onChange={handleChange}
-        sx={{}}
       >
         <BottomNavigationAction
           label="Balance"
