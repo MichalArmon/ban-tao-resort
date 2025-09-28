@@ -216,29 +216,31 @@ function PublicNav() {
           id="menu-appbar"
           open={Boolean(anchorElNav)}
           onClose={handleCloseNavMenu}
-          // מסך מלא
+          // מסך מלא מלמעלה-שמאל
           anchorReference="anchorPosition"
           anchorPosition={{ top: 0, left: 0 }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
+          // מבטל את רווח ה-16px של Popover
+          marginThreshold={0}
           sx={{ display: { xs: "block", md: "none" } }}
           slotProps={{
             paper: {
               sx: {
-                width: "100%",
+                width: "100vw", // לא 100% – תופס את ה-viewport
+                height: "100dvh", // נכון למובייל
                 maxWidth: "none",
-                height: "100dvh",
                 m: 0,
                 borderRadius: 0,
                 boxShadow: "none",
                 position: "relative",
-                bgcolor: "background.default", // הבז' שלך
+                bgcolor: "background.default",
                 color: "text.primary",
               },
             },
             list: { sx: { p: 0 } },
           }}
         >
-          {/* כפתור X לסגירה */}
+          {/* כפתור X */}
           <IconButton
             onClick={handleCloseNavMenu}
             sx={{
@@ -252,29 +254,27 @@ function PublicNav() {
             <CloseIcon sx={{ fontSize: 32 }} />
           </IconButton>
 
-          {/* תוכן ממורכז עם רווחים גדולים */}
+          {/* מרכז מסך */}
           <Box
             sx={{
               height: "100%",
+              width: "100%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              px: 3,
+              px: 0, // בלי padding צדדי
+              textAlign: "center",
             }}
           >
-            {/* קישורי הניווט */}
-            <Stack spacing={6} alignItems="center">
+            <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
               {pages.map((page) => (
                 <MenuItem
                   key={page}
                   onClick={handleCloseNavMenu}
                   disableRipple
-                  sx={{
-                    py: 0,
-                    "&:hover": { bgcolor: "transparent" },
-                  }}
+                  sx={{ py: 0, "&:hover": { bgcolor: "transparent" } }}
                 >
                   <Typography sx={{ fontSize: 28, letterSpacing: 0.5 }}>
                     {page}
@@ -283,10 +283,8 @@ function PublicNav() {
               ))}
             </Stack>
 
-            {/* כפתור More Info */}
             <Button
               variant="contained"
-              onClick={handleCloseNavMenu}
               sx={{
                 mt: 2,
                 px: 5,
@@ -300,33 +298,15 @@ function PublicNav() {
               More Info
             </Button>
 
-            {/* אייקונים במרכז */}
             <Stack direction="row" spacing={6} alignItems="center" mt={2}>
-              <IconButton aria-label="WhatsApp" sx={{ color: "primary.main" }}>
+              <IconButton sx={{ color: "primary.main" }} aria-label="WhatsApp">
                 <WhatsApp sx={{ fontSize: 36 }} />
               </IconButton>
-              <IconButton aria-label="Instagram" sx={{ color: "primary.main" }}>
+              <IconButton sx={{ color: "primary.main" }} aria-label="Instagram">
                 <Instagram sx={{ fontSize: 36 }} />
               </IconButton>
             </Stack>
           </Box>
-
-          {/* כפתור שיחה צף בפינה */}
-          <Fab
-            aria-label="Call"
-            sx={{
-              position: "absolute",
-              right: 16,
-              bottom: 16,
-              bgcolor: "#fff",
-              color: "primary.main",
-              border: "2px solid",
-              borderColor: "primary.main",
-              "&:hover": { bgcolor: "#fff" },
-            }}
-          >
-            <PhoneIcon />
-          </Fab>
         </Menu>
       </Container>
     </AppBar>
