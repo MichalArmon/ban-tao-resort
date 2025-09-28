@@ -83,6 +83,7 @@ function PublicNav() {
               justifyContent: "right",
             }}
           >
+            <AdbIcon sx={{ color: "primary.main" }} />
             <Typography
               variant="h6"
               noWrap
