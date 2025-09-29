@@ -19,6 +19,7 @@
     "@mui/material": "^7.3.2",
     "@mui/x-date-pickers": "^8.11.3",
     "dayjs": "^1.11.18",
+    "firebase": "^12.3.0",
     "framer-motion": "^12.23.22",
     "gsap": "^3.13.0",
     "react": "^19.1.1",

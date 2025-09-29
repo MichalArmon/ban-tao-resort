@@ -16,13 +16,13 @@ import { Instagram, WhatsApp } from "@mui/icons-material";
 import Stack from "@mui/material/Stack";
 import Fab from "@mui/material/Fab";
 import CloseIcon from "@mui/icons-material/Close";
-import PhoneIcon from "@mui/icons-material/Phone";
-import BanTaoLogo from "../../components/BanTaoLogo";
+
+import { Link as RouterLink } from "react-router-dom";
 
 const pages = ["About", "Construction", "Location", "Atmosphere"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
-function PublicNav() {
+function GuestNav() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const iconStyle = {
@@ -81,7 +81,6 @@ function PublicNav() {
           </Box>
 
           {/* כותרת במרכז (xs בלבד) */}
-
           <Box
             sx={{
               display: { xs: "flex", md: "none" },
@@ -90,14 +89,7 @@ function PublicNav() {
               mr: "1px",
             }}
           >
-            {/* לוגו קטן */}
-            <Box
-              component="img"
-              src={`${import.meta.env.BASE_URL}logo_B.svg`}
-              alt="Ban Tao logo"
-              sx={{ width: 36, height: 36, mr: 1 }}
-            />
-            {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
+            <AdbIcon sx={{ color: "primary.main" }} />
             <Typography
               variant="h6"
               noWrap
@@ -145,12 +137,7 @@ function PublicNav() {
               gap: 1,
             }}
           >
-            <Box
-              component="img"
-              src={`${import.meta.env.BASE_URL}logo_B.svg`}
-              alt="Ban Tao logo"
-              sx={{ width: 40, height: 40 }}
-            />
+            <AdbIcon sx={{ color: "primary.main" }} />
             <Typography
               variant="h6"
               noWrap
@@ -177,7 +164,8 @@ function PublicNav() {
             }}
           >
             <Button
-              href="https://wa.me/972502136623"
+              component={RouterLink}
+              to="/guest/login"
               variant="contained"
               size="small"
               sx={{
@@ -187,7 +175,7 @@ function PublicNav() {
                 "&:hover": { bgcolor: "primary.dark" },
               }}
             >
-              More Info
+              LOGIN
             </Button>
 
             <IconButton
@@ -300,18 +288,18 @@ function PublicNav() {
             </Stack>
 
             <Button
+              component={RouterLink}
+              to="/login"
               variant="contained"
+              size="small"
               sx={{
-                mt: 2,
-                px: 5,
-                py: 1.5,
-                textTransform: "none",
-                fontSize: 20,
+                px: 3,
+                borderRadius: 0,
                 bgcolor: "primary.main",
                 "&:hover": { bgcolor: "primary.dark" },
               }}
             >
-              More Info
+              LOGIN
             </Button>
 
             <Stack direction="row" spacing={6} alignItems="center" mt={2}>
@@ -333,4 +321,4 @@ function PublicNav() {
   );
 }
 
-export default PublicNav;
+export default GuestNav;

@@ -1,15 +1,14 @@
+// main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import App from "./App.jsx";
+import AppRoutes from "./routes.jsx";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "./theme.js";
 import { CacheProvider } from "@emotion/react";
 import { AuthProvider } from "./auth.jsx";
-import AppRoutes from "./routes.jsx";
 import rtlCache from "./rtlCache.js";
 import "./index.css";
-import { HashRouter } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -17,9 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <HashRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
             <AppRoutes />
-          </HashRouter>
+          </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>
     </CacheProvider>
