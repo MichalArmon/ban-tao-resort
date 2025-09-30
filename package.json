@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
- {
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,9 +10,7 @@
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
     "predeploy": "vite build --mode gh"
-  }
-}
-
+  },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
