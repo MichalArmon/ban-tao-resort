@@ -32,7 +32,7 @@ function PublicLayout() {
       </Fab>
       <div className="wrapper">
         {" "}
-        כפתור שיחה צף בפינה
+        {/* כפתור שיחה צף בפינה */}
         <PublicNav />
         <Hero />
         <IntroBlock />
@@ -56,7 +56,7 @@ function PublicLayout() {
           {" "}
           <img
             className="bgImage"
-            src={pub("landscape3.jpg")}
+            src={pub("landscape4.jpg")}
             alt="Landscape 3"
           />
         </div>

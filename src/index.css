@@ -1,8 +1,22 @@
 html,
 body {
+  width: 100%;
   overflow-x: hidden;
 }
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  /* נועל את גלילת ה-body */
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
 
 .hero {
   color: aliceblue;
@@ -41,6 +55,7 @@ body {
 
 .wrapper {
   height: 100vh;
+  overflow-x: clip;
   overflow-y: auto;
   perspective: 10px;
 

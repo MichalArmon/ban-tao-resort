@@ -24,7 +24,7 @@ export default function TwinImages() {
 
   return (
     <Box
-      maxWidth="100wv"
+      maxWidth="100%"
       sx={{
         bgcolor: "background.default",
         mb: 60,
@@ -40,7 +40,7 @@ export default function TwinImages() {
         spacing={{ xs: 4, md: 0 }}
         disableEqualOverflow
         sx={{
-          alignItems: { xs: "stretch", md: "center" },
+          alignItems: { xs: "stretch", md: "center", overflowX: "clip" },
           justifyContent: "center",
         }}
       >
@@ -48,7 +48,7 @@ export default function TwinImages() {
           size={{ xs: 12, md: 6 }}
           sx={{
             display: "flex",
-            justifyContent: { xs: "center", md: "flex-end" },
+            justifyContent: { xs: "center", md: "flex-end", overflowX: "clip" },
             pr: { xs: 0, md: 5 },
           }}
         >
@@ -65,7 +65,11 @@ export default function TwinImages() {
           size={{ xs: 12, md: 6 }}
           sx={{
             display: "flex",
-            justifyContent: { xs: "center", md: "flex-start" },
+            justifyContent: {
+              xs: "center",
+              md: "flex-start",
+              overflowX: "clip",
+            },
             pl: { xs: 0, md: 5 },
           }}
         >

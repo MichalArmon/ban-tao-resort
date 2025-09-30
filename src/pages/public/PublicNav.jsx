@@ -53,7 +53,10 @@ function PublicNav() {
   };
 
   return (
-    <AppBar position="fixed" sx={{ bgcolor: "background.default", height: 80 }}>
+    <AppBar
+      position="sticky"
+      sx={{ bgcolor: "background.default", height: 80 }}
+    >
       <Container maxWidth="xl">
         <Toolbar
           disableGutters
@@ -242,7 +245,7 @@ function PublicNav() {
           slotProps={{
             paper: {
               sx: {
-                width: "100vw", // לא 100% – תופס את ה-viewport
+                width: "100%", // לא 100% – תופס את ה-viewport
                 height: "150dvh", // נכון למובייל
                 maxWidth: "none",
                 m: 0,

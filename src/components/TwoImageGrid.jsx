@@ -37,12 +37,12 @@ export default function TwoImageFeature() {
   const base = import.meta.env.BASE_URL;
 
   return (
-    <Box maxWidth="100wv" sx={{ bgcolor: "background.default", pb: 10 }}>
+    <Box maxWidth="100%" sx={{ bgcolor: "background.default", pb: 10 }}>
       <Grid
         container
         spacing={4}
         sx={{
-          alignItems: { xs: "stretch", md: "center" }, // ממרכז אנכית את הימני בדסקטופ
+          alignItems: { xs: "stretch", md: "center", overflowX: "clip" }, // ממרכז אנכית את הימני בדסקטופ
         }}
       >
         {/* שמאל: תמונה גדולה, רחבה */}
@@ -63,7 +63,7 @@ export default function TwoImageFeature() {
           size={{ xs: 12, md: 5 }}
           sx={{
             display: "flex",
-            justifyContent: { xs: "center", md: "flex-end" },
+            justifyContent: { xs: "center", md: "flex-end", overflowX: "clip" },
           }}
         >
           <motion.div
