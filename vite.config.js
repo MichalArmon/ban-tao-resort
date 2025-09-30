@@ -1,8 +1,8 @@
+// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  // חשוב: שם הריפו המדויק
-  base: "/ban-tao-resort/",
-});
+  base: mode === "gh" ? "/ban-tao-resort/" : "/", // GH Pages מול Netlify
+}));

@@ -5,6 +5,7 @@ import Grid from "@mui/material/Grid";
 
 import { Box } from "@mui/material";
 import { motion } from "framer-motion";
+import { pub } from "../../utils/publicPath";
 
 export default function TwoImageFeature() {
   const bigFrame = {
@@ -36,7 +37,7 @@ export default function TwoImageFeature() {
   const base = import.meta.env.BASE_URL;
 
   return (
-    <Box maxWidth="xl" sx={{ bgcolor: "background.default", mb: 60, pb: 10 }}>
+    <Box maxWidth="100wv" sx={{ bgcolor: "background.default", pb: 10 }}>
       <Grid
         container
         spacing={4}
@@ -49,8 +50,9 @@ export default function TwoImageFeature() {
           <Box sx={bigFrame}>
             <Box
               component="img"
-              src={base + "portrait.jpg"}
-              alt="Warm minimal kitchen"
+              img
+              src={pub("portrait.jpg")}
+              alt="Portrait"
               sx={img}
             />
           </Box>
@@ -78,7 +80,8 @@ export default function TwoImageFeature() {
             <Box sx={smallCard}>
               <Box
                 component="img"
-                src={base + "landscape.jpg"}
+                img
+                src={pub("landscape.jpg")}
                 alt="Cozy beige living room"
                 sx={img}
               />

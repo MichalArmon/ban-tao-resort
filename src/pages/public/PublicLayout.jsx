@@ -1,4 +1,4 @@
-import { Fab, Typography } from "@mui/material";
+import { Button, Fab, Typography } from "@mui/material";
 import Footer from "../../components/Footer";
 import Hero from "../../components/Hero";
 import PublicNav from "./PublicNav";
@@ -8,18 +8,18 @@ import FullScreenImage from "../../components/FullScreenImage";
 import Pblock from "../../components/Pblock";
 import TwinImages from "../../components/TwinImages";
 import { Phone } from "@mui/icons-material";
-Phone;
+import { Link as RouterLink } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 function PublicLayout() {
   return (
     <>
-      {/* כפתור שיחה צף בפינה */}
       <Fab
         aria-label="Call"
         sx={{
           position: "fixed",
-          right: 16,
-          bottom: 16,
+          right: 20,
+          bottom: 20,
           bgcolor: "#fff",
           color: "primary.main",
           border: "2px solid",
@@ -29,18 +29,34 @@ function PublicLayout() {
       >
         <Phone />
       </Fab>
-      <PublicNav />
-      <Hero />
-      <IntroBlock />
-
-      <TwoImageGrid />
-      <FullScreenImage src="/landsccape2.jpg" navH={72} durationVH={220} />
-      <Pblock
-        title="THOUGHTFUL DESIGN INSIDE AND OUT"
-        text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
-        align="left"
-      />
-      <TwinImages />
+      <div className="wrapper">
+        {" "}
+        כפתור שיחה צף בפינה
+        <PublicNav />
+        <Hero />
+        <IntroBlock />
+        <TwoImageGrid />
+        <div className="picDiv">
+          {" "}
+          <img className="bgImage" src="/landscape2.jpg" alt="" />
+        </div>
+        {/* <FullScreenImage src="/landscape2.jpg" navH={72} durationVH={100} /> */}
+        <Pblock
+          title="THOUGHTFUL DESIGN INSIDE AND OUT"
+          text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
+          align="left"
+        />
+        <TwinImages />
+        <div className="picDiv">
+          {" "}
+          <img className="bgImage" src="/landscape3.jpg" alt="" />
+        </div>
+        <Pblock
+          title="THOUGHTFUL DESIGN INSIDE AND OUT"
+          text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
+          align="left"
+        />
+      </div>
     </>
   );
 }

@@ -9,8 +9,10 @@ import {
   Paper,
   Stack,
   Divider,
+  IconButton,
 } from "@mui/material";
 import { loginWithGoogle } from "../firebase"; // הוספנו
+import CloseIcon from "@mui/icons-material/Close";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -45,7 +47,19 @@ export default function Login() {
         bgcolor: "background.default",
       }}
     >
-      <Paper elevation={3} sx={{ p: 4, maxWidth: 400, width: "100%" }}>
+      <Paper
+        elevation={3}
+        sx={{ p: 4, maxWidth: 400, width: "100%", position: "relative" }}
+      >
+        {/* כפתור סגירה */}
+        <IconButton
+          component={RouterLink}
+          to="/guest" // 👈 לאן הכפתור מחזיר
+          sx={{ position: "absolute", top: 8, right: 8 }}
+          aria-label="close"
+        >
+          <CloseIcon />
+        </IconButton>
         <Typography variant="h5" gutterBottom>
           Login
         </Typography>

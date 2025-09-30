@@ -24,3 +24,42 @@ body {
   font-family: "Wix Madefor Display", system-ui, sans-serif;
   font-weight: 800;
 }
+
+
+
+.try {
+  height: 500px;
+
+  width: 900px;
+  background: #000;
+  top: 70vh;
+  position: absolute;
+  z-index: 10;
+}
+
+
+
+.wrapper {
+  height: 100vh;
+  overflow-y: auto;
+  perspective: 10px;
+
+}
+
+.picDiv {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  transform-style: preserve-3d;
+  z-index: -1;
+}
+
+.bgImage {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  transform: translateZ(-10px)scale(2);
+
+}

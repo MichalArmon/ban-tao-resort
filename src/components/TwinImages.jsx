@@ -4,6 +4,7 @@ import Grid from "@mui/material/Grid";
 // import Grid from "@mui/material/Unstable_Grid2";
 
 import { Box } from "@mui/material";
+import { pub } from "../../utils/publicPath";
 
 export default function TwinImages() {
   const bigFrame = {
@@ -20,11 +21,10 @@ export default function TwinImages() {
     objectFit: "cover",
     display: "block",
   };
-  const base = import.meta.env.BASE_URL;
 
   return (
     <Box
-      maxWidth="xl"
+      maxWidth="100wv"
       sx={{
         bgcolor: "background.default",
         mb: 60,
@@ -55,7 +55,7 @@ export default function TwinImages() {
           <Box sx={bigFrame}>
             <Box
               component="img"
-              src={base + "/pool.jpg"}
+              src={pub("pool.jpg")}
               alt="Warm minimal kitchen"
               sx={img}
             />
@@ -72,7 +72,7 @@ export default function TwinImages() {
           <Box sx={bigFrame}>
             <Box
               component="img"
-              src={base + "/pool2.jpg"}
+              src={pub("pool2.jpg")}
               alt="Warm minimal kitchen"
               sx={img}
             />

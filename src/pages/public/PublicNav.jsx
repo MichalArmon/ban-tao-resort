@@ -18,6 +18,7 @@ import Fab from "@mui/material/Fab";
 import CloseIcon from "@mui/icons-material/Close";
 import PhoneIcon from "@mui/icons-material/Phone";
 import BanTaoLogo from "../../components/BanTaoLogo";
+import { pub } from "../../../utils/publicPath";
 
 const pages = ["About", "Construction", "Location", "Atmosphere"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
@@ -93,8 +94,8 @@ function PublicNav() {
             {/* לוגו קטן */}
             <Box
               component="img"
-              src={`${import.meta.env.BASE_URL}logo_B.svg`}
-              alt="Ban Tao logo"
+              src={pub("logo_B.svg")}
+              alt="Ban Tao"
               sx={{ width: 36, height: 36, mr: 1 }}
             />
             {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
@@ -147,7 +148,7 @@ function PublicNav() {
           >
             <Box
               component="img"
-              src={`${import.meta.env.BASE_URL}logo_B.svg`}
+              src={pub("logo_B.svg")}
               alt="Ban Tao logo"
               sx={{ width: 40, height: 40 }}
             />

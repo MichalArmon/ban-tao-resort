@@ -1,4 +1,5 @@
 import { Button, Typography } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
 
 function Hero() {
   return (
@@ -6,7 +7,6 @@ function Hero() {
       <Typography
         component="h1"
         sx={{
-          textTransform: "uppercase",
           letterSpacing: { xs: ".08em", md: ".12em" },
           fontWeight: 300,
           color: "rgba(255,255,255,0.92)",
@@ -14,8 +14,22 @@ function Hero() {
           fontSize: "clamp(56px, 12vw, 220px)", // ענק ורספונסיבי
         }}
       >
-        BAN TAO
+        Bân TAO
       </Typography>
+      <Button
+        component={RouterLink}
+        to="/guest"
+        variant="contained"
+        size="big"
+        sx={{
+          px: 3,
+          borderRadius: 2,
+          bgcolor: "primary.main",
+          "&:hover": { bgcolor: "primary.dark" },
+        }}
+      >
+        Check Availability
+      </Button>
     </div>
   );
 }

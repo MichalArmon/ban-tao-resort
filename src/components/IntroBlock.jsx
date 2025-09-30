@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 function IntroBlock() {
   return (
-    <Box maxWidth="xl" sx={{ bgcolor: "background.default" }}>
+    <Box maxWidth="100wv" sx={{ bgcolor: "background.default" }}>
       <Container
         maxWidth="lg"
         sx={{ py: { xs: 6, md: 10 }, bgcolor: "background.default" }}
