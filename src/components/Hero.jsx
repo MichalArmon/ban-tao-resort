@@ -1,5 +1,6 @@
 import { Button, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
+import { pub } from "../../utils/publicPath";
 
 function Hero() {
   return (
@@ -18,9 +19,9 @@ function Hero() {
       </Typography>
       <Button
         component={RouterLink}
-        to="/guest"
+        to={pub("guest")}
         variant="contained"
-        size="big"
+        size="large"
         sx={{
           px: 3,
           borderRadius: 2,

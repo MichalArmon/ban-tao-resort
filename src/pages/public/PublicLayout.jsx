@@ -10,6 +10,7 @@ import TwinImages from "../../components/TwinImages";
 import { Phone } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import { Outlet } from "react-router-dom";
+import { pub } from "../../../utils/publicPath";
 
 function PublicLayout() {
   return (
@@ -38,7 +39,11 @@ function PublicLayout() {
         <TwoImageGrid />
         <div className="picDiv">
           {" "}
-          <img className="bgImage" src="/landscape2.jpg" alt="" />
+          <img
+            className="bgImage"
+            src={pub("landscape2.jpg")}
+            alt="Landscape"
+          />
         </div>
         {/* <FullScreenImage src="/landscape2.jpg" navH={72} durationVH={100} /> */}
         <Pblock
@@ -49,7 +54,11 @@ function PublicLayout() {
         <TwinImages />
         <div className="picDiv">
           {" "}
-          <img className="bgImage" src="/landscape3.jpg" alt="" />
+          <img
+            className="bgImage"
+            src={pub("landscape3.jpg")}
+            alt="Landscape 3"
+          />
         </div>
         <Pblock
           title="THOUGHTFUL DESIGN INSIDE AND OUT"
