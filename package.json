@@ -3,13 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+ {
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:gh": "vite build --mode gh",
+    "preview": "vite preview",
     "deploy": "gh-pages -d dist",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
+    "predeploy": "vite build --mode gh"
+  }
+}
+
   "dependencies": {
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
