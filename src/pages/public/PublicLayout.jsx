@@ -15,6 +15,7 @@ import { pub } from "../../../utils/publicPath";
 function PublicLayout() {
   return (
     <>
+      {/* כפתור שיחה צף בפינה */}
       <Fab
         aria-label="Call"
         sx={{
@@ -31,8 +32,6 @@ function PublicLayout() {
         <Phone />
       </Fab>
       <div className="wrapper">
-        {" "}
-        {/* כפתור שיחה צף בפינה */}
         <PublicNav />
         <Hero />
         <IntroBlock />

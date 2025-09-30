@@ -1,15 +1,22 @@
-html,
-body {
-  width: 100%;
-  overflow-x: hidden;
+:root {
+  --nav-h: 80px;
 }
+
+/* גובה ה-Nav בפועל */
 
 html,
 body {
-  height: 100%;
-  overflow: hidden;
-  /* נועל את גלילת ה-body */
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: auto;
+  /* חשוב! */
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* ה-body הוא זה שגולל */
 }
+
+
 
 img,
 video {
@@ -19,10 +26,10 @@ video {
 }
 
 .hero {
-  color: aliceblue;
+
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   align-items: center;
   gap: 40px;
   justify-content: center;
@@ -54,12 +61,15 @@ video {
 
 
 .wrapper {
-  height: 100vh;
+
+  height: 100dvh;
   overflow-x: clip;
   overflow-y: auto;
   perspective: 10px;
 
 }
+
+
 
 .picDiv {
   position: relative;
@@ -71,10 +81,14 @@ video {
 }
 
 .bgImage {
+
   position: absolute;
-  height: 100%;
-  width: 100%;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
+
+  will-change: transform;
   object-fit: cover;
   transform: translateZ(-10px)scale(2);
+
 
 }

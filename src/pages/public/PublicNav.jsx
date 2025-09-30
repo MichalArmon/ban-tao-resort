@@ -55,9 +55,17 @@ function PublicNav() {
   return (
     <AppBar
       position="sticky"
-      sx={{ bgcolor: "background.default", height: 80 }}
+      // אם את רוצה להשתמש במחלקה חיצונית
+      sx={{
+        top: 0,
+        left: 0,
+        right: 0,
+        bgcolor: "background.default",
+        boxShadow: "none",
+        zIndex: (t) => t.zIndex.drawer + 2,
+      }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" disableGutters>
         <Toolbar
           disableGutters
           sx={{
