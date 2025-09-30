@@ -4,7 +4,10 @@ import { pub } from "../../utils/publicPath";
 
 function Hero() {
   return (
-    <div className="hero">
+    <div
+      className="hero"
+      style={{ backgroundImage: `url(${pub("TRY_clean.jpg")})` }}
+    >
       <Typography
         component="h1"
         sx={{
