@@ -1,21 +1,9 @@
 import { Block } from "@mui/icons-material";
 import { pub } from "../../utils/publicPath";
+import ParallaxSection from "../components/ParallaxSection";
 
 function About() {
-  return (
-    <>
-      <div
-        style={{
-          height: "400vh",
-          // backgroundColor: "green",
-          position: "relative",
-        }}
-      >
-        {" "}
-        <div className="try">HFHGRFTYGRTYRE</div>
-      </div>
-    </>
-  );
+  return <></>;
 }
 
 export default About;

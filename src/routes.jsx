@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./auth"; // { user, role: 'guest'|'admin' }
 import App from "./App";
 import PublicLayout from "./pages/public/PublicLayout";
-import Home from "./pages/Home";
+// import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -16,7 +16,11 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import { useEffect } from "react";
 import Login from "./components/Login";
 import SignUp from "./components/SignUp";
-SignUp;
+
+import Home from "./pages/public/Home";
+import AvailabilityBar from "./components/booking/AvailabilityBar";
+import CheckAvailability from "./components/booking/CheckAvailability";
+CheckAvailability;
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -53,7 +57,7 @@ export default function AppRoutes() {
       {/* אזור אורחים מוגן (לוגין חובה) */}
 
       <Route path="/guest" element={<GuestLayout />}>
-        {/* <Route index element={<GuestHome />} /> */}
+        <Route index element={<CheckAvailability />} />
         <Route path="booking" element={<Booking />} />
         <Route path="reservations" element={<Reservations />} />
         <Route path="signup" element={<SignUp />} />

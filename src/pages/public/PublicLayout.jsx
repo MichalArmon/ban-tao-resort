@@ -31,40 +31,11 @@ function PublicLayout() {
       >
         <Phone />
       </Fab>
-      <div className="wrapper">
-        <PublicNav />
-        <Hero />
-        <IntroBlock />
-        <TwoImageGrid />
-        <div className="picDiv">
-          {" "}
-          <img
-            className="bgImage"
-            src={pub("landscape2.jpg")}
-            alt="Landscape"
-          />
-        </div>
-        {/* <FullScreenImage src="/landscape2.jpg" navH={72} durationVH={100} /> */}
-        <Pblock
-          title="THOUGHTFUL DESIGN INSIDE AND OUT"
-          text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
-          align="left"
-        />
-        <TwinImages />
-        <div className="picDiv">
-          {" "}
-          <img
-            className="bgImage"
-            src={pub("landscape4.jpg")}
-            alt="Landscape 3"
-          />
-        </div>
-        <Pblock
-          title="THOUGHTFUL DESIGN INSIDE AND OUT"
-          text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
-          align="left"
-        />
-      </div>
+
+      <PublicNav />
+      <main className="page">
+        <Outlet />
+      </main>
     </>
   );
 }

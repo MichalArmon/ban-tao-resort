@@ -19,11 +19,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import PhoneIcon from "@mui/icons-material/Phone";
 import BanTaoLogo from "../../components/BanTaoLogo";
 import { pub } from "../../../utils/publicPath";
+import { Link as RouterLink } from "react-router-dom";
 
 const pages = ["About", "Construction", "Location", "Atmosphere"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
-function PublicNav() {
+function PublicNav(props) {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const iconStyle = {
@@ -54,16 +55,15 @@ function PublicNav() {
 
   return (
     <AppBar
-      position="sticky"
-      // אם את רוצה להשתמש במחלקה חיצונית
-      sx={{
-        top: 0,
-        left: 0,
-        right: 0,
+      {...props}
+      position="fixed"
+      sx={(theme) => ({
+        zIndex: theme.zIndex.drawer + 1, // מעל התוכן
         bgcolor: "background.default",
-        boxShadow: "none",
-        zIndex: (t) => t.zIndex.drawer + 2,
-      }}
+        color: "text.primary",
+        height: "var(--nav-h)",
+        justifyContent: "center",
+      })}
     >
       <Container maxWidth="xl" disableGutters>
         <Toolbar
@@ -122,7 +122,7 @@ function PublicNav() {
                 fontWeight: 300,
               }}
             >
-              BAN TAO
+              B̂ān TAO
             </Typography>
           </Box>
 
@@ -138,6 +138,8 @@ function PublicNav() {
           >
             {pages.map((page) => (
               <Button
+                component={RouterLink}
+                to={`/${page.toLowerCase()}`}
                 key={page}
                 onClick={handleCloseNavMenu}
                 color="inherit"
@@ -175,7 +177,7 @@ function PublicNav() {
                 fontWeight: 300,
               }}
             >
-              BAN TAO
+              B̂ān TAO
             </Typography>
           </Box>
 

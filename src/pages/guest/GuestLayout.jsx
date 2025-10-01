@@ -1,11 +1,12 @@
 import { Outlet } from "react-router-dom";
-import GuestNav from "./GuestNav";
+
+import PublicNav from "../public/PublicNav";
 
 function GuestLayout() {
   return (
     <>
-      <GuestNav />
-      <main style={{ marginTop: 80 }}>
+      <PublicNav sx={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }} />
+      <main style={{ marginTop: 120 }}>
         <Outlet />
       </main>
     </>

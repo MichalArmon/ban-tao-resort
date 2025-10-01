@@ -37,7 +37,7 @@ export default function TwoImageFeature() {
   const base = import.meta.env.BASE_URL;
 
   return (
-    <Box maxWidth="100%" sx={{ bgcolor: "background.default", pb: 10 }}>
+    <Box maxWidth="100%" sx={{ pb: 10, pt: 10 }}>
       <Grid
         container
         spacing={4}

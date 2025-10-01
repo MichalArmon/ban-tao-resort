@@ -2,21 +2,33 @@
   --nav-h: 80px;
 }
 
-/* גובה ה-Nav בפועל */
-
+/* גלילה גלובלית חוזרת ל-Body */
 html,
 body {
   margin: 0;
   padding: 0;
   width: 100%;
+  /* 🛑 חשוב: אין גובה קבוע, כדי לאפשר גלילה גלובלית */
   height: auto;
-  /* חשוב! */
   overflow-x: hidden;
-  overflow-y: auto;
-  /* ה-body הוא זה שגולל */
+  /* overflow-y: auto יקרה אוטומטית אם יש תוכן רב */
 }
 
+.page {
+  /* מנקה את כל כללי הפרלקס שהיו כאן */
+  position: relative;
+  /* 🛑 חשוב: הסרנו גובה קבוע וכללי 3D */
+  /* height: 100vh; */
+  /* perspective: 1px; */
+  /* transform-style: preserve-3d; */
+  /* overflow-y: auto; */
 
+  overflow-x: clip;
+}
+
+/* ---------------------------------------------------- */
+/* עיצוב כללי (נשאר ללא שינוי מהותי)           */
+/* ---------------------------------------------------- */
 
 img,
 video {
@@ -26,69 +38,59 @@ video {
 }
 
 .hero {
-
+  /* זה טוב, דוחף את התוכן מתחת ל-Navbar קבוע */
+  padding-top: var(--nav-h);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   align-items: center;
   gap: 40px;
   justify-content: center;
-  /* background: url("./TRY_clean.jpg") center/cover no-repeat; */
-
-
+  padding-bottom: 100px;
 }
 
-
-
 .hero-title {
-  /* font-family: "Manrope", sans-serif; */
   font-family: "Wix Madefor Display", system-ui, sans-serif;
   font-weight: 800;
 }
 
+/* ---------------------------------------------------- */
+/* שיטת PARALLAX החדשה והפשוטה (רקע קבוע)      */
+/* ---------------------------------------------------- */
 
+/* 🛑 הקלאס picDiv הישן שברנו לטובת simpleParallax */
+.simpleParallax {
+  /* הגדרות גודל חובה */
+  min-height: 150vh;
+  height: 150vh;
+  width: 100%;
 
-.try {
-  height: 500px;
+  /* 🛑 התיקון הקסום: מקפיא את הרקע בזמן שהתוכן גולל */
+  background-attachment: fixed;
 
-  width: 900px;
-  background: #000;
-  top: 70vh;
-  position: absolute;
-  z-index: 10;
-}
+  /* הגדרות תמונה (החלף את ה-url ב-React props אם צריך) */
+  /* כדאי להגדיר את התמונה כ-prop במקום ב-CSS קבוע */
+  /* background-image: url("./landscape4.jpg"); */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 
-
-
-.wrapper {
-
-  height: 100dvh;
-  overflow-x: clip;
-  overflow-y: auto;
-  perspective: 10px;
-
-}
-
-
-
-.picDiv {
   position: relative;
-  display: flex;
-  justify-content: center;
-  height: 100%;
-  transform-style: preserve-3d;
-  z-index: -1;
+  /* z-index מיותר בשיטה הזו */
 }
 
-.bgImage {
+/* זה הקונטיינר לתוכן שיופיע על התמונה */
+.foregroundContent {
+  width: 100%;
+  height: 100%;
 
-  position: absolute;
-  width: calc(100% + 10px);
-  height: calc(100% + 10px);
+  /* דוגמה למעטפת שחורה */
+  /* ... הוסף כאן פלקסבוקס למיקום תוכן אם צריך ... */
+}
 
-  will-change: transform;
-  object-fit: cover;
-  transform: translateZ(-10px)scale(2);
-
-
+/* קלאסים ישנים שכבר אינם רלוונטיים: */
+.picDiv,
+.bgImage,
+.picDivForeground {
+  /* אתה אמור להסיר את האלמנטים האלה מה-HTML/React ולהשתמש רק ב-.simpleParallax */
 }

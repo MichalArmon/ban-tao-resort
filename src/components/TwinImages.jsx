@@ -27,7 +27,7 @@ export default function TwinImages() {
       maxWidth="100%"
       sx={{
         bgcolor: "background.default",
-        mb: 60,
+
         pb: 10,
         mx: "auto",
         px: 2,
@@ -38,7 +38,6 @@ export default function TwinImages() {
       <Grid
         container
         spacing={{ xs: 4, md: 0 }}
-        disableEqualOverflow
         sx={{
           alignItems: { xs: "stretch", md: "center", overflowX: "clip" },
           justifyContent: "center",
