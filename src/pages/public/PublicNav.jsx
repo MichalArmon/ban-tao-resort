@@ -139,7 +139,7 @@ function PublicNav(props) {
             {pages.map((page) => (
               <Button
                 component={RouterLink}
-                to={`/${page.toLowerCase()}`}
+                to={pub(`/${page.toLowerCase()}`)}
                 key={page}
                 onClick={handleCloseNavMenu}
                 color="inherit"
