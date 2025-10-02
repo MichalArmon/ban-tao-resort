@@ -9,18 +9,21 @@ import { CacheProvider } from "@emotion/react";
 import { AuthProvider } from "./auth.jsx";
 import rtlCache from "./rtlCache.js";
 import "./index.css";
+import { BookingProvider } from "./context/BookingContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <CacheProvider value={rtlCache}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AuthProvider>
-          <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-            <AppRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
+      <BookingProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AuthProvider>
+            <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
+              <AppRoutes />
+            </BrowserRouter>
+          </AuthProvider>
+        </ThemeProvider>
+      </BookingProvider>
     </CacheProvider>
   </React.StrictMode>
 );

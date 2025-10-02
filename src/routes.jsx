@@ -20,6 +20,7 @@ import SignUp from "./components/SignUp";
 import Home from "./pages/public/Home";
 import AvailabilityBar from "./components/booking/AvailabilityBar";
 import CheckAvailability from "./components/booking/CheckAvailability";
+import AvailabilityPage from "./components/booking/AvailabilityPage";
 CheckAvailability;
 
 function RequireAuth({ allow, fallback = "/enter" }) {
@@ -57,7 +58,7 @@ export default function AppRoutes() {
       {/* אזור אורחים מוגן (לוגין חובה) */}
 
       <Route path="/guest" element={<GuestLayout />}>
-        <Route index element={<CheckAvailability />} />
+        <Route index element={<AvailabilityPage />} />
         <Route path="booking" element={<Booking />} />
         <Route path="reservations" element={<Reservations />} />
         <Route path="signup" element={<SignUp />} />
