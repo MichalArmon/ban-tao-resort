@@ -43,7 +43,7 @@ function Hero() {
         </Typography>
         <Button
           component={RouterLink}
-          to={pub("guest")}
+          to="/guest"
           variant="contained"
           size="large"
           sx={{
