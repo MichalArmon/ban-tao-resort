@@ -107,7 +107,7 @@ function PublicNav(props) {
 
           <Box
             sx={{
-              display: { xs: "flex", md: "none" },
+              display: { xs: "block", md: "none" },
 
               justifyContent: "right",
               mr: "1px",

@@ -12,7 +12,7 @@ export default function Hero() {
 
   // קישורים לקבצים
   const IMG_FULL = pub("HERO.jpg"); // תמונת ה-HERO
-  const LOGO_ANIM = pub("resort-all.webm"); // וידאו שקוף של הלוגו
+  const LOGO_ANIM = pub("resort-all2.webm"); // וידאו שקוף של הלוגו
 
   // נפילה חכמה: אם משום מה onLoad לא יורה, נעלים את המסך אחרי 4 שניות
   useEffect(() => {
@@ -91,6 +91,7 @@ export default function Hero() {
           muted
           playsInline
           // loop
+          onEnded={() => setShowLoader(false)} // סגירה בסוף הווידאו
           sx={{
             width: { xs: 360, sm: 320, md: 580 },
             height: "auto",
