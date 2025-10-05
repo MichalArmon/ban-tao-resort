@@ -118,10 +118,10 @@ function PublicNav(props) {
               component="img"
               src={pub("logo_B.svg")}
               alt="Ban Tao"
-              sx={{ width: 36, height: 36, mr: 1 }}
+              sx={{ width: 100, height: 100, mr: 1 }}
             />
             {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
-            <Typography
+            {/* <Typography
               component={HashLink}
               to="/#top"
               smooth
@@ -135,7 +135,7 @@ function PublicNav(props) {
               }}
             >
               B̂ān TAO
-            </Typography>
+            </Typography> */}
           </Box>
 
           {/* ========= דסקטופ (md+) – 3 עמודות ========= */}
@@ -175,9 +175,9 @@ function PublicNav(props) {
               component="img"
               src={pub("logo_B.svg")}
               alt="Ban Tao logo"
-              sx={{ width: 40, height: 40 }}
+              sx={{ width: 150, height: 150 }}
             />
-            <Typography
+            {/* <Typography
               component={HashLink}
               to="/#top"
               smooth
@@ -192,7 +192,7 @@ function PublicNav(props) {
               }}
             >
               B̂ān TAO
-            </Typography>
+            </Typography> */}
           </Box>
 
           {/* עמודה ימין: כפתור + אייקונים */}
