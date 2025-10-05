@@ -12,7 +12,7 @@ export default function Hero() {
 
   // קישורים לקבצים
   const IMG_FULL = pub("HERO.jpg"); // תמונת ה-HERO
-  const LOGO_ANIM = pub("resort1.webm"); // וידאו שקוף של הלוגו
+  const LOGO_ANIM = pub("resort-all.webm"); // וידאו שקוף של הלוגו
 
   // נפילה חכמה: אם משום מה onLoad לא יורה, נעלים את המסך אחרי 4 שניות
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function Hero() {
   // כשנטען: נכבה את המסך בצורה חלקה
   useEffect(() => {
     if (imgLoaded) {
-      const t = setTimeout(() => setShowLoader(false), 1500);
+      const t = setTimeout(() => setShowLoader(false), 3500);
       return () => clearTimeout(t);
     }
   }, [imgLoaded]);
@@ -92,7 +92,7 @@ export default function Hero() {
           playsInline
           // loop
           sx={{
-            width: { xs: 260, sm: 220, md: 380 },
+            width: { xs: 360, sm: 320, md: 580 },
             height: "auto",
           }}
         />
