@@ -118,7 +118,7 @@ function PublicNav(props) {
               component="img"
               src={pub("logo_B.svg")}
               alt="Ban Tao"
-              sx={{ width: 100, height: 100, mr: 1 }}
+              sx={{ width: 120, height: "auto", mr: 1 }}
             />
             {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
             {/* <Typography
