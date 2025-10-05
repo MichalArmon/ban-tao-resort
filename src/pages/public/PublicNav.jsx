@@ -114,28 +114,30 @@ function PublicNav(props) {
             }}
           >
             {/* לוגו קטן */}
-            <Box
-              component="img"
-              src={pub("logo_B.svg")}
-              alt="Ban Tao"
-              sx={{ width: 120, height: "auto", mr: 1 }}
-            />
-            {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
-            {/* <Typography
-              component={HashLink}
-              to="/#top"
-              smooth
-              variant="h6"
-              noWrap
-              sx={{
-                letterSpacing: ".18rem",
-                color: "primary.main",
-                textDecoration: "none",
-                fontWeight: 300,
-              }}
-            >
-              B̂ān TAO
-            </Typography> */}
+            <HashLink to="/#top" smooth>
+              <Box
+                component="img"
+                src={pub("logo_B.svg")}
+                alt="Ban Tao"
+                sx={{ width: 120, height: "auto", mr: 1 }}
+              />
+              {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
+              {/* <Typography
+                component={HashLink}
+                to="/#top"
+                smooth
+                variant="h6"
+                noWrap
+                sx={{
+                  letterSpacing: ".18rem",
+                  color: "primary.main",
+                  textDecoration: "none",
+                  fontWeight: 300,
+                }}
+              >
+                B̂ān TAO
+              </Typography> */}
+            </HashLink>
           </Box>
 
           {/* ========= דסקטופ (md+) – 3 עמודות ========= */}
@@ -164,6 +166,9 @@ function PublicNav(props) {
 
           {/* עמודה מרכז: לוגו + שם ממורכזים */}
           <Box
+            component={HashLink}
+            to="/#top"
+            smooth
             sx={{
               display: { xs: "none", md: "flex" },
               alignItems: "center",
