@@ -6,29 +6,41 @@ import { pub } from "../../utils/publicPath";
 import { Box, keyframes } from "@mui/system";
 
 export default function Hero() {
-  // מצב טעינה של התמונה ושל המסך הלבן
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
+  const [fadeVideo, setFadeVideo] = useState(false);
 
-  // קישורים לקבצים
-  const IMG_FULL = pub("HERO.jpg"); // תמונת ה-HERO
-  const LOGO_ANIM = pub("resort-all2.webm"); // וידאו שקוף של הלוגו
+  const IMG_FULL = pub("HERO.jpg");
+  const LOGO_ANIM = pub("resort-all2.webm");
 
-  // נפילה חכמה: אם משום מה onLoad לא יורה, נעלים את המסך אחרי 4 שניות
+  // ⏱ שליטה מדויקת בזמנים
+  const START_FADE_AFTER_MS = 3000; // מתי להתחיל להעלים את הווידאו
+  const VIDEO_FADE_MS = 550; // כמה זמן פייד הווידאו
+  const WHITE_LAG_AFTER_VIDEO_MS = 90; // השהייה קטנה עד תחילת פייד המסך הלבן
+
   useEffect(() => {
-    const fallback = setTimeout(() => setShowLoader(false), 4000);
+    const fallback = setTimeout(() => setShowLoader(false), 5000);
     return () => clearTimeout(fallback);
   }, []);
 
-  // כשנטען: נכבה את המסך בצורה חלקה
   useEffect(() => {
-    if (imgLoaded) {
-      const t = setTimeout(() => setShowLoader(false), 3500);
-      return () => clearTimeout(t);
-    }
+    if (!imgLoaded) return;
+
+    // 1) מתחילים להעלים את הווידאו
+    const t1 = setTimeout(() => setFadeVideo(true), START_FADE_AFTER_MS);
+
+    // 2) מעט אחרי שסיים להיעלם, מתחילים להעלים את המסך הלבן
+    const t2 = setTimeout(
+      () => setShowLoader(false),
+      START_FADE_AFTER_MS + VIDEO_FADE_MS + WHITE_LAG_AFTER_VIDEO_MS
+    );
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [imgLoaded]);
 
-  // אנימציה עדינה לטקסט (wipe)
   const wipeIn = keyframes`
     from { background-size: 0% 100%; }
     to   { background-size: 200% 100%; }
@@ -51,7 +63,7 @@ export default function Hero() {
         bgcolor: "#f2f2f2",
       }}
     >
-      {/* תמונת הרקע */}
+      {/* תמונת רקע */}
       <Box
         component="img"
         src={IMG_FULL}
@@ -69,7 +81,7 @@ export default function Hero() {
         }}
       />
 
-      {/* מסך טעינה עם רקע לבן ולוגו מונפש (שקוף) */}
+      {/* מסך טעינה */}
       <Box
         aria-hidden={!showLoader}
         sx={{
@@ -81,7 +93,7 @@ export default function Hero() {
           placeItems: "center",
           opacity: showLoader ? 1 : 0,
           pointerEvents: showLoader ? "auto" : "none",
-          transition: "opacity 600ms ease",
+          transition: "opacity 600ms ease", // פייד של המסך הלבן
         }}
       >
         <Box
@@ -90,16 +102,19 @@ export default function Hero() {
           autoPlay
           muted
           playsInline
-          // loop
-          onEnded={() => setShowLoader(false)} // סגירה בסוף הווידאו
           sx={{
             width: { xs: 360, sm: 320, md: 580 },
             height: "auto",
+            opacity: fadeVideo ? 0 : 1,
+            transition: `opacity ${VIDEO_FADE_MS}ms ease`, // פייד של הווידאו
+            "@media (prefers-reduced-motion: reduce)": {
+              transition: "none",
+            },
           }}
         />
       </Box>
 
-      {/* טקסט עליון */}
+      {/* כותרת */}
       <Typography
         component="h1"
         sx={{
@@ -116,7 +131,7 @@ export default function Hero() {
         B̂āN TAO
       </Typography>
 
-      {/* פס התחתון עם טקסט וכפתור */}
+      {/* פס תחתון */}
       <Paper
         sx={{
           display: "flex",
