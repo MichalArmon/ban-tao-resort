@@ -32,7 +32,7 @@ function Hero() {
           fontWeight: { xs: 700, md: 300 },
           color: "rgba(255,255,255,0.92)",
           lineHeight: 1,
-          fontSize: "clamp(80px, 12vw, 220px)", // ענק ורספונסיבי
+          fontSize: "clamp(40px, 10vw, 220px)", // ענק ורספונסיבי
         }}
       >
         B̂āN TAO
