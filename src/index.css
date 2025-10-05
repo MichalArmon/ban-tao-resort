@@ -94,3 +94,29 @@ video {
 .picDivForeground {
   /* אתה אמור להסיר את האלמנטים האלה מה-HTML/React ולהשתמש רק ב-.simpleParallax */
 }
+
+
+.retreat-yoga {
+  background: rgba(76, 175, 80, 0.15);
+  border-radius: 50%;
+}
+
+.retreat-detox {
+  background: rgba(33, 150, 243, 0.15);
+  border-radius: 50%;
+}
+
+.retreat-meditation {
+  background: rgba(156, 39, 176, 0.15);
+  border-radius: 50%;
+}
+
+.retreat-soldout {
+  outline: 2px dashed currentColor;
+}
+
+.MuiPickersDay-root.Mui-selected.retreat-yoga,
+.MuiPickersDay-root.Mui-selected.retreat-detox,
+.MuiPickersDay-root.Mui-selected.retreat-meditation {
+  background: var(--mui-palette-primary-main);
+}

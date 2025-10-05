@@ -1,34 +1,54 @@
-// src/context/BookingContext.jsx
+// src/context/BookingContext.jsx (קוד מלא ומתוקן)
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 
 const BookingContext = createContext();
-const API_BASE_URL = "http://localhost:3000/api/v1/bookings";
+// 🔑 הכתובת הבסיסית הכללית, עבור פיתוח מקומי (עדיין HTTP)
+const GLOBAL_API_BASE = "http://localhost:3000/api/v1";
+const API_BASE_URL = `${GLOBAL_API_BASE}/bookings`;
+
+const formatDate = (date) => {
+  // פורמט YYYY-MM-DD (הנדרש ע"י שדות input type="date" ו-API)
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getTodayDate = () => {
+  return formatDate(new Date());
+};
+
+const getTomorrowDate = () => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  // 🔑 הוספת יום אחד לתאריך הנוכחי
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return formatDate(tomorrow);
+};
 
 // Custom hook to use the booking context
 export const useBooking = () => {
   return useContext(BookingContext);
 };
 
+// ----------------------------------------------------
+// --- Booking Provider ---
+// ----------------------------------------------------
 export const BookingProvider = ({ children }) => {
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
+  const [checkIn, setCheckIn] = useState(getTodayDate());
+  const [checkOut, setCheckOut] = useState(getTomorrowDate());
   const [availableRooms, setAvailableRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState("");
   const [guests, setGuests] = useState(2);
-  const [rooms, setRooms] = useState(1);
+  const [rooms, setRooms] = useState(1); // --- Core Fetch Function: Check Availability ---
 
-  // --- Core Fetch Function: Check Availability ---
   const fetchAvailability = useCallback(async () => {
+    // ... (קוד fetchAvailability קיים) ...
     if (!checkIn || !checkOut || guests < 1 || rooms < 1) {
       setError("Please select valid dates, guests, and rooms.");
-      return;
-    }
-
-    if (!checkIn || !checkOut) {
-      setError("Please select both Check-In and Check-Out dates.");
       return;
     }
 
@@ -57,17 +77,16 @@ export const BookingProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [checkIn, checkOut, guests, rooms]); // Dependency on dates ensures the function uses current state
+  }, [checkIn, checkOut, guests, rooms]); // Dependency on dates ensures the function uses current state // --- Core Fetch Function: Get Quote ---
 
-  // --- Core Fetch Function: Get Quote ---
   const fetchQuote = async (roomType, currentCheckIn, currentCheckOut) => {
-    // This function will be called by RoomQuote component
+    // ... (קוד fetchQuote קיים) ...
     try {
       const response = await fetch(`${API_BASE_URL}/get-quote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          checkIn: currentCheckIn, // Use local dates passed from RoomQuote for precision
+          checkIn: currentCheckIn,
           checkOut: currentCheckOut,
           roomType,
         }),
@@ -85,8 +104,45 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  // --- Context Value ---
+  // ----------------------------------------------------------------------
+  // 🔑 פונקציה חדשה: שליפת מפת ריטריטים לצורך צביעת לוח שנה
+  // ----------------------------------------------------------------------
+  const fetchMonthlyRetreatsMap = useCallback(async (year, month) => {
+    try {
+      // 🔑 משתמש בנתיב הכללי של ה-API, ופונה ל-Endpoint של הריטריטים
+      const url = `${GLOBAL_API_BASE}/retreats/monthly-map?year=${year}&month=${month}`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error(`HTTP error! status: ${response.status}`);
+        throw new Error("Failed to fetch retreat calendar data.");
+      }
+      const data = await response.json();
+      return data?.days || {};
+      // מחזיר מפת תאריכים
+    } catch (error) {
+      console.error("Retreats map fetch failed:", error);
+      // במקרה של כשל, נחזיר אובייקט ריק כדי לא לשבור את ה-UI
+      return {};
+    }
+  }, []); // הפונקציה תלויה רק בפרמטרים שמגיעים מה-DatePicker // --- Context Value ---
+
+  const fetchRetreatsCalendar = useCallback(async (months = 24) => {
+    try {
+      const url = `${GLOBAL_API_BASE}/retreats/calendar?months=${months}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed retreats calendar: ${res.status}`);
+      const data = await res.json();
+      return data?.days || {}; // מפה { "YYYY-MM-DD": {...} }
+    } catch (e) {
+      console.error("fetchRetreatsCalendar failed:", e);
+      return {};
+    }
+  }, []);
+
   const value = {
+    fetchRetreatsCalendar,
     // State
     checkIn,
     setCheckIn,
@@ -99,11 +155,10 @@ export const BookingProvider = ({ children }) => {
     guests,
     setGuests,
     rooms,
-    setRooms,
-    // Functions
+    setRooms, // Functions
     fetchAvailability,
-    fetchQuote, // Exporting the fetchQuote utility
-    // Note: You can add createBooking here later
+    fetchQuote,
+    fetchMonthlyRetreatsMap, // 🔑 הוספה קריטית לאובייקט ה-value
   };
 
   return (
