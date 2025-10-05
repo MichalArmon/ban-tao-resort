@@ -4,7 +4,10 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 
 const BookingContext = createContext();
 // 🔑 הכתובת הבסיסית הכללית, עבור פיתוח מקומי (עדיין HTTP)
-const GLOBAL_API_BASE = "http://localhost:3000/api/v1";
+// const GLOBAL_API_BASE = "http://localhost:3000/api/v1";
+
+const GLOBAL_API_BASE = "https://resort-server-kzy9.onrender.com/api/v1";
+
 const API_BASE_URL = `${GLOBAL_API_BASE}/bookings`;
 
 const formatDate = (date) => {
