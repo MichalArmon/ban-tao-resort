@@ -92,7 +92,7 @@ export default function Hero() {
           playsInline
           // loop
           sx={{
-            width: { xs: 160, sm: 220, md: 380 },
+            width: { xs: 260, sm: 220, md: 380 },
             height: "auto",
           }}
         />
