@@ -37,7 +37,12 @@ function Hero() {
           backgroundColor: "background.default",
         }}
       >
-        <Typography sx={{ textTransform: "uppercase" }}>
+        <Typography
+          sx={{
+            display: { xs: "none", md: "block" },
+            textTransform: "uppercase",
+          }}
+        >
           {" "}
           B̂āN TAO • Village Boutique • KOH PHANGAN • CHALOKLUM
         </Typography>
