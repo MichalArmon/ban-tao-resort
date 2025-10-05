@@ -6,34 +6,29 @@ import { pub } from "../../utils/publicPath";
 import { Box, keyframes } from "@mui/system";
 
 export default function Hero() {
+  // מצב טעינה של התמונה ושל המסך הלבן
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
 
-  // תמונות
-  const IMG_FULL = pub("HERO.jpg"); // תמונת ה-HERO (אפשר להקטין ל-1600–2000px רוחב)
-  const LOGO = pub("logo_B.svg"); // לוגו, שימי בקובץ public/logo.svg (או שינוי שם)
+  // קישורים לקבצים
+  const IMG_FULL = pub("HERO.jpg"); // תמונת ה-HERO
+  const LOGO_ANIM = pub("resort1.webm"); // וידאו שקוף של הלוגו
 
-  // נפילה חכמה: אם משום מה onLoad לא יורה, נסגור את המסך אחרי 4 שניות
+  // נפילה חכמה: אם משום מה onLoad לא יורה, נעלים את המסך אחרי 4 שניות
   useEffect(() => {
     const fallback = setTimeout(() => setShowLoader(false), 4000);
     return () => clearTimeout(fallback);
   }, []);
 
-  // כשנטען: כבה את המסך בצורה חלקה
+  // כשנטען: נכבה את המסך בצורה חלקה
   useEffect(() => {
     if (imgLoaded) {
-      const t = setTimeout(() => setShowLoader(false), 1500); // זמן הדהייה
+      const t = setTimeout(() => setShowLoader(false), 1500);
       return () => clearTimeout(t);
     }
   }, [imgLoaded]);
 
-  // אנימציה קטנה ועדינה ללוגו (אפשר להסיר אם לא אוהבים)
-  const gentlePulse = keyframes`
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.03); }
-    100% { transform: scale(1); }
-  `;
-
+  // אנימציה עדינה לטקסט (wipe)
   const wipeIn = keyframes`
     from { background-size: 0% 100%; }
     to   { background-size: 200% 100%; }
@@ -56,7 +51,7 @@ export default function Hero() {
         bgcolor: "#f2f2f2",
       }}
     >
-      {/* תמונת הרקע עצמה */}
+      {/* תמונת הרקע */}
       <Box
         component="img"
         src={IMG_FULL}
@@ -74,7 +69,7 @@ export default function Hero() {
         }}
       />
 
-      {/* מסך לבן עם לוגו עד שהתמונה נטענת */}
+      {/* מסך טעינה עם רקע לבן ולוגו מונפש (שקוף) */}
       <Box
         aria-hidden={!showLoader}
         sx={{
@@ -86,23 +81,24 @@ export default function Hero() {
           placeItems: "center",
           opacity: showLoader ? 1 : 0,
           pointerEvents: showLoader ? "auto" : "none",
-          transition: "opacity 300ms ease",
+          transition: "opacity 600ms ease",
         }}
       >
         <Box
-          component="img"
-          src={LOGO}
-          alt="Ban Tao"
+          component="video"
+          src={LOGO_ANIM}
+          autoPlay
+          muted
+          playsInline
+          // loop
           sx={{
-            width: { xs: 140, sm: 180, md: 220 },
+            width: { xs: 160, sm: 220, md: 380 },
             height: "auto",
-            animation: `${gentlePulse} 2.2s ease-in-out infinite`,
-            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
           }}
         />
       </Box>
 
-      {/* התוכן מעל התמונה */}
+      {/* טקסט עליון */}
       <Typography
         component="h1"
         sx={{
@@ -119,6 +115,7 @@ export default function Hero() {
         B̂āN TAO
       </Typography>
 
+      {/* פס התחתון עם טקסט וכפתור */}
       <Paper
         sx={{
           display: "flex",
