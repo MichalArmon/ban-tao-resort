@@ -119,7 +119,16 @@ function PublicNav(props) {
                 component="img"
                 src={pub("logo_B.svg")}
                 alt="Ban Tao"
-                sx={{ width: 120, height: "auto", mr: 1, flex: "0 0 auto" }}
+                sx={{
+                  width: 120,
+                  height: "auto", // שומר יחס
+                  display: "block",
+                  maxWidth: "60vw",
+                  objectFit: "contain",
+                  flex: "0 0 auto", // מונע מתיחה של Flex
+                  alignSelf: "center",
+                  mr: 1,
+                }}
               />
               {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
               {/* <Typography
