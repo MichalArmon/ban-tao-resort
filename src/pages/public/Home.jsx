@@ -4,12 +4,13 @@ import IntroBlock from "../../components/IntroBlock";
 import Pblock from "../../components/Pblock";
 import TwinImages from "../../components/TwinImages";
 import TwoImageGrid from "../../components/TwoImageGrid";
+import { HashLink } from "react-router-hash-link";
 
 // קומפוננטת Home המנוקה:
 function Home() {
   return (
     <>
-      <Hero />
+      <Hero id="top" />
 
       {/* 🛑 פרלקס 1: באמצעות simpleParallax. התמונה עוברת כ-style prop. */}
       <div

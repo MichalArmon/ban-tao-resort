@@ -20,6 +20,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import BanTaoLogo from "../../components/BanTaoLogo";
 import { pub } from "../../../utils/publicPath";
 import { Link as RouterLink } from "react-router-dom";
+import { HashLink } from "react-router-hash-link";
 
 const pages = ["About", "Construction", "Location", "Atmosphere"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
@@ -111,10 +112,11 @@ function PublicNav(props) {
             />
             {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
             <Typography
+              component={HashLink}
+              to="/#top"
+              smooth
               variant="h6"
               noWrap
-              component="a"
-              href="#top"
               sx={{
                 letterSpacing: ".18rem",
                 color: "primary.main",
@@ -166,9 +168,11 @@ function PublicNav(props) {
               sx={{ width: 40, height: 40 }}
             />
             <Typography
+              component={HashLink}
+              to="/#top"
+              smooth
               variant="h6"
               noWrap
-              component="a"
               href="#top"
               sx={{
                 letterSpacing: ".18rem",
