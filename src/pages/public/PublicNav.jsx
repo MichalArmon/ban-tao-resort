@@ -76,7 +76,7 @@ function PublicNav(props) {
         justifyContent: "center",
       })}
     >
-      <Container maxWidth="xl" disableGutters sx={{ px: 5 }}>
+      <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 5 } }}>
         <Toolbar
           disableGutters
           sx={{
