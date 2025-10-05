@@ -11,12 +11,12 @@ export default function Hero() {
   const [fadeVideo, setFadeVideo] = useState(false);
 
   const IMG_FULL = pub("HERO.jpg");
-  const LOGO_ANIM = pub("resort-all2.webm");
+  const LOGO_ANIM = pub("resort-all3.webm");
 
   // ⏱ שליטה מדויקת בזמנים
-  const START_FADE_AFTER_MS = 3000; // מתי להתחיל להעלים את הווידאו
-  const VIDEO_FADE_MS = 550; // כמה זמן פייד הווידאו
-  const WHITE_LAG_AFTER_VIDEO_MS = 90; // השהייה קטנה עד תחילת פייד המסך הלבן
+  const START_FADE_AFTER_MS = 3800; // מתי להתחיל להעלים את הווידאו
+  const VIDEO_FADE_MS = 450; // כמה זמן פייד הווידאו
+  const WHITE_LAG_AFTER_VIDEO_MS = 60; // השהייה קטנה עד תחילת פייד המסך הלבן
 
   useEffect(() => {
     const fallback = setTimeout(() => setShowLoader(false), 5000);
@@ -103,7 +103,7 @@ export default function Hero() {
           muted
           playsInline
           sx={{
-            width: { xs: 360, sm: 320, md: 580 },
+            width: { xs: 360, sm: 320, md: 680 },
             height: "auto",
             opacity: fadeVideo ? 0 : 1,
             transition: `opacity ${VIDEO_FADE_MS}ms ease`, // פייד של הווידאו
