@@ -19,10 +19,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import PhoneIcon from "@mui/icons-material/Phone";
 import BanTaoLogo from "../../components/BanTaoLogo";
 import { pub } from "../../../utils/publicPath";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 
-const pages = ["About", "Construction", "Location", "Atmosphere"];
+const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
+const PAGES_GUEST = ["Rooms", "Treatments", "Classes", "Retreats"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
 function PublicNav(props) {
@@ -38,6 +39,15 @@ function PublicNav(props) {
     bgcolor: "transparent",
     "&:hover": { bgcolor: "action.hover" },
   };
+  // 👇 חדש: נקבע אם אנחנו באזור /guest לפי ה-URL
+  const { pathname } = useLocation();
+  const isGuest = pathname.startsWith("/guest");
+
+  // פונקציית עזר פשוטה ל-slug
+  const slug = (s) => s.trim().toLowerCase();
+
+  // 👇 זה המערך שישתנה אוטומטית
+  const pages = isGuest ? PAGES_GUEST : PAGES_PUBLIC;
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -66,7 +76,7 @@ function PublicNav(props) {
         justifyContent: "center",
       })}
     >
-      <Container maxWidth="xl" disableGutters>
+      <Container maxWidth="xl" disableGutters sx={{ px: 5 }}>
         <Toolbar
           disableGutters
           sx={{

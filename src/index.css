@@ -1,5 +1,8 @@
 :root {
   --nav-h: 80px;
+  margin: 0;
+  padding: 0;
+  max-width: none;
 }
 
 /* גלילה גלובלית חוזרת ל-Body */
