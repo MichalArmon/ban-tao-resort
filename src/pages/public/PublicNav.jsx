@@ -109,7 +109,7 @@ function PublicNav(props) {
             sx={{
               display: { xs: "block", md: "none" },
 
-              justifyContent: "right",
+              // justifyContent: "right",
               mr: "1px",
             }}
           >
