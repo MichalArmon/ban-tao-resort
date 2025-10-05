@@ -76,7 +76,7 @@ export default function Hero() {
           position: "fixed",
           inset: 0,
           zIndex: (t) => t.zIndex.modal + 1,
-          bgcolor: "#fff",
+          bgcolor: "background.default",
           display: "grid",
           placeItems: "center",
           opacity: showLoader ? 1 : 0,
