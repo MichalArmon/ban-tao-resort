@@ -108,7 +108,7 @@ function PublicNav(props) {
           <Box
             sx={{
               display: { xs: "flex", md: "none" },
-              flexGrow: 1,
+
               justifyContent: "right",
               mr: "1px",
             }}
