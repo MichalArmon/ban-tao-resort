@@ -1,5 +1,5 @@
-function studioAbout() {
+function StudioAbout() {
   return <div></div>;
 }
 
-export default studioAbout;
+export default StudioAbout;
