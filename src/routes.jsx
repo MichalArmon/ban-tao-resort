@@ -18,7 +18,7 @@ import SignUp from "./components/SignUp";
 // 🧱 Studio imports
 import StudioLayout from "./pages/studio/StudioLayout";
 import StudioHome from "./pages/studio/StudioHome";
-import StudioAbout from "./pages/studio/StudioAbout";
+// import StudioAbout from "./pages/studio/StudioAbout";
 
 // ⚙️ Admin
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -91,7 +91,7 @@ export default function AppRoutes() {
       {/* ========================== */}
       <Route path="/studio" element={<StudioLayout />}>
         <Route index element={<StudioHome />} />
-        <Route path="about" element={<StudioAbout />} />
+        {/* <Route path="about" element={<StudioAbout />} /> */}
         {/* בעתיד: <Route path="portfolio" element={<Portfolio />} /> */}
       </Route>
 
