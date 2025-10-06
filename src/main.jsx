@@ -10,20 +10,23 @@ import { AuthProvider } from "./auth.jsx";
 import rtlCache from "./rtlCache.js";
 import "./index.css";
 import { BookingProvider } from "./context/BookingContext";
+import { RoomsProvider } from "./context/RoomContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <CacheProvider value={rtlCache}>
-      <BookingProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <AuthProvider>
-            <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-              <AppRoutes />
-            </BrowserRouter>
-          </AuthProvider>
-        </ThemeProvider>
-      </BookingProvider>
+      <RoomsProvider>
+        <BookingProvider>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <AuthProvider>
+              <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
+                <AppRoutes />
+              </BrowserRouter>
+            </AuthProvider>
+          </ThemeProvider>
+        </BookingProvider>
+      </RoomsProvider>
     </CacheProvider>
   </React.StrictMode>
 );

@@ -4,5 +4,11 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: mode === "gh" ? "/ban-tao-resort/" : "/", // GH Pages מול Netlify
+  // אל תשתמשי ב-&&; תמיד מחרוזת:
+  base:
+    mode === "gh"
+      ? "/ban-tao-resort/" // לבילד GH Pages
+      : mode === "netlify"
+      ? "/resort/" // לבילד ל-Netlify (האתר תחת /resort)
+      : "/", // dev / preview
 }));

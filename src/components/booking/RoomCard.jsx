@@ -3,7 +3,7 @@ import React from "react";
 import { Paper, Typography, Box, Button, Stack, Divider } from "@mui/material";
 import { useBooking } from "../../context/BookingContext";
 
-const RoomCard = ({ room }) => {
+const RoomCard = ({ room, onTitleClick }) => {
   const {
     setSelectedRoomId,
     setFinalQuote,
@@ -37,6 +37,15 @@ const RoomCard = ({ room }) => {
       console.error("Failed to get quote:", err);
       setSelectedRoomId(null);
       setFinalQuote(null);
+    }
+  };
+
+  // נגישות ללחיצה גם מהמקלדת על כותרת החדר (לפתיחת הפופאפ)
+  const onTitleKeyDown = (e) => {
+    if (!onTitleClick) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onTitleClick();
     }
   };
 
@@ -88,7 +97,21 @@ const RoomCard = ({ room }) => {
           <Typography
             variant="h6"
             component="h3"
-            sx={{ fontWeight: 700, fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+            // אם התקבל onTitleClick – הכותרת לחיצה/ממודגשת
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: "1.1rem", sm: "1.25rem" },
+              cursor: onTitleClick ? "pointer" : "default",
+              textDecoration: onTitleClick ? "underline" : "none",
+              textUnderlineOffset: onTitleClick ? "3px" : undefined,
+              "&:hover": onTitleClick
+                ? { color: "primary.main", textDecorationThickness: "2px" }
+                : undefined,
+            }}
+            role={onTitleClick ? "button" : undefined}
+            tabIndex={onTitleClick ? 0 : undefined}
+            onClick={onTitleClick}
+            onKeyDown={onTitleKeyDown}
           >
             {room.roomType}
           </Typography>
@@ -102,7 +125,7 @@ const RoomCard = ({ room }) => {
             sx={{
               color: "text.secondary",
               display: "-webkit-box",
-              WebkitLineClamp: { xs: 2, sm: 3 }, // חיתוך אלגנטי
+              WebkitLineClamp: { xs: 2, sm: 3 },
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}

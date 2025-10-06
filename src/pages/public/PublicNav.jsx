@@ -1,3 +1,4 @@
+// src/pages/public/PublicNav.jsx
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -7,73 +8,43 @@ import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
 import MenuIcon from "@mui/icons-material/Menu";
 import Container from "@mui/material/Container";
-import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
-import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
-import AdbIcon from "@mui/icons-material/Adb";
 import { Instagram, WhatsApp } from "@mui/icons-material";
 import Stack from "@mui/material/Stack";
-import Fab from "@mui/material/Fab";
 import CloseIcon from "@mui/icons-material/Close";
-import PhoneIcon from "@mui/icons-material/Phone";
-import BanTaoLogo from "../../components/BanTaoLogo";
-import { pub } from "../../../utils/publicPath";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
+import { pub } from "../../../utils/publicPath";
+import RoomsMenuButton from "../guest/RoomMenuButton";
 
 const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
 const PAGES_GUEST = ["Rooms", "Treatments", "Classes", "Retreats"];
-const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
 function PublicNav(props) {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const iconStyle = {
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    border: "1px solid",
-    borderColor: "text.primary",
-    color: "text.primary",
-    bgcolor: "transparent",
-    "&:hover": { bgcolor: "action.hover" },
-  };
-  // 👇 חדש: נקבע אם אנחנו באזור /guest לפי ה-URL
   const { pathname } = useLocation();
-  const isGuest = pathname.startsWith("/guest");
 
-  // פונקציית עזר פשוטה ל-slug
+  const ROOT = "/resort";
+  const isGuest = pathname.startsWith("/resort/guest");
+  const basePath = isGuest ? `${ROOT}/guest` : ROOT;
+
   const slug = (s) => s.trim().toLowerCase();
-
-  // 👇 זה המערך שישתנה אוטומטית
   const pages = isGuest ? PAGES_GUEST : PAGES_PUBLIC;
 
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
-  };
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+  const handleOpenNavMenu = (e) => setAnchorElNav(e.currentTarget);
+  const handleCloseNavMenu = () => setAnchorElNav(null);
 
   return (
     <AppBar
       {...props}
       position="fixed"
       sx={(theme) => ({
-        zIndex: theme.zIndex.drawer + 1, // מעל התוכן
+        zIndex: theme.zIndex.drawer + 1,
         bgcolor: "background.default",
         color: "text.primary",
-        height: "var(--nav-h)",
         justifyContent: "center",
+        height: "var(--nav-h)",
       })}
     >
       <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 5 } }}>
@@ -81,7 +52,6 @@ function PublicNav(props) {
           disableGutters
           sx={{
             minHeight: 80,
-            // xs = flex רגיל; md+ = grid עם 3 עמודות
             display: { xs: "flex", md: "grid" },
             gridTemplateColumns: { md: "1fr auto 1fr" },
             alignItems: "center",
@@ -90,7 +60,6 @@ function PublicNav(props) {
           }}
         >
           {/* ========= מובייל ========= */}
-          {/* המבורגר (xs בלבד) */}
           <Box sx={{ display: { xs: "flex", md: "none" } }}>
             <IconButton
               size="large"
@@ -103,54 +72,28 @@ function PublicNav(props) {
             </IconButton>
           </Box>
 
-          {/* כותרת במרכז (xs בלבד) */}
-
-          <Box
-            sx={{
-              display: { xs: "block", md: "none" },
-
-              // justifyContent: "right",
-              mr: "1px",
-            }}
-          >
-            {/* לוגו קטן */}
-            <HashLink to="/#top" smooth>
+          {/* לוגו קטן במרכז (מובייל) */}
+          <Box sx={{ display: { xs: "block", md: "none" }, mr: "1px" }}>
+            <HashLink to={`${ROOT}/#top`} smooth>
               <Box
                 component="img"
                 src={pub("logo_B.svg")}
                 alt="Ban Tao"
                 sx={{
                   width: 120,
-                  height: "auto", // שומר יחס
+                  height: "auto",
                   display: "block",
                   maxWidth: "60vw",
                   objectFit: "contain",
-                  flex: "0 0 auto", // מונע מתיחה של Flex
+                  flex: "0 0 auto",
                   alignSelf: "center",
                   mr: 1,
                 }}
               />
-              {/* <AdbIcon sx={{ color: "primary.main" }} /> */}
-              {/* <Typography
-                component={HashLink}
-                to="/#top"
-                smooth
-                variant="h6"
-                noWrap
-                sx={{
-                  letterSpacing: ".18rem",
-                  color: "primary.main",
-                  textDecoration: "none",
-                  fontWeight: 300,
-                }}
-              >
-                B̂ān TAO
-              </Typography> */}
             </HashLink>
           </Box>
 
-          {/* ========= דסקטופ (md+) – 3 עמודות ========= */}
-          {/* עמודה שמאל: תפריט */}
+          {/* ========= דסקטופ (md+) ========= */}
           <Box
             sx={{
               display: { xs: "none", md: "flex" },
@@ -159,24 +102,29 @@ function PublicNav(props) {
               color: "primary.main",
             }}
           >
-            {pages.map((page) => (
-              <Button
-                component={RouterLink}
-                to={`/${page.toLowerCase()}`}
-                key={page}
-                onClick={handleCloseNavMenu}
-                color="inherit"
-                sx={{ textTransform: "none" }}
-              >
-                {page}
-              </Button>
-            ))}
+            {pages.map((page) => {
+              const isRooms = isGuest && page === "Rooms";
+              if (isRooms) return <RoomsMenuButton key="rooms-menu" />;
+
+              return (
+                <Button
+                  key={page}
+                  component={RouterLink}
+                  to={`${basePath}/${slug(page)}`}
+                  onClick={handleCloseNavMenu}
+                  color="inherit"
+                  sx={{ textTransform: "none" }}
+                >
+                  {page}
+                </Button>
+              );
+            })}
           </Box>
 
-          {/* עמודה מרכז: לוגו + שם ממורכזים */}
+          {/* מרכז: לוגו גדול */}
           <Box
             component={HashLink}
-            to="/#top"
+            to={`${ROOT}/#top`}
             smooth
             sx={{
               display: { xs: "none", md: "flex" },
@@ -191,25 +139,9 @@ function PublicNav(props) {
               alt="Ban Tao logo"
               sx={{ width: 150, height: 150 }}
             />
-            {/* <Typography
-              component={HashLink}
-              to="/#top"
-              smooth
-              variant="h6"
-              noWrap
-              href="#top"
-              sx={{
-                letterSpacing: ".18rem",
-                color: "primary.main",
-                textDecoration: "none",
-                fontWeight: 300,
-              }}
-            >
-              B̂ān TAO
-            </Typography> */}
           </Box>
 
-          {/* עמודה ימין: כפתור + אייקונים */}
+          {/* ימין: CTA + אייקונים */}
           <Box
             sx={{
               display: { xs: "none", md: "flex" },
@@ -231,7 +163,6 @@ function PublicNav(props) {
             >
               More Info
             </Button>
-
             <IconButton
               component="a"
               href="https://wa.me/972502136623"
@@ -241,14 +172,12 @@ function PublicNav(props) {
               sx={{
                 width: 36,
                 height: 36,
-
                 color: "primary.main",
                 "&:hover": { bgcolor: "action.hover" },
               }}
             >
               <WhatsApp fontSize="small" />
             </IconButton>
-
             <IconButton
               component="a"
               href="https://instagram.com/yourprofile"
@@ -258,7 +187,6 @@ function PublicNav(props) {
               sx={{
                 width: 36,
                 height: 36,
-
                 color: "primary.main",
                 "&:hover": { bgcolor: "action.hover" },
               }}
@@ -268,26 +196,23 @@ function PublicNav(props) {
           </Box>
         </Toolbar>
 
-        {/* תפריט המבורגר למובייל */}
+        {/* ========= תפריט מובייל ========= */}
         <Menu
           id="menu-appbar"
           open={Boolean(anchorElNav)}
           onClose={handleCloseNavMenu}
-          // מסך מלא מלמעלה-שמאל
           anchorReference="anchorPosition"
           anchorPosition={{ top: 0, left: 0 }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
-          // מבטל את רווח ה-16px של Popover
           marginThreshold={0}
           sx={{ display: { xs: "block", md: "none" } }}
           slotProps={{
             paper: {
               sx: {
-                width: "100%", // לא 100% – תופס את ה-viewport
-                height: "150dvh", // נכון למובייל
+                width: "100%",
+                height: "150dvh",
                 maxWidth: "none",
                 m: 0,
-
                 borderRadius: 0,
                 boxShadow: "none",
                 position: "relative",
@@ -322,7 +247,7 @@ function PublicNav(props) {
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              px: 0, // בלי padding צדדי
+              px: 0,
               textAlign: "center",
             }}
           >
@@ -334,7 +259,16 @@ function PublicNav(props) {
                   disableRipple
                   sx={{ py: 0, "&:hover": { bgcolor: "transparent" } }}
                 >
-                  <Typography sx={{ fontSize: 28, letterSpacing: 0.5 }}>
+                  <Typography
+                    component={RouterLink}
+                    to={`${basePath}/${slug(page)}`}
+                    sx={{
+                      fontSize: 28,
+                      letterSpacing: 0.5,
+                      textDecoration: "none",
+                      color: "text.primary",
+                    }}
+                  >
                     {page}
                   </Typography>
                 </MenuItem>
@@ -352,6 +286,9 @@ function PublicNav(props) {
                 bgcolor: "primary.main",
                 "&:hover": { bgcolor: "primary.dark" },
               }}
+              href="https://wa.me/972502136623"
+              target="_blank"
+              rel="noopener"
             >
               More Info
             </Button>
@@ -361,10 +298,18 @@ function PublicNav(props) {
                 sx={{ color: "primary.main" }}
                 aria-label="WhatsApp"
                 href="https://wa.me/972502136623"
+                target="_blank"
+                rel="noopener"
               >
                 <WhatsApp sx={{ fontSize: 36 }} />
               </IconButton>
-              <IconButton sx={{ color: "primary.main" }} aria-label="Instagram">
+              <IconButton
+                sx={{ color: "primary.main" }}
+                aria-label="Instagram"
+                href="https://instagram.com/yourprofile"
+                target="_blank"
+                rel="noopener"
+              >
                 <Instagram sx={{ fontSize: 36 }} />
               </IconButton>
             </Stack>

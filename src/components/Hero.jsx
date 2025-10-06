@@ -175,7 +175,8 @@ export default function Hero() {
 
         <Button
           component={RouterLink}
-          to="/guest"
+          Link
+          to="/resort/guest"
           variant="contained"
           size="large"
           sx={{

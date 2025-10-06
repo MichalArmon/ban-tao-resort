@@ -1,3 +1,12 @@
 // src/utils/publicPath.js
-export const BASE = import.meta.env.BASE_URL; // תמיד מסתיים ב־'/'.
-export const pub = (p = "") => `${BASE}${String(p).replace(/^\/+/, "")}`;
+const normalize = (s) => (s.endsWith("/") ? s : s + "/");
+
+const safeBase = () => {
+  const b = import.meta?.env?.BASE_URL;
+  // אם ב־dev/בילד בטעות נקבע "/false" או undefined – נשתמש ב־"/"
+  if (!b || b === "/false") return "/";
+  return normalize(b);
+};
+
+export const BASE = safeBase(); // תמיד יסתיים ב־"/"
+export const pub = (p = "") => BASE + String(p).replace(/^\/+/, "");

@@ -28,7 +28,9 @@ import AdminHome from "./pages/admin/AdminHome";
 // ❌ Not Found
 import NotFound from "./pages/NotFound";
 
-// --------------------------------------------------------
+// Retreats / Rooms
+import RetreatAll from "./pages/reatrets/RetreatAll"; // אם התיקייה באמת "reatrets" השאירי כך
+import Room from "./pages/rooms/Room";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -41,19 +43,18 @@ function RequireAuth({ allow, fallback = "/enter" }) {
     }
   }, [user, loginGuest]);
 
-  if (import.meta.env.DEV && !user)
+  if (import.meta.env.DEV && !user) {
     return <div style={{ padding: 16 }}>Loading…</div>;
+  }
 
   if (!user) return <Navigate to={fallback} replace state={{ from: loc }} />;
   return allow.includes(role) ? <Outlet /> : <Navigate to="/" replace />;
 }
 
-// --------------------------------------------------------
-
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Redirect זמני מהשורש */}
+      {/* Redirect מהשורש ל-/resort */}
       <Route path="/" element={<Navigate to="/resort" replace />} />
 
       {/* ========================== */}
@@ -65,13 +66,24 @@ export default function AppRoutes() {
         <Route path="contact" element={<Contact />} />
       </Route>
 
-      {/* אזור אורחים מוגן (Guest Area) */}
+      {/* אזור אורחים (Guest Area) */}
       <Route path="/resort/guest" element={<GuestLayout />}>
         <Route index element={<AvailabilityPage />} />
         <Route path="booking" element={<Booking />} />
         <Route path="reservations" element={<Reservations />} />
         <Route path="signup" element={<SignUp />} />
         <Route path="login" element={<Login />} />
+        <Route path="retreats" element={<RetreatAll />} />
+        <Route path="classes" element={<RetreatAll />} />
+
+        {/* ברירת מחדל לנתיב rooms */}
+        <Route
+          path="rooms"
+          element={<Navigate to="/resort/guest/rooms/bungalow" replace />}
+        />
+        {/* שימי לב: כאן הפרמטר נקרא :type (כמו אצלך). אם בתפריט את משתמשת ב"slug",
+            או תיישרי את השמות או תתרגמי בתוך <Room /> מ-slug ל-type. */}
+        <Route path="rooms/:type" element={<Room />} />
       </Route>
 
       {/* ========================== */}
@@ -92,12 +104,12 @@ export default function AppRoutes() {
       >
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
-          {/* בעתיד: rooms, media, rates, reports וכו' */}
+          {/* עתידי: rooms, media, rates, reports */}
         </Route>
       </Route>
 
       {/* ========================== */}
-      {/* ❌ 404 fallback */}
+      {/* ❌ 404 */}
       {/* ========================== */}
       <Route path="*" element={<NotFound />} />
     </Routes>
