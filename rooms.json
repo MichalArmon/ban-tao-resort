@@ -1,0 +1,26 @@
+{
+  "Villa": {
+    "title": "Villa",
+    "label": "Villa",
+    "sizeM2": 45,
+    "maxGuests": 4,
+    "features": ["Pool view", "Private terrace", "Mini-bar", "AC"],
+    "amenities": ["Shower", "Hairdryer", "TV", "Slippers"],
+    "hero": "rooms/bungalow/bungalow1.jpg",
+    "images": ["rooms/bungalow/bungalow1.jpg", "villa/2.jpg", "villa/3.jpg"]
+  },
+  "Deluxe Villa": {
+    "title": "Deluxe Villa",
+    "label": "Deluxe Villa",
+    "sizeM2": 52,
+    "maxGuests": 4,
+    "features": ["Private pool", "Garden view", "Kitchenette"],
+    "amenities": ["Walk-in shower", "Bathrobes", "Smart TV"],
+    "hero": "rooms/bungalow/bungalow1.jpg",
+    "images": [
+      "rooms/bungalow/bungalow1.jpg",
+      "rooms/Garden Suite/Garden Suite.jpg",
+      "rooms/dorm/dorm.jpg"
+    ]
+  }
+}
