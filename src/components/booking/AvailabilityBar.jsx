@@ -6,18 +6,15 @@ import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { useNavigate } from "react-router-dom";
 dayjs.extend(isSameOrBefore);
 
 // 🔑 ייבוא Hooks ורכיבים חיוניים
 import { useBooking } from "../../context/BookingContext";
 import GuestRoomPopover from "./GuestRoomPopover";
-import { styled } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import AddIcon from "@mui/icons-material/Add"; // לוודא שמיובא אם משתמשים בו
-import RemoveIcon from "@mui/icons-material/Remove"; // לוודא שמיובא אם משתמשים בו
 
 const AvailabilityBar = () => {
-  // 🔑 שליפת המשתנים והפונקציות מה-Context
+  // 🔗 שליפת המשתנים והפונקציות מה-Context
   const {
     checkIn,
     setCheckIn,
@@ -29,64 +26,117 @@ const AvailabilityBar = () => {
     setRooms,
     fetchAvailability,
     loading,
-    fetchMonthlyRetreatsMap,
     fetchRetreatsCalendar,
   } = useBooking();
 
-  // 🛑 1. הסרת הקונפליקט: נשתמש ב-checkIn כ-source of truth לחודש
+  const navigate = useNavigate();
+
+  // 📅 לוח ריטריטים: { "YYYY-MM-DD": { type, name, slug? } }
   const [retreatDates, setRetreatDates] = useState({});
 
-  // 💡 חישוב תלותי: minCheckOut תלוי ב-checkIn
-  const minCheckIn = dayjs().startOf("day");
+  // 🗓️ קבועי תאריכים (ממואיזים)
+  const minCheckIn = useMemo(() => dayjs().startOf("day"), []);
+  const farFuture = useMemo(() => dayjs().add(3, "year").endOf("day"), []);
   const minCheckOut = useMemo(
     () => (checkIn ? dayjs(checkIn).add(1, "day") : minCheckIn.add(1, "day")),
     [checkIn, minCheckIn]
   );
 
-  // 🔑 2. Effect לטעינת נתונים: תלוי רק ב-checkIn (מופעל בטעינה ובשינוי checkIn)
+  // ✨ מחולל slug אחיד ל-URL
+  const makeSlug = useCallback((info, key) => {
+    const base = (
+      info?.slug ||
+      info?.name ||
+      info?.type ||
+      key ||
+      ""
+    ).toString();
+    return base
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+  }, []);
+
+  // ⬇️ טעינת לוח הריטריטים
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      const map = await fetchRetreatsCalendar(24);
-      setRetreatDates(map); // map = { "2025-10-15": { type:"yoga", name:"..." }, ... }
-      console.log("calendar loaded days:", Object.keys(map).length);
+      try {
+        const map = await fetchRetreatsCalendar(24);
+        if (mounted) setRetreatDates(map || {});
+        // דוגמה: { "2025-10-15": { type:"yoga", name:"...", slug:"yoga-oct-15" } }
+      } catch (err) {
+        console.error("Failed to load retreats calendar:", err);
+      }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [fetchRetreatsCalendar]);
 
-  // ✅ CustomDay בתוך הקומפוננטה כדי שיקבל retreatDates מה-closure
+  // 🎨 יום מותאם: צובע ומנווט במקום לבחור
   const CustomDay = (props) => {
     const { day, className, ...rest } = props;
-
-    // הגנה
-    if (!day || !dayjs.isDayjs(day))
+    if (!day || !dayjs.isDayjs(day)) {
       return <PickersDay {...rest} day={day} className={className} />;
+    }
 
     const key = day.format("YYYY-MM-DD");
-    const info = retreatDates[key]; // 👈 משתמשים במפה מהשרת
+    const info = retreatDates[key];
     const type = info?.type?.toLowerCase();
 
-    // צבעים לפי סוג
     const colors = {
       yoga: "rgba(76,175,80,0.15)",
       detox: "rgba(33,150,243,0.15)",
       meditation: "rgba(156,39,176,0.15)",
       workshop: "rgba(255,152,0,0.18)",
     };
-
     const bg = type ? colors[type] : "transparent";
-    const hoverBg = type ? colors[type].replace("0.15", "0.25") : "inherit";
+    const hoverBg = type ? bg.replace("0.15", "0.25") : "inherit";
 
-    // דיבוג נקודתי ליום שאת מצפה שיצבע
-    if (key === "2025-10-15") console.log("DBG 15th ->", info);
+    const goToRetreat = () => {
+      const slug = makeSlug(info, key);
+      navigate(`/resort/retreats/${slug}`, { state: info });
+    };
+
+    // קליק: לנווט במקום לבחור
+    const handleClick = (e) => {
+      if (info) {
+        e.preventDefault();
+        e.stopPropagation();
+        goToRetreat();
+        return;
+      }
+      rest.onClick?.(e);
+    };
+
+    // מקלדת: Enter/Space לנווט במקום לבחור
+    const handleKeyDown = (e) => {
+      if (info && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        e.stopPropagation();
+        goToRetreat();
+      } else {
+        rest.onKeyDown?.(e);
+      }
+    };
 
     return (
       <PickersDay
-        {...rest} // חשוב: משמר את כל ה-handlers הפנימיים של MUI
+        {...rest}
         day={day}
         className={className}
-        title={info?.name || info?.type}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        role={info ? "link" : undefined}
+        title={info ? info.name || info.type : undefined}
+        aria-label={info ? `Retreat: ${info.name || info.type}` : undefined}
         sx={{
           backgroundColor: bg,
           borderRadius: "50%",
+          cursor: info ? "pointer" : "default",
+          textDecoration: "none",
           "&:hover": { backgroundColor: hoverBg },
           "&.Mui-selected": {
             backgroundColor: "primary.main",
@@ -97,7 +147,7 @@ const AvailabilityBar = () => {
     );
   };
 
-  // ... (פונקציות עזר handleSetGuests, handleSetRooms נשארות כצפוי)
+  // 👥 אורחים/חדרים (מינימום 1)
   const handleSetGuests = useCallback(
     (value) => setGuests(Math.max(1, value)),
     [setGuests]
@@ -106,23 +156,18 @@ const AvailabilityBar = () => {
     (value) => setRooms(Math.max(1, value)),
     [setRooms]
   );
-  const maxGuests = rooms * 4;
-  const minGuests = rooms * 1;
 
-  // 3. הגדרת הפונקציה לחיפוש (משתמשת ב-State עדכני)
+  // 🔍 חיפוש זמינות
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
     await fetchAvailability();
   };
 
-  // 4. ולידציה לכפתור
+  // 🧯 ולידציה לכפתור
   const isSearchDisabled =
     !checkIn ||
     !checkOut ||
     dayjs(checkOut).isSameOrBefore(dayjs(checkIn), "day");
-
-  const today = useMemo(() => dayjs().startOf("day"), []);
-  const farFuture = useMemo(() => dayjs().add(3, "year").endOf("day"), []);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -147,14 +192,18 @@ const AvailabilityBar = () => {
         <DatePicker
           label="Check-In"
           value={checkIn ? dayjs(checkIn) : null}
-          onChange={(newValue) =>
-            setCheckIn(newValue ? newValue.format("YYYY-MM-DD") : "")
-          }
+          onChange={(newValue) => {
+            const key = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
+            const info = key && retreatDates[key];
+            if (info) {
+              const slug = makeSlug(info, key);
+              navigate(`/resort/retreats/${slug}`, { state: info });
+              return; // לא משנים state
+            }
+            setCheckIn(newValue ? dayjs(newValue).format("YYYY-MM-DD") : "");
+          }}
           minDate={minCheckIn}
-          maxDate={farFuture} // 🛑 farFuture צריך להיות מוגדר בראש הקומפוננטה או להגיע מה-Context
-          // 🛑 מחיקת onMonthChange – לא נחוץ! ה-useEffect תלוי ב-checkIn
-          // onMonthChange={(newDate) => setCurrentMonth(newDate)}
-
+          maxDate={farFuture}
           slots={{ day: CustomDay }}
           slotProps={{
             textField: { size: "medium", InputLabelProps: { shrink: true } },
@@ -167,13 +216,18 @@ const AvailabilityBar = () => {
         <DatePicker
           label="Check-Out"
           value={checkOut ? dayjs(checkOut) : null}
-          onChange={(newValue) =>
-            setCheckOut(newValue ? newValue.format("YYYY-MM-DD") : "")
-          }
-          minDate={minCheckIn}
+          onChange={(newValue) => {
+            const key = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
+            const info = key && retreatDates[key];
+            if (info) {
+              const slug = makeSlug(info, key);
+              navigate(`/resort/retreats/${slug}`, { state: info });
+              return; // לא משנים state
+            }
+            setCheckOut(newValue ? dayjs(newValue).format("YYYY-MM-DD") : "");
+          }}
+          minDate={minCheckOut} // 👈 חשוב: יום אחרי check-in
           maxDate={farFuture}
-          // 🛑 מחיקת onMonthChange
-          // onMonthChange={(newDate) => setCurrentMonth(newDate)}
           slots={{ day: CustomDay }}
           slotProps={{
             textField: { size: "medium", InputLabelProps: { shrink: true } },

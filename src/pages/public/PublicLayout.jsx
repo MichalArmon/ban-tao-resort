@@ -11,32 +11,37 @@ import { Phone } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import { pub } from "../../../utils/publicPath";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import { themeResort } from "../../theme";
 
 function PublicLayout() {
   return (
-    <>
-      {/* כפתור שיחה צף בפינה */}
-      <Fab
-        aria-label="Call"
-        sx={{
-          position: "fixed",
-          right: 20,
-          bottom: 20,
-          bgcolor: "#fff",
-          color: "primary.main",
-          border: "2px solid",
-          borderColor: "primary.main",
-          "&:hover": { bgcolor: "#fff" },
-        }}
-      >
-        <Phone />
-      </Fab>
+    <ThemeProvider theme={themeResort}>
+      <CssBaseline />
+      <>
+        {/* כפתור שיחה צף בפינה */}
+        <Fab
+          aria-label="Call"
+          sx={{
+            position: "fixed",
+            right: 20,
+            bottom: 20,
+            bgcolor: "#fff",
+            color: "primary.main",
+            border: "2px solid",
+            borderColor: "primary.main",
+            "&:hover": { bgcolor: "#fff" },
+          }}
+        >
+          <Phone />
+        </Fab>
 
-      <PublicNav />
-      <main className="page">
-        <Outlet />
-      </main>
-    </>
+        <PublicNav />
+        <main className="page">
+          <Outlet />
+        </main>
+      </>
+    </ThemeProvider>
   );
 }
 
