@@ -9,7 +9,7 @@ import useRoomsConfig from "../../hooks/useRoomsConfig";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Box } from "@mui/material";
 
-// ✅ פונקציה חיונית: ממירה מחרוזת ל-slug
+// ממירה טקסט ל-slug רק כשאין slug מובנה
 const slugify = (text) => text.toLowerCase().replace(/\s+/g, "-");
 
 export default function RoomsMenuButton() {
@@ -19,6 +19,19 @@ export default function RoomsMenuButton() {
 
   const handleClick = (e) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
+
+  // תקנון: גם אם rooms הוא אובייקט (map) וגם אם הוא מערך
+  const list = React.useMemo(() => {
+    if (Array.isArray(rooms)) return rooms; // [{ label, slug, ... }]
+    if (rooms && typeof rooms === "object") {
+      return Object.entries(rooms).map(([key, data]) => ({
+        // נפוץ אצלך: data.label וכד' נמצאים תחת המפתח
+        key,
+        ...data,
+      }));
+    }
+    return [];
+  }, [rooms]);
 
   return (
     <>
@@ -31,20 +44,13 @@ export default function RoomsMenuButton() {
         color="inherit"
         sx={{
           textTransform: "none",
-          // ✅ 1. ביטול מוחלט של הריפוד האופקי בכפתור כולו
           px: 0,
           minWidth: "auto",
-
-          // ✅ 2. דריסת המרווח של עוטף האייקון
           "& .MuiButton-endIcon": {
-            marginLeft: "3px", // מבטל את המרווח האוטומטי
-            marginRight: "0px", // מושך את האייקון אחורה (שנה את -4px אם צריך)
+            marginLeft: "3px",
+            marginRight: 0,
           },
-
-          // ✅ 3. ניקוי המרווחים הפנימיים מהתווית (Text label)
-          "& .MuiButton-label": {
-            margin: "0px",
-          },
+          "& .MuiButton-label": { margin: 0 },
         }}
         endIcon={open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
         disabled={error}
@@ -76,7 +82,6 @@ export default function RoomsMenuButton() {
           },
         }}
       >
-        {/* מציג טעינה */}
         {loading && (
           <MenuItem disabled sx={{ opacity: 0.7, justifyContent: "center" }}>
             <Box py={0.5}>
@@ -84,37 +89,47 @@ export default function RoomsMenuButton() {
             </Box>
           </MenuItem>
         )}
-        {/* מציג שגיאה */}
+
         {error && !loading && (
           <MenuItem disabled sx={{ color: "error.main", opacity: 1 }}>
             Failed to load rooms
           </MenuItem>
         )}
-        {/* מציג את החדרים רק אם יש מפתחות באובייקט */}
-        {Object.keys(rooms).length > 0 &&
-          Object.entries(rooms).map(([key, data]) => (
-            <MenuItem
-              key={key}
-              component={RouterLink}
-              to={`/resort/guest/rooms/${slugify(key)}`}
-              onClick={handleClose}
-              sx={{
-                fontWeight: 500,
-                "&:hover": {
-                  textDecoration: "underline",
-                  textDecorationThickness: "2px",
-                  textUnderlineOffset: "4px",
-                  backgroundColor: "transparent",
-                  color: "primary.main",
-                },
-                "&.Mui-focusVisible": { backgroundColor: "transparent" },
-              }}
-            >
-              {data?.label ?? key}
-            </MenuItem>
-          ))}
-        {/* מציג הודעה אם אין חדרים ואין שגיאה */}
-        {Object.keys(rooms).length === 0 && !loading && !error && (
+
+        {!loading && !error && list.length > 0 && (
+          <>
+            {list.map((item) => {
+              const label = item?.label ?? item?.title ?? item?.key ?? "Room";
+              const slug = item?.slug ?? slugify(label);
+              // ✅ נתיב חדש ונכון: בלי '/resort' ובצורת יחיד 'room'
+              const to = `/guest/room/${slug}`;
+
+              return (
+                <MenuItem
+                  key={slug}
+                  component={RouterLink}
+                  to={to}
+                  onClick={handleClose}
+                  sx={{
+                    fontWeight: 500,
+                    "&:hover": {
+                      textDecoration: "underline",
+                      textDecorationThickness: "2px",
+                      textUnderlineOffset: "4px",
+                      backgroundColor: "transparent",
+                      color: "primary.main",
+                    },
+                    "&.Mui-focusVisible": { backgroundColor: "transparent" },
+                  }}
+                >
+                  {label}
+                </MenuItem>
+              );
+            })}
+          </>
+        )}
+
+        {!loading && !error && list.length === 0 && (
           <MenuItem disabled sx={{ opacity: 0.7 }}>
             No rooms defined.
           </MenuItem>
