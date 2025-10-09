@@ -9,19 +9,17 @@ import {
   Chip,
   Stack,
   Divider,
+  Paper,
 } from "@mui/material";
 import { pub } from "../../../utils/publicPath";
 import useRoomsConfig from "../../hooks/useRoomsConfig";
 import { Hotel, SquareFoot, People } from "@mui/icons-material";
 
-// פונקציות עזר נשארות כפי שהן
 const slugify = (text) => text.toLowerCase().replace(/\s+/g, "-");
-const imgSrc = (p) => (p?.startsWith("http") ? p : pub(p));
+const imgSrc = (p) => (p?.startsWith?.("http") ? p : pub(p));
+const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
 
 export default function Room() {
-  // =======================================================
-  // ✅ 1. כל הקריאות ל-Hooks חייבות להיות כאן, למעלה
-  // =======================================================
   const { type } = useParams();
   const roomSlug = (type || "").toLowerCase();
   const { rooms, loading, error } = useRoomsConfig();
@@ -34,226 +32,236 @@ export default function Room() {
     return foundKey ? rooms[foundKey] : null;
   }, [rooms, roomSlug]);
 
-  // משתנה עזר כדי לחשב את התמונה ההתחלתית
-  const initialImage = data ? data.hero || data.images?.[0] : null;
+  const [mainImage, setMainImage] = useState(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
-  // ✅ 2. ה-useState חייב להיות כאן
-  const [mainImage, setMainImage] = useState(initialImage);
-
-  // ✅ 3. ה-useEffect חייב להיות כאן
   useEffect(() => {
-    // אם הנתונים טרם נטענו או שה-roomSlug ריק, יוצאים מה-Effect
-    if (!data || !roomSlug) return;
-
-    const currentDefault = data.hero || data.images?.[0];
-
-    // מעדכן את ה-mainImage רק אם הוא השתנה או אם החדר התחלף
-    if (mainImage !== currentDefault) {
-      setMainImage(currentDefault);
-    }
+    if (!data) return;
+    const nextDefault = data.hero || data.images?.[0] || null;
+    setImgLoaded(false);
+    setMainImage(nextDefault ? imgSrc(nextDefault) : null);
   }, [data, roomSlug]);
 
-  // =======================================================
-  // ✅ 4. לוגיקת return מותנית - חייבת להיות אחרי ה-Hooks
-  // =======================================================
+  useEffect(() => {
+    if (!mainImage) return;
+    const img = new Image();
+    img.onload = () => setImgLoaded(true);
+    img.onerror = () => {
+      setMainImage(FALLBACK_IMG);
+      setImgLoaded(true);
+    };
+    img.src = mainImage;
+  }, [mainImage]);
 
   if (loading) return null;
-
-  if (error || !data) {
+  if (error || !data)
     return <Navigate to="/resort/guest/rooms/bungalow" replace />;
-  }
-
-  // פונקציה לטיפול באירועי העכבר (לא Hook, אז יכול להיות מוגדר כאן)
-  const handleImageChange = (newImgSrc) => {
-    setMainImage(newImgSrc);
-  };
 
   const images = data.images || [];
+  const handleImageChange = (newImgSrc) => {
+    const next = imgSrc(newImgSrc);
+    if (next === mainImage) return;
+    setImgLoaded(false);
+    setMainImage(next);
+  };
 
-  // ... (facilities נשאר כפי שהיה)
   const facilities = [
     {
       label: `${data.maxGuests ?? 2} guests`,
       icon: <People sx={{ fontSize: 16 }} />,
-      value: data.maxGuests,
     },
     {
       label: `${data.sizeM2 ?? 30} m²`,
       icon: <SquareFoot sx={{ fontSize: 16 }} />,
-      value: data.sizeM2,
     },
     {
       label: data.bedType ?? "King size",
       icon: <Hotel sx={{ fontSize: 16 }} />,
     },
-  ].filter(
-    (f) =>
-      f.value !== undefined ||
-      f.label.includes("guest") ||
-      f.label.includes("size")
-  );
+  ];
 
   return (
-    <>
-      {/* ... (שאר הקוד של הרינדור נשאר זהה) */}
-      {/* Hero Section */}
-      {mainImage && (
-        <Box
+    <Container
+      maxWidth="lg"
+      sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 6, md: 10 } }}
+    >
+      {/* כותרת מיושרת לשמאל */}
+      <Typography
+        variant="h3"
+        component="h1"
+        sx={{
+          mb: { xs: 3, md: 4 },
+          fontWeight: 700,
+          textAlign: "left",
+          color: "primary.main",
+          fontSize: { xs: 28, md: 44 },
+        }}
+      >
+        {data.title}
+      </Typography>
+
+      {/* תמונה גדולה + גלריה ימנית בגובה זהה */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          gap: 2,
+          height: { xs: 300, md: 520 }, // 🔑 גובה אחיד לשני החלקים
+          width: "100%",
+        }}
+      >
+        {/* תמונה ראשית */}
+        <Paper
+          elevation={0}
           sx={{
-            position: "relative",
-            width: "100%",
-            height: { xs: 350, md: 600 },
-            mb: 4,
+            flex: "0 0 80%", // 🔹 80% מהשטח
+            borderRadius: 2,
+            overflow: "hidden",
+            border: "1px solid",
+            borderColor: "divider",
+            height: "100%",
           }}
         >
-          {/* התמונה עצמה */}
-          <Box
-            component="img"
-            src={imgSrc(mainImage)}
-            alt={data.title}
-            sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
-          {/* כותרת החדר (Title) */}
-          <Typography
-            variant="h2"
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              color: "white",
-              fontWeight: 700,
-              textShadow: "0 0 10px rgba(0,0,0,0.5)",
-              textAlign: "center",
-              fontSize: { xs: 36, md: 60 },
-            }}
-          >
-            {data.title}
-          </Typography>
-        </Box>
-      )}
-                 {" "}
-      <Container maxWidth="lg" sx={{ pt: 0, pb: { xs: 6, md: 10 } }}>
-                {/* 1. גלריית תמונות קטנות אינטראקטיבית */}       {" "}
-        <Grid container spacing={2} sx={{ mb: 6 }}>
-                   {" "}
-          {images.map((img) => (
-            <Grid key={img} item xs={4} sm={3}>
-                           {" "}
+          {mainImage && (
+            <Box
+              component="img"
+              src={mainImage}
+              alt={data.title}
+              onError={() => setMainImage(FALLBACK_IMG)}
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                opacity: imgLoaded ? 1 : 0,
+                transition: "opacity 0.3s ease",
+              }}
+            />
+          )}
+        </Paper>
+
+        {/* גלריה ימנית — מעט רחבה יותר (20%) ומתפרסת על כל הגובה */}
+        <Stack
+          spacing={1.2}
+          sx={{
+            flex: "0 0 20%",
+            height: "100%", // ✅ אותו גובה כמו התמונה
+            overflowY: "auto",
+            borderRadius: 2,
+            pr: 0.5,
+            "&::-webkit-scrollbar": { width: 6 },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "divider",
+              borderRadius: 8,
+            },
+          }}
+        >
+          {images.map((img, idx) => {
+            const full = imgSrc(img);
+            const isActive = full === mainImage;
+            return (
               <Box
+                key={img}
                 component="img"
-                src={imgSrc(img)}
-                alt={`${data.title} photo`}
-                // ✅ הוספת אינטראקציה
-                onMouseEnter={() => handleImageChange(img)}
+                src={full}
+                alt=""
                 onClick={() => handleImageChange(img)}
+                onError={(e) => (e.currentTarget.src = FALLBACK_IMG)}
                 sx={{
                   width: "100%",
-                  height: { xs: 80, md: 120 },
                   objectFit: "cover",
                   borderRadius: 1,
                   cursor: "pointer",
-                  opacity: imgSrc(img) === imgSrc(mainImage) ? 1 : 0.6,
-                  border:
-                    imgSrc(img) === imgSrc(mainImage) ? "2px solid" : "none",
-                  borderColor: "primary.main",
-                  transition: "opacity 0.2s",
+                  border: "2px solid",
+                  borderColor: isActive ? "primary.light" : "transparent",
+                  transition: "transform 0.2s ease, border-color 0.2s ease",
+                  "&:hover": { transform: "scale(1.03)" },
+
+                  // 🔹 גבהים משתנים למראה דינמי
+                  maxHeight:
+                    idx % 3 === 0
+                      ? { xs: 140, md: 200 }
+                      : idx % 3 === 1
+                      ? { xs: 110, md: 160 }
+                      : { xs: 90, md: 130 },
                 }}
               />
-                         {" "}
-            </Grid>
-          ))}
-                 {" "}
-        </Grid>
-                        <Divider sx={{ my: 4 }} />               {" "}
-        {/* 2. בלוק טקסט ומתקנים */}       {" "}
-        <Grid container spacing={4} alignItems="flex-start">
-                    {/* טור שמאל: טקסט ותכונות נוספות */}         {" "}
-          <Grid item xs={12} md={7}>
-                       {" "}
-            <Typography variant="body1" sx={{ mb: 4, whiteSpace: "pre-line" }}>
-              {data.blurb}
-            </Typography>
-                                   {" "}
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-              Room Amenities
-            </Typography>
-                       {" "}
-            {!!data.features?.length && (
-              <Stack
-                direction="row"
-                spacing={1}
-                flexWrap="wrap"
-                useFlexGap
-                sx={{ mb: 3 }}
-              >
-                               {" "}
-                {data.features.map((f) => (
-                  <Chip key={f} label={f} variant="outlined" size="small" />
-                ))}
-                             {" "}
-              </Stack>
-            )}
-                                   {" "}
-            <Button
-              variant="contained"
-              size="large"
-              sx={{ textTransform: "none" }}
-              href="https://wa.me/972502136623"
-              target="_blank"
-              rel="noopener"
+            );
+          })}
+        </Stack>
+      </Box>
+
+      <Divider sx={{ my: { xs: 3, md: 5 } }} />
+
+      {/* תיאור + נתונים */}
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={7}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            Room Description
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 4, whiteSpace: "pre-line" }}>
+            {data.blurb}
+          </Typography>
+
+          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
+            Room Amenities
+          </Typography>
+          {!!data.features?.length && (
+            <Stack
+              direction="row"
+              spacing={1}
+              flexWrap="wrap"
+              useFlexGap
+              sx={{ mb: 3 }}
             >
-                            Check availability            {" "}
-            </Button>
-                     {" "}
-          </Grid>
-                              {/* טור ימין: מתקנים (Facilities) */}         {" "}
-          <Grid item xs={12} md={5}>
-                       {" "}
-            <Box
-              sx={{
-                p: 3,
-                borderLeft: { md: "1px solid" },
-                borderColor: "divider",
-              }}
-            >
-                             {" "}
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-                                    Facilities                {" "}
-              </Typography>
-                             {" "}
-              <Stack spacing={1}>
-                                   {" "}
-                {facilities.map((f, i) => (
-                  <Stack
-                    key={i}
-                    direction="row"
-                    alignItems="center"
-                    spacing={1}
-                  >
-                                               {" "}
-                    <Box color="primary.main" sx={{ display: "flex" }}>
-                      {f.icon}
-                    </Box>
-                                               {" "}
-                    <Typography variant="body1">{f.label}</Typography>         
-                                 {" "}
-                  </Stack>
-                ))}
-                               {" "}
-              </Stack>
-                         {" "}
-            </Box>
-                     {" "}
-          </Grid>
-                 {" "}
+              {data.features.map((f) => (
+                <Chip key={f} label={f} variant="outlined" size="medium" />
+              ))}
+            </Stack>
+          )}
+
+          <Button
+            variant="contained"
+            size="large"
+            sx={{ textTransform: "none" }}
+            href="https://wa.me/972502136623"
+            target="_blank"
+          >
+            Check availability
+          </Button>
         </Grid>
-             {" "}
-      </Container>
-    </>
+
+        <Grid item xs={12} md={5}>
+          <Box
+            sx={{
+              p: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 2,
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 600, mb: 2, color: "text.secondary" }}
+            >
+              Room Quick Facts
+            </Typography>
+
+            <Stack spacing={1.5}>
+              {facilities.map((f, i) => (
+                <Stack
+                  key={i}
+                  direction="row"
+                  alignItems="center"
+                  spacing={1.2}
+                >
+                  <Box color="primary.main">{f.icon}</Box>
+                  <Typography variant="body1">{f.label}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        </Grid>
+      </Grid>
+    </Container>
   );
 }

@@ -11,7 +11,7 @@ export default function Hero() {
   const [fadeVideo, setFadeVideo] = useState(false);
 
   const IMG_FULL = pub("HERO.jpg");
-  const LOGO_ANIM = pub("resort-all3.webm");
+  const LOGO_ANIM = pub("resortweb.webm");
 
   // ⏱ שליטה מדויקת בזמנים
   const START_FADE_AFTER_MS = 3800; // מתי להתחיל להעלים את הווידאו
