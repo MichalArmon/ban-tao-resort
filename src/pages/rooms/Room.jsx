@@ -61,6 +61,7 @@ export default function Room() {
 
   const [mainImage, setMainImage] = useState(null);
   const [imgLoaded, setImgLoaded] = useState(false);
+  console.log("ROOM DATA:", data);
 
   useEffect(() => {
     if (!data) return;
