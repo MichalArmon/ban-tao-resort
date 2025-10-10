@@ -14,12 +14,40 @@ import {
   ImageListItem,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-// התאימי למסלול שבו השתמשת בשאר הפרויקט (אותו כמו ב-RoomCard)
 import { useBooking } from "../../context/BookingContext";
 import { pub } from "../../utils/publicPath";
+import useRoomsConfig from "../../hooks/useRoomsConfig";
+
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dhje7hbxd";
+const cldUrl = (publicId) =>
+  publicId
+    ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${publicId}`
+    : null;
+
+const pickTitle = (roomData, room, key) =>
+  roomData?.title || room?.name || key || "Room details";
+
+const normalizeImageUrls = (roomData, staticInfo) => {
+  // קודם מהשרת (Cloudinary), ואז fallback לסטטי מה-public
+  const server = (
+    roomData?.imageUrls?.length
+      ? roomData.imageUrls
+      : Array.isArray(roomData?.images)
+      ? roomData.images.map((x) => (typeof x === "string" ? cldUrl(x) : x?.url))
+      : []
+  ).filter(Boolean);
+
+  if (server.length) return server;
+
+  const stat = Array.isArray(staticInfo?.images)
+    ? staticInfo.images.map((rel) => pub(rel))
+    : [];
+  return stat;
+};
 
 export default function RoomInfoDialog({ open, onClose, room }) {
   const { checkIn, checkOut, fetchQuote } = useBooking();
+  const { rooms } = useRoomsConfig();
 
   const [quote, setQuote] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
@@ -31,7 +59,13 @@ export default function RoomInfoDialog({ open, onClose, room }) {
 
   const roomTypeKey = room?.roomType;
 
-  // מחיר/זמינות מהשרת
+  const roomData = rooms?.[roomTypeKey] || null;
+  const title = useMemo(
+    () => pickTitle(roomData, room, roomTypeKey),
+    [roomData, room, roomTypeKey]
+  );
+
+  // מחיר/זמינות
   useEffect(() => {
     let ignore = false;
     if (!open || !roomTypeKey) return;
@@ -52,7 +86,7 @@ export default function RoomInfoDialog({ open, onClose, room }) {
     };
   }, [open, roomTypeKey, checkIn, checkOut, fetchQuote]);
 
-  // מידע סטטי מה-public/rooms.json
+  // סטטי (fallback) מה-public/rooms.json
   useEffect(() => {
     let ignore = false;
     if (!open || !roomTypeKey) return;
@@ -74,11 +108,7 @@ export default function RoomInfoDialog({ open, onClose, room }) {
     };
   }, [open, roomTypeKey]);
 
-  const title = useMemo(
-    () => staticInfo?.title || room?.name || roomTypeKey || "Room details",
-    [staticInfo, room, roomTypeKey]
-  );
-
+  const images = normalizeImageUrls(roomData, staticInfo);
   const fmt = (d) =>
     d?.format?.("YYYY-MM-DD") || (typeof d === "string" ? d : "");
 
@@ -96,20 +126,18 @@ export default function RoomInfoDialog({ open, onClose, room }) {
       </DialogTitle>
 
       <DialogContent dividers>
-        {/* גלריית תמונות */}
+        {/* גלרייה */}
         <Box sx={{ mb: 2 }}>
-          {loadingStatic ? (
+          {loadingStatic && !images.length ? (
             <Stack alignItems="center" py={3}>
               <CircularProgress />
             </Stack>
-          ) : staticErr ? (
-            <Typography color="error">{staticErr}</Typography>
-          ) : staticInfo?.images?.length ? (
+          ) : images.length ? (
             <ImageList cols={3} gap={8} sx={{ m: 0 }}>
-              {staticInfo.images.map((rel, i) => (
-                <ImageListItem key={i}>
+              {images.map((src, i) => (
+                <ImageListItem key={src + i}>
                   <img
-                    src={pub(rel)}
+                    src={src}
                     alt={`${title} ${i + 1}`}
                     loading="lazy"
                     style={{
@@ -122,6 +150,8 @@ export default function RoomInfoDialog({ open, onClose, room }) {
                 </ImageListItem>
               ))}
             </ImageList>
+          ) : staticErr ? (
+            <Typography color="error">{staticErr}</Typography>
           ) : (
             <Box
               sx={{
@@ -174,36 +204,36 @@ export default function RoomInfoDialog({ open, onClose, room }) {
 
         <Divider sx={{ my: 2 }} />
 
-        {/* פרטים סטטיים */}
+        {/* פרטים סטטיים (כמו קודם) */}
         <Stack spacing={1}>
           <Typography variant="h6">Room details</Typography>
 
           <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mb: 1 }}>
-            {staticInfo?.sizeM2 && (
-              <Chip label={`${staticInfo.sizeM2} m²`} size="small" />
+            {(roomData?.sizeM2 ?? staticInfo?.sizeM2) && (
+              <Chip
+                label={`${roomData?.sizeM2 ?? staticInfo?.sizeM2} m²`}
+                size="small"
+              />
             )}
-            {staticInfo?.maxGuests && (
-              <Chip label={`Max ${staticInfo.maxGuests} guests`} size="small" />
+            {(roomData?.maxGuests ?? staticInfo?.maxGuests) && (
+              <Chip
+                label={`Max ${
+                  roomData?.maxGuests ?? staticInfo?.maxGuests
+                } guests`}
+                size="small"
+              />
             )}
           </Stack>
 
-          {!!staticInfo?.features?.length && (
+          {!!(roomData?.features?.length || staticInfo?.features?.length) && (
             <>
               <Typography fontWeight={600}>Features</Typography>
               <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mb: 1 }}>
-                {staticInfo.features.map((f, i) => (
+                {(roomData?.features?.length
+                  ? roomData.features
+                  : staticInfo?.features || []
+                ).map((f, i) => (
                   <Chip key={i} label={f} size="small" variant="outlined" />
-                ))}
-              </Stack>
-            </>
-          )}
-
-          {!!staticInfo?.amenities?.length && (
-            <>
-              <Typography fontWeight={600}>Amenities</Typography>
-              <Stack direction="row" gap={1} flexWrap="wrap">
-                {staticInfo.amenities.map((a, i) => (
-                  <Chip key={i} label={a} size="small" />
                 ))}
               </Stack>
             </>

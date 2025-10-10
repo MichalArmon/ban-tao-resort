@@ -11,13 +11,40 @@ import {
   Divider,
   Paper,
 } from "@mui/material";
-import { pub } from "../../../utils/publicPath";
 import useRoomsConfig from "../../hooks/useRoomsConfig";
 import { Hotel, SquareFoot, People } from "@mui/icons-material";
 
-const slugify = (text) => text.toLowerCase().replace(/\s+/g, "-");
-const imgSrc = (p) => (p?.startsWith?.("http") ? p : pub(p));
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dhje7hbxd";
 const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
+const slugify = (text = "") => text.toLowerCase().replace(/\s+/g, "-");
+
+// publicId → Cloudinary URL
+const cldUrl = (publicId) =>
+  publicId
+    ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${publicId}`
+    : null;
+
+// מחזיר URL hero תקין מכל פורמט
+const pickHeroUrl = (data) =>
+  data?.heroUrl ||
+  data?.hero?.url ||
+  (typeof data?.hero === "string" ? cldUrl(data.hero) : null) ||
+  data?.imageUrls?.[0] ||
+  data?.images?.[0]?.url ||
+  (typeof data?.images?.[0] === "string" ? cldUrl(data.images[0]) : null) ||
+  null;
+
+// מנרמל מערך תמונות ל־URL-ים
+const normalizeImageUrls = (data) => {
+  const raw = Array.isArray(data?.imageUrls)
+    ? data.imageUrls
+    : Array.isArray(data?.images)
+    ? data.images
+    : [];
+  return raw
+    .map((x) => (typeof x === "string" ? cldUrl(x) : x?.url || null))
+    .filter(Boolean);
+};
 
 export default function Room() {
   const { type } = useParams();
@@ -37,9 +64,11 @@ export default function Room() {
 
   useEffect(() => {
     if (!data) return;
-    const nextDefault = data.hero || data.images?.[0] || null;
+    const hero = pickHeroUrl(data);
+    const gallery = normalizeImageUrls(data);
+    const nextDefault = hero || gallery[0] || null;
     setImgLoaded(false);
-    setMainImage(nextDefault ? imgSrc(nextDefault) : null);
+    setMainImage(nextDefault);
   }, [data, roomSlug]);
 
   useEffect(() => {
@@ -57,12 +86,11 @@ export default function Room() {
   if (error || !data)
     return <Navigate to="/resort/guest/rooms/bungalow" replace />;
 
-  const images = data.images || [];
+  const images = normalizeImageUrls(data);
   const handleImageChange = (newImgSrc) => {
-    const next = imgSrc(newImgSrc);
-    if (next === mainImage) return;
+    if (!newImgSrc || newImgSrc === mainImage) return;
     setImgLoaded(false);
-    setMainImage(next);
+    setMainImage(newImgSrc);
   };
 
   const facilities = [
@@ -85,7 +113,6 @@ export default function Room() {
       maxWidth="lg"
       sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 6, md: 10 } }}
     >
-      {/* כותרת מיושרת לשמאל */}
       <Typography
         variant="h3"
         component="h1"
@@ -100,21 +127,19 @@ export default function Room() {
         {data.title}
       </Typography>
 
-      {/* תמונה גדולה + גלריה ימנית בגובה זהה */}
       <Box
         sx={{
           display: "flex",
           flexDirection: "row",
           gap: 2,
-          height: { xs: 300, md: 520 }, // 🔑 גובה אחיד לשני החלקים
+          height: { xs: 300, md: 520 },
           width: "100%",
         }}
       >
-        {/* תמונה ראשית */}
         <Paper
           elevation={0}
           sx={{
-            flex: "0 0 80%", // 🔹 80% מהשטח
+            flex: "0 0 80%",
             borderRadius: 2,
             overflow: "hidden",
             border: "1px solid",
@@ -139,12 +164,11 @@ export default function Room() {
           )}
         </Paper>
 
-        {/* גלריה ימנית — מעט רחבה יותר (20%) ומתפרסת על כל הגובה */}
         <Stack
           spacing={1.2}
           sx={{
             flex: "0 0 20%",
-            height: "100%", // ✅ אותו גובה כמו התמונה
+            height: "100%",
             overflowY: "auto",
             borderRadius: 2,
             pr: 0.5,
@@ -155,16 +179,15 @@ export default function Room() {
             },
           }}
         >
-          {images.map((img, idx) => {
-            const full = imgSrc(img);
+          {images.map((full, idx) => {
             const isActive = full === mainImage;
             return (
               <Box
-                key={img}
+                key={full + idx}
                 component="img"
                 src={full}
                 alt=""
-                onClick={() => handleImageChange(img)}
+                onClick={() => handleImageChange(full)}
                 onError={(e) => (e.currentTarget.src = FALLBACK_IMG)}
                 sx={{
                   width: "100%",
@@ -175,8 +198,6 @@ export default function Room() {
                   borderColor: isActive ? "primary.light" : "transparent",
                   transition: "transform 0.2s ease, border-color 0.2s ease",
                   "&:hover": { transform: "scale(1.03)" },
-
-                  // 🔹 גבהים משתנים למראה דינמי
                   maxHeight:
                     idx % 3 === 0
                       ? { xs: 140, md: 200 }
@@ -192,7 +213,6 @@ export default function Room() {
 
       <Divider sx={{ my: { xs: 3, md: 5 } }} />
 
-      {/* תיאור + נתונים */}
       <Grid container spacing={4}>
         <Grid item xs={12} md={7}>
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
@@ -245,7 +265,6 @@ export default function Room() {
             >
               Room Quick Facts
             </Typography>
-
             <Stack spacing={1.5}>
               {facilities.map((f, i) => (
                 <Stack

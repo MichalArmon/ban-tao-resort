@@ -20,6 +20,7 @@ import RoomsMenuButton from "../guest/RoomMenuButton";
 
 const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
 const PAGES_GUEST = ["Rooms", "Treatments", "Classes", "Retreats"];
+const PAGES_ADMIN = ["Rooms", "Retreats", "Users", "My Booking"]; // ← חדש
 
 function PublicNav(props) {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
@@ -27,10 +28,13 @@ function PublicNav(props) {
 
   const ROOT = "/resort";
   const isGuest = pathname.startsWith("/resort/guest");
-  const basePath = isGuest ? `${ROOT}/guest` : ROOT;
+  const isAdmin = pathname.startsWith("/admin"); // ← חדש
 
-  const slug = (s) => s.trim().toLowerCase();
-  const pages = isGuest ? PAGES_GUEST : PAGES_PUBLIC;
+  // בסיס הנתיב לפי הקשר
+  const basePath = isGuest ? `${ROOT}/guest` : isAdmin ? `/admin` : ROOT;
+
+  const slug = (s) => s.trim().toLowerCase().replace(/\s+/g, "-");
+  const pages = isGuest ? PAGES_GUEST : isAdmin ? PAGES_ADMIN : PAGES_PUBLIC;
 
   const handleOpenNavMenu = (e) => setAnchorElNav(e.currentTarget);
   const handleCloseNavMenu = () => setAnchorElNav(null);
@@ -103,8 +107,9 @@ function PublicNav(props) {
             }}
           >
             {pages.map((page) => {
-              const isRooms = isGuest && page === "Rooms";
-              if (isRooms) return <RoomsMenuButton key="rooms-menu" />;
+              // כפתור תפריט דינמי לחדרים – רק במצב GUEST
+              const isRoomsGuest = isGuest && page === "Rooms";
+              if (isRoomsGuest) return <RoomsMenuButton key="rooms-menu" />;
 
               return (
                 <Button

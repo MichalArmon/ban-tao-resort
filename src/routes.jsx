@@ -31,6 +31,8 @@ import NotFound from "./pages/NotFound";
 // Retreats / Rooms
 import RetreatAll from "./pages/reatrets/RetreatAll"; // אם התיקייה באמת "reatrets" השאירי כך
 import Room from "./pages/rooms/Room";
+import AdminRooms from "./pages/admin/AdminRooms";
+import AdminTest from "./pages/admin/AdminTest";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -98,16 +100,22 @@ export default function AppRoutes() {
       {/* ========================== */}
       {/* ⚙️ ADMIN SECTION */}
       {/* ========================== */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route
-        element={<RequireAuth allow={["admin"]} fallback="/admin/login" />}
-      >
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminHome />} />
-          {/* עתידי: rooms, media, rates, reports */}
-        </Route>
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminHome />} />
+        <Route path="rooms" element={<AdminRooms />} />
+        <Route
+          path="retreats"
+          element={<div style={{ padding: 24 }}>ADMIN RETREATS ✅</div>}
+        />
+        <Route
+          path="users"
+          element={<div style={{ padding: 24 }}>ADMIN USERS ✅</div>}
+        />
+        <Route
+          path="my-booking"
+          element={<div style={{ padding: 24 }}>ADMIN MY BOOKING ✅</div>}
+        />
       </Route>
-
       {/* ========================== */}
       {/* ❌ 404 */}
       {/* ========================== */}
