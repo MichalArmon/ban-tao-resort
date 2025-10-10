@@ -19,10 +19,15 @@ const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
 const slugify = (text = "") => text.toLowerCase().replace(/\s+/g, "-");
 
 // publicId → Cloudinary URL
-const cldUrl = (publicId) =>
-  publicId
-    ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${publicId}`
-    : null;
+// publicId או URL מלא → תמיד מחזיר URL תקין
+const cldUrl = (input) => {
+  if (!input) return null;
+  // אם זה כבר URL מלא (מתחיל ב-http), נחזיר כמו שהוא
+  if (typeof input === "string" && input.startsWith("http")) return input;
+
+  // אחרת נבנה URL מ-publicId בלבד
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${input}`;
+};
 
 // מחזיר URL hero תקין מכל פורמט
 const pickHeroUrl = (data) =>
