@@ -20,7 +20,7 @@ import RoomsMenuButton from "../guest/RoomMenuButton";
 
 const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
 const PAGES_GUEST = ["Rooms", "Treatments", "Classes", "Retreats"];
-const PAGES_ADMIN = ["Rooms", "Retreats", "Users", "My Booking"]; // ← חדש
+const PAGES_ADMIN = ["Rooms", "Retreats", "Users", "My Booking"];
 
 function PublicNav(props) {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
@@ -28,9 +28,8 @@ function PublicNav(props) {
 
   const ROOT = "/resort";
   const isGuest = pathname.startsWith("/resort/guest");
-  const isAdmin = pathname.startsWith("/admin"); // ← חדש
+  const isAdmin = pathname.startsWith("/admin");
 
-  // בסיס הנתיב לפי הקשר
   const basePath = isGuest ? `${ROOT}/guest` : isAdmin ? `/admin` : ROOT;
 
   const slug = (s) => s.trim().toLowerCase().replace(/\s+/g, "-");
@@ -107,7 +106,6 @@ function PublicNav(props) {
             }}
           >
             {pages.map((page) => {
-              // כפתור תפריט דינמי לחדרים – רק במצב GUEST
               const isRoomsGuest = isGuest && page === "Rooms";
               if (isRoomsGuest) return <RoomsMenuButton key="rooms-menu" />;
 
@@ -257,27 +255,32 @@ function PublicNav(props) {
             }}
           >
             <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
-              {pages.map((page) => (
-                <MenuItem
-                  key={page}
-                  onClick={handleCloseNavMenu}
-                  disableRipple
-                  sx={{ py: 0, "&:hover": { bgcolor: "transparent" } }}
-                >
-                  <Typography
-                    component={RouterLink}
-                    to={`${basePath}/${slug(page)}`}
-                    sx={{
-                      fontSize: 28,
-                      letterSpacing: 0.5,
-                      textDecoration: "none",
-                      color: "text.primary",
-                    }}
+              {pages.map((page) => {
+                // במובייל: תמיד מסתמכים על basePath כדי לשמר /resort/guest/*
+                const to = `${basePath}/${slug(page)}`;
+
+                return (
+                  <MenuItem
+                    key={page}
+                    onClick={handleCloseNavMenu}
+                    disableRipple
+                    sx={{ py: 0, "&:hover": { bgcolor: "transparent" } }}
                   >
-                    {page}
-                  </Typography>
-                </MenuItem>
-              ))}
+                    <Typography
+                      component={RouterLink}
+                      to={to}
+                      sx={{
+                        fontSize: 28,
+                        letterSpacing: 0.5,
+                        textDecoration: "none",
+                        color: "text.primary",
+                      }}
+                    >
+                      {page}
+                    </Typography>
+                  </MenuItem>
+                );
+              })}
             </Stack>
 
             <Button

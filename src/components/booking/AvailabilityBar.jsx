@@ -1,5 +1,7 @@
+// src/components/AvailabilityBar.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Stack, Button, CircularProgress } from "@mui/material";
+import { Stack, Button, CircularProgress, TextField } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { PickersDay } from "@mui/x-date-pickers/PickersDay";
@@ -7,14 +9,15 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { useNavigate } from "react-router-dom";
-dayjs.extend(isSameOrBefore);
-
-// 🔑 ייבוא Hooks ורכיבים חיוניים
-import { useBooking } from "../../context/BookingContext";
 import GuestRoomPopover from "./GuestRoomPopover";
 
+dayjs.extend(isSameOrBefore);
+
+import { useBooking } from "../../context/BookingContext";
+import { useRooms } from "../../context/RoomContext";
+
 const AvailabilityBar = () => {
-  // 🔗 שליפת המשתנים והפונקציות מה-Context
+  // Booking state/actions
   const {
     checkIn,
     setCheckIn,
@@ -24,17 +27,23 @@ const AvailabilityBar = () => {
     setGuests,
     rooms,
     setRooms,
-    fetchAvailability,
+    fetchAvailability, // נקרא עם roomType (slug/_id) או null
     loading,
     fetchRetreatsCalendar,
   } = useBooking();
 
+  // Rooms state/actions
+  const { types, ensureTypes, loadingTypes, typesError } = useRooms();
+
   const navigate = useNavigate();
 
-  // 📅 לוח ריטריטים: { "YYYY-MM-DD": { type, name, slug? } }
+  // 📅 Retreats calendar
   const [retreatDates, setRetreatDates] = useState({});
 
-  // 🗓️ קבועי תאריכים (ממואיזים)
+  // 🏷️ Room Type שנבחר (ברירת מחדל: Any)
+  const [selectedType, setSelectedType] = useState(null);
+
+  // 🗓️ Date constraints
   const minCheckIn = useMemo(() => dayjs().startOf("day"), []);
   const farFuture = useMemo(() => dayjs().add(3, "year").endOf("day"), []);
   const minCheckOut = useMemo(
@@ -42,7 +51,7 @@ const AvailabilityBar = () => {
     [checkIn, minCheckIn]
   );
 
-  // ✨ מחולל slug אחיד ל-URL
+  // ✨ slug for retreat/day navigation
   const makeSlug = useCallback((info, key) => {
     const base = (
       info?.slug ||
@@ -58,14 +67,13 @@ const AvailabilityBar = () => {
       .replace(/[^a-z0-9-]/g, "");
   }, []);
 
-  // ⬇️ טעינת לוח הריטריטים
+  // ⬇️ טוען ריטריטים
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const map = await fetchRetreatsCalendar(24);
         if (mounted) setRetreatDates(map || {});
-        // דוגמה: { "2025-10-15": { type:"yoga", name:"...", slug:"yoga-oct-15" } }
       } catch (err) {
         console.error("Failed to load retreats calendar:", err);
       }
@@ -75,13 +83,23 @@ const AvailabilityBar = () => {
     };
   }, [fetchRetreatsCalendar]);
 
-  // 🎨 יום מותאם: צובע ומנווט במקום לבחור
+  // ⬇️ טוען סוגי חדרים (החדשים) עבור הבורר
+  useEffect(() => {
+    (async () => {
+      try {
+        await ensureTypes();
+      } catch (e) {
+        console.error("Failed to ensure room types:", e);
+      }
+    })();
+  }, [ensureTypes]);
+
+  // 🎨 יום מותאם: צובע ומנווט לריטריט במקום לבחור תאריך
   const CustomDay = (props) => {
     const { day, className, ...rest } = props;
     if (!day || !dayjs.isDayjs(day)) {
       return <PickersDay {...rest} day={day} className={className} />;
     }
-
     const key = day.format("YYYY-MM-DD");
     const info = retreatDates[key];
     const type = info?.type?.toLowerCase();
@@ -100,7 +118,6 @@ const AvailabilityBar = () => {
       navigate(`/resort/retreats/${slug}`, { state: info });
     };
 
-    // קליק: לנווט במקום לבחור
     const handleClick = (e) => {
       if (info) {
         e.preventDefault();
@@ -111,7 +128,6 @@ const AvailabilityBar = () => {
       rest.onClick?.(e);
     };
 
-    // מקלדת: Enter/Space לנווט במקום לבחור
     const handleKeyDown = (e) => {
       if (info && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
@@ -147,7 +163,7 @@ const AvailabilityBar = () => {
     );
   };
 
-  // 👥 אורחים/חדרים (מינימום 1)
+  // 👥 Guests/Rooms (מינימום 1)
   const handleSetGuests = useCallback(
     (value) => setGuests(Math.max(1, value)),
     [setGuests]
@@ -157,17 +173,35 @@ const AvailabilityBar = () => {
     [setRooms]
   );
 
-  // 🔍 חיפוש זמינות
+  // 🔍 Search availability — שולח תמיד slug אם קיים, או null (Any)
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
-    await fetchAvailability();
+    const roomTypeSlug = selectedType?.slug ?? null;
+    await fetchAvailability(roomTypeSlug);
   };
+
+  // 👉 אופציה (לא חובה): להריץ חיפוש אוטומטי כשמחליפים סוג, אם תאריכים מלאים
+  // useEffect(() => {
+  //   if (checkIn && checkOut) {
+  //     fetchAvailability(selectedType?.slug ?? null);
+  //   }
+  // }, [selectedType, checkIn, checkOut, fetchAvailability]);
 
   // 🧯 ולידציה לכפתור
   const isSearchDisabled =
     !checkIn ||
     !checkOut ||
     dayjs(checkOut).isSameOrBefore(dayjs(checkIn), "day");
+
+  // 🧮 אופציות ל־Autocomplete מה־types
+  const typeOptions = useMemo(() => {
+    const list = Array.isArray(types) ? types : [];
+    return list.map((t) => ({
+      slug: t.slug,
+      label: t.label || t.title || t.slug,
+      raw: t,
+    }));
+  }, [types]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -188,6 +222,25 @@ const AvailabilityBar = () => {
           flexWrap: { xs: "wrap", sm: "nowrap" },
         }}
       >
+        {/* Room Type */}
+        <Autocomplete
+          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 220 } }}
+          options={typeOptions}
+          loading={loadingTypes}
+          value={selectedType}
+          onChange={(_, val) => setSelectedType(val)}
+          getOptionLabel={(opt) => (opt?.label ? String(opt.label) : "")}
+          isOptionEqualToValue={(o, v) => o.slug === v?.slug}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Room Type"
+              placeholder={typesError ? "Failed to load" : "Any"}
+              InputLabelProps={{ shrink: true }}
+            />
+          )}
+        />
+
         {/* Check-In */}
         <DatePicker
           label="Check-In"
@@ -198,7 +251,7 @@ const AvailabilityBar = () => {
             if (info) {
               const slug = makeSlug(info, key);
               navigate(`/resort/retreats/${slug}`, { state: info });
-              return; // לא משנים state
+              return;
             }
             setCheckIn(newValue ? dayjs(newValue).format("YYYY-MM-DD") : "");
           }}
@@ -209,7 +262,7 @@ const AvailabilityBar = () => {
             textField: { size: "medium", InputLabelProps: { shrink: true } },
             popper: { disablePortal: true },
           }}
-          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 240 } }}
+          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
 
         {/* Check-Out */}
@@ -222,18 +275,18 @@ const AvailabilityBar = () => {
             if (info) {
               const slug = makeSlug(info, key);
               navigate(`/resort/retreats/${slug}`, { state: info });
-              return; // לא משנים state
+              return;
             }
             setCheckOut(newValue ? dayjs(newValue).format("YYYY-MM-DD") : "");
           }}
-          minDate={minCheckOut} // 👈 חשוב: יום אחרי check-in
+          minDate={minCheckOut}
           maxDate={farFuture}
           slots={{ day: CustomDay }}
           slotProps={{
             textField: { size: "medium", InputLabelProps: { shrink: true } },
             popper: { disablePortal: true, sx: { zIndex: 2000 } },
           }}
-          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 240 } }}
+          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
 
         {/* Guests & Rooms */}

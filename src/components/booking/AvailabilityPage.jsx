@@ -5,15 +5,19 @@ import RoomResults from "./RoomResults";
 function AvailabilityPage() {
   return (
     <Container
-      direction="row"
-      alignItems="center"
-      spacing={1}
-      sx={{ width: "100%" }}
+      maxWidth="lg"
+      sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 6, md: 10 } }}
     >
       <Typography
-        variant="h4"
+        variant="h3"
         component="h1"
-        sx={{ mt: 4, mb: 3, textAlign: "center" }}
+        sx={{
+          mb: { xs: 3, md: 4 },
+          fontWeight: 700,
+          textAlign: "left",
+          color: "primary.main",
+          fontSize: { xs: 28, md: 44 },
+        }}
       >
         Check Room Availability
       </Typography>{" "}

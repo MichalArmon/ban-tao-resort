@@ -2,8 +2,22 @@
 import React from "react";
 import { Paper, Typography, Box, Button, Stack, Divider } from "@mui/material";
 import { useBooking } from "../../context/BookingContext";
+import { useNavigate } from "react-router-dom";
 
-const RoomCard = ({ room, onTitleClick }) => {
+const getImgUrl = (val) => {
+  if (!val) return null;
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) {
+    // array of objects/strings
+    const first = val[0];
+    return typeof first === "string" ? first : first?.url || null;
+  }
+  // object with url/publicId
+  return val?.url || null;
+};
+
+export default function RoomCard({ room }) {
+  const navigate = useNavigate();
   const {
     setSelectedRoomId,
     setFinalQuote,
@@ -14,9 +28,15 @@ const RoomCard = ({ room, onTitleClick }) => {
     finalQuote,
   } = useBooking();
 
-  const imageUrl =
-    room.imageURL || "https://via.placeholder.com/800x600?text=Room+Image";
   const isSelected = selectedRoomId === room._id;
+
+  // 🔧 קביעת תמונה בצורה בטוחה (תומך heroUrl/imageUrl/hero{url}/images[0].url/מחרוזת)
+  const img =
+    room.heroUrl ||
+    room.imageUrl ||
+    getImgUrl(room.hero) ||
+    getImgUrl(room.images) ||
+    "https://via.placeholder.com/800x600?text=Room+Image";
 
   const handleSelectRoom = async () => {
     if (isSelected) {
@@ -24,14 +44,16 @@ const RoomCard = ({ room, onTitleClick }) => {
       setFinalQuote(null);
       return;
     }
+
     setSelectedRoomId(room._id);
     setFinalQuote(null);
+
     try {
-      const quoteData = await fetchQuote(room.roomType, checkIn, checkOut);
+      const quoteData = await fetchQuote(room.slug, checkIn, checkOut);
       setFinalQuote({
         price: quoteData.totalPrice,
         isRetreat: quoteData.isRetreatPrice,
-        currency: quoteData.currency || "$",
+        currency: quoteData.currency || room.currency || "USD",
       });
     } catch (err) {
       console.error("Failed to get quote:", err);
@@ -40,18 +62,11 @@ const RoomCard = ({ room, onTitleClick }) => {
     }
   };
 
-  // נגישות ללחיצה גם מהמקלדת על כותרת החדר (לפתיחת הפופאפ)
-  const onTitleKeyDown = (e) => {
-    if (!onTitleClick) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onTitleClick();
-    }
-  };
+  const goToRoomPage = () =>
+    navigate(`/resort/rooms/${room.slug}`, { state: room });
 
   return (
     <Paper
-      component="article"
       elevation={1}
       sx={{
         p: { xs: 1.5, sm: 2 },
@@ -65,7 +80,6 @@ const RoomCard = ({ room, onTitleClick }) => {
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={{ xs: 1.5, sm: 2 }}
-        alignItems={{ xs: "stretch", sm: "stretch" }}
       >
         {/* תמונה */}
         <Box
@@ -74,66 +88,57 @@ const RoomCard = ({ room, onTitleClick }) => {
             flexShrink: 0,
             borderRadius: 2,
             overflow: "hidden",
-            alignSelf: { xs: "stretch", sm: "flex-start" },
           }}
         >
           <Box
             component="img"
-            src={imageUrl}
-            alt={`${room.roomType} photo`}
+            src={img}
+            alt={`${room.title} photo`}
             loading="lazy"
+            onClick={goToRoomPage}
             sx={{
-              display: "block",
               width: "100%",
               height: { xs: 180, sm: 160 },
               objectFit: "cover",
-              aspectRatio: { xs: "16 / 10", sm: "auto" },
+              cursor: "pointer",
+              borderRadius: 2,
             }}
           />
         </Box>
 
         {/* תוכן */}
-        <Stack spacing={1} sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Stack spacing={1} sx={{ flexGrow: 1 }}>
           <Typography
             variant="h6"
             component="h3"
-            // אם התקבל onTitleClick – הכותרת לחיצה/ממודגשת
+            onClick={goToRoomPage}
             sx={{
               fontWeight: 700,
-              fontSize: { xs: "1.1rem", sm: "1.25rem" },
-              cursor: onTitleClick ? "pointer" : "default",
-              textDecoration: onTitleClick ? "underline" : "none",
-              textUnderlineOffset: onTitleClick ? "3px" : undefined,
-              "&:hover": onTitleClick
-                ? { color: "primary.main", textDecorationThickness: "2px" }
-                : undefined,
+              cursor: "pointer",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+              "&:hover": { color: "primary.main" },
             }}
-            role={onTitleClick ? "button" : undefined}
-            tabIndex={onTitleClick ? 0 : undefined}
-            onClick={onTitleClick}
-            onKeyDown={onTitleKeyDown}
           >
-            {room.roomType}
+            {room.title}
           </Typography>
+
+          {room.blurb && (
+            <Typography variant="body2" color="text.secondary">
+              {room.blurb}
+            </Typography>
+          )}
 
           <Typography variant="body2" color="text.secondary">
-            Max Guests: {room.capacity}
+            Guests: {room.maxGuests ?? "-"} | Bed: {room.bedType ?? "-"} | Size:{" "}
+            {room.sizeM2 ?? "-"} m²
           </Typography>
 
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.secondary",
-              display: "-webkit-box",
-              WebkitLineClamp: { xs: 2, sm: 3 },
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {Array.isArray(room.amenities)
-              ? room.amenities.join(", ")
-              : room.amenities}
-          </Typography>
+          {Array.isArray(room.features) && room.features.length > 0 && (
+            <Typography variant="body2" color="text.secondary">
+              {room.features.join(", ")}
+            </Typography>
+          )}
         </Stack>
 
         {/* מפריד במובייל */}
@@ -155,7 +160,8 @@ const RoomCard = ({ room, onTitleClick }) => {
                     fontWeight: 700,
                   }}
                 >
-                  ${room.basePrice}
+                  {(room.currency || "USD") + " "}
+                  {room.priceBase ?? "-"}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Base price per night
@@ -170,17 +176,11 @@ const RoomCard = ({ room, onTitleClick }) => {
                     color: "secondary.main",
                   }}
                 >
-                  Total: {finalQuote.currency}
-                  {finalQuote.price}
+                  Total: {finalQuote.currency} {finalQuote.price}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Final Price
                 </Typography>
-                {finalQuote.isRetreat && (
-                  <Typography variant="caption" color="error.main">
-                    (Special rate applied)
-                  </Typography>
-                )}
               </>
             )}
           </Box>
@@ -203,6 +203,4 @@ const RoomCard = ({ room, onTitleClick }) => {
       </Stack>
     </Paper>
   );
-};
-
-export default RoomCard;
+}

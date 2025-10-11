@@ -33,6 +33,7 @@ import RetreatAll from "./pages/reatrets/RetreatAll"; // אם התיקייה ב�
 import Room from "./pages/rooms/Room";
 import AdminRooms from "./pages/admin/AdminRooms";
 import AdminTest from "./pages/admin/AdminTest";
+import RoomsAll from "./pages/rooms/RoomsAll";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -77,7 +78,7 @@ export default function AppRoutes() {
         <Route path="login" element={<Login />} />
         <Route path="retreats" element={<RetreatAll />} />
         <Route path="classes" element={<RetreatAll />} />
-
+        <Route path="rooms" element={<RoomsAll />} />
         {/* ברירת מחדל לנתיב rooms */}
         <Route
           path="rooms"

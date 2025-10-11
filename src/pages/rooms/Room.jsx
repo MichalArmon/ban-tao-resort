@@ -19,17 +19,12 @@ const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
 const slugify = (text = "") => text.toLowerCase().replace(/\s+/g, "-");
 
 // publicId → Cloudinary URL
-// publicId או URL מלא → תמיד מחזיר URL תקין
 const cldUrl = (input) => {
   if (!input) return null;
-  // אם זה כבר URL מלא (מתחיל ב-http), נחזיר כמו שהוא
   if (typeof input === "string" && input.startsWith("http")) return input;
-
-  // אחרת נבנה URL מ-publicId בלבד
   return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${input}`;
 };
 
-// מחזיר URL hero תקין מכל פורמט
 const pickHeroUrl = (data) =>
   data?.heroUrl ||
   data?.hero?.url ||
@@ -39,7 +34,6 @@ const pickHeroUrl = (data) =>
   (typeof data?.images?.[0] === "string" ? cldUrl(data.images[0]) : null) ||
   null;
 
-// מנרמל מערך תמונות ל־URL-ים
 const normalizeImageUrls = (data) => {
   const raw = Array.isArray(data?.imageUrls)
     ? data.imageUrls
@@ -51,22 +45,43 @@ const normalizeImageUrls = (data) => {
     .filter(Boolean);
 };
 
-export default function Room() {
-  const { type } = useParams();
-  const roomSlug = (type || "").toLowerCase();
+export default function Room({ slug: propSlug, embedded = false }) {
+  const params = useParams();
+  // אם הועבר slug כ־prop נשתמש בו; אחרת ניקח מה־route param (type)
+  const roomSlug = (propSlug || params.type || "").toLowerCase();
+
   const { rooms, loading, error } = useRoomsConfig();
 
   const data = useMemo(() => {
-    if (!rooms || Object.keys(rooms).length === 0) return null;
-    const foundKey = Object.keys(rooms).find(
-      (key) => slugify(key) === roomSlug
-    );
-    return foundKey ? rooms[foundKey] : null;
+    if (!rooms) return null;
+    const keys = Object.keys(rooms);
+    if (!keys.length) return null;
+
+    // חיפוש לפי מפתח ממוּפה (title/label) או לפי השדה slug ב־value
+    let found = null;
+
+    // 1) חיפוש לפי slug בשדה של הדאטה
+    for (const key of keys) {
+      const r = rooms[key];
+      if (r?.slug && r.slug.toLowerCase() === roomSlug) {
+        found = r;
+        break;
+      }
+    }
+    // 2) אם לא נמצא — חיפוש לפי מפתח ממופה (title→slugify)
+    if (!found) {
+      for (const key of keys) {
+        if (slugify(key) === roomSlug) {
+          found = rooms[key];
+          break;
+        }
+      }
+    }
+    return found;
   }, [rooms, roomSlug]);
 
   const [mainImage, setMainImage] = useState(null);
   const [imgLoaded, setImgLoaded] = useState(false);
-  console.log("ROOM DATA:", data);
 
   useEffect(() => {
     if (!data) return;
@@ -88,9 +103,15 @@ export default function Room() {
     img.src = mainImage;
   }, [mainImage]);
 
+  // התנהגות שונה אם מוטמע
   if (loading) return null;
-  if (error || !data)
+  if ((error || !data) && !embedded) {
     return <Navigate to="/resort/guest/rooms/bungalow" replace />;
+  }
+  if ((error || !data) && embedded) {
+    // במצב מוטמע לא מעבירים את המשתמש — פשוט לא מציגים בלוק
+    return null;
+  }
 
   const images = normalizeImageUrls(data);
   const handleImageChange = (newImgSrc) => {
@@ -114,20 +135,23 @@ export default function Room() {
     },
   ];
 
+  // התאמות עיצוב קלות במצב מוטמע
+  const imageHeights = embedded ? { xs: 220, md: 420 } : { xs: 300, md: 520 };
+  const titleVariant = embedded ? "h4" : "h3";
+  const titleSize = embedded ? { xs: 24, md: 36 } : { xs: 28, md: 44 };
+  const outerPadding = embedded ? { xs: 2, md: 4 } : { xs: 2, md: 4 };
+
   return (
-    <Container
-      maxWidth="lg"
-      sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 6, md: 10 } }}
-    >
+    <Container maxWidth="lg" sx={{ pt: outerPadding, pb: { xs: 4, md: 8 } }}>
       <Typography
-        variant="h3"
+        variant={titleVariant}
         component="h1"
         sx={{
-          mb: { xs: 3, md: 4 },
+          mb: { xs: 2.5, md: 3 },
           fontWeight: 700,
           textAlign: "left",
           color: "primary.main",
-          fontSize: { xs: 28, md: 44 },
+          fontSize: titleSize,
         }}
       >
         {data.title}
@@ -138,7 +162,7 @@ export default function Room() {
           display: "flex",
           flexDirection: "row",
           gap: 2,
-          height: { xs: 300, md: 520 },
+          height: imageHeights,
           width: "100%",
         }}
       >
@@ -206,9 +230,9 @@ export default function Room() {
                   "&:hover": { transform: "scale(1.03)" },
                   maxHeight:
                     idx % 3 === 0
-                      ? { xs: 140, md: 200 }
+                      ? { xs: 120, md: 180 }
                       : idx % 3 === 1
-                      ? { xs: 110, md: 160 }
+                      ? { xs: 100, md: 150 }
                       : { xs: 90, md: 130 },
                 }}
               />
@@ -217,14 +241,14 @@ export default function Room() {
         </Stack>
       </Box>
 
-      <Divider sx={{ my: { xs: 3, md: 5 } }} />
+      <Divider sx={{ my: { xs: 2.5, md: 4 } }} />
 
       <Grid container spacing={4}>
         <Grid item xs={12} md={7}>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
             Room Description
           </Typography>
-          <Typography variant="body1" sx={{ mb: 4, whiteSpace: "pre-line" }}>
+          <Typography variant="body1" sx={{ mb: 3, whiteSpace: "pre-line" }}>
             {data.blurb}
           </Typography>
 
@@ -245,15 +269,17 @@ export default function Room() {
             </Stack>
           )}
 
-          <Button
-            variant="contained"
-            size="large"
-            sx={{ textTransform: "none" }}
-            href="https://wa.me/972502136623"
-            target="_blank"
-          >
-            Check availability
-          </Button>
+          {!embedded && (
+            <Button
+              variant="contained"
+              size="large"
+              sx={{ textTransform: "none" }}
+              href="https://wa.me/972502136623"
+              target="_blank"
+            >
+              Check availability
+            </Button>
+          )}
         </Grid>
 
         <Grid item xs={12} md={5}>
@@ -266,7 +292,7 @@ export default function Room() {
             }}
           >
             <Typography
-              variant="h5"
+              variant="h6"
               sx={{ fontWeight: 600, mb: 2, color: "text.secondary" }}
             >
               Room Quick Facts
