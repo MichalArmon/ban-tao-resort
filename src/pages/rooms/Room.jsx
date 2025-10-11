@@ -19,6 +19,7 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dhje7hbxd";
 const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
 const slugify = (text = "") => text.toLowerCase().replace(/\s+/g, "-");
 
+// publicId → Cloudinary URL
 const cldUrl = (input) => {
   if (!input) return null;
   if (typeof input === "string" && input.startsWith("http")) return input;
@@ -47,7 +48,9 @@ const normalizeImageUrls = (data) => {
 
 export default function Room({ slug: propSlug, embedded = false }) {
   const params = useParams();
+  // אם הועבר slug כ־prop נשתמש בו; אחרת ניקח מה־route param (type)
   const roomSlug = (propSlug || params.type || "").toLowerCase();
+
   const { rooms, loading, error } = useRoomsConfig();
 
   const data = useMemo(() => {
@@ -56,6 +59,8 @@ export default function Room({ slug: propSlug, embedded = false }) {
     if (!keys.length) return null;
 
     let found = null;
+
+    // 1) חיפוש לפי שדה slug באובייקט הערך
     for (const key of keys) {
       const r = rooms[key];
       if (r?.slug && r.slug.toLowerCase() === roomSlug) {
@@ -63,6 +68,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
         break;
       }
     }
+    // 2) אם לא נמצא — חיפוש לפי המפתח (title/label) עם slugify
     if (!found) {
       for (const key of keys) {
         if (slugify(key) === roomSlug) {
@@ -97,10 +103,15 @@ export default function Room({ slug: propSlug, embedded = false }) {
     img.src = mainImage;
   }, [mainImage]);
 
+  // התנהגות שונה אם מוטמע
   if (loading) return null;
-  if ((error || !data) && !embedded)
+  if ((error || !data) && !embedded) {
     return <Navigate to="/resort/guest/rooms/bungalow" replace />;
-  if ((error || !data) && embedded) return null;
+  }
+  if ((error || !data) && embedded) {
+    // במצב מוטמע לא מעבירים את המשתמש — פשוט לא מציגים בלוק
+    return null;
+  }
 
   const images = normalizeImageUrls(data);
   const handleImageChange = (newImgSrc) => {
@@ -133,6 +144,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
       maxWidth="lg"
       sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 4, md: 8 } }}
     >
+      {/* כותרת */}
       <Typography
         variant={titleVariant}
         component="h1"
@@ -148,7 +160,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
       </Typography>
 
       {/* ===== Hero + Gallery =====
-          מובייל: טור (hero למעלה, גלריה מתחת)
+          מובייל: טור (hero למעלה, גלריה מתחת, גלילה אופקית)
           דסקטופ: שורה (hero משמאל, גלריה צידית מימין)
       */}
       <Stack
@@ -162,7 +174,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
           sx={{
             flex: { md: "0 0 80%" },
             width: "100%",
-            borderRadius: 2,
+            borderRadius: { xs: 2, md: 2 },
             overflow: "hidden",
             border: "1px solid",
             borderColor: "divider",
@@ -176,7 +188,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
               onError={() => setMainImage(FALLBACK_IMG)}
               sx={{
                 width: "100%",
-                // במובייל יחס 16:9; בדסקטופ גובה גבוה יותר
+                // במובייל יחס 16:9; בדסקטופ גובה קבוע
                 height: { xs: "56vw", sm: "50vw", md: 520 },
                 maxHeight: { xs: 420, md: 520 },
                 objectFit: "cover",
@@ -191,7 +203,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
         {/* Gallery */}
         <Box
           sx={{
-            // מובייל: שורת תמונות מתחת ל-hero (גלילה אופקית)
+            // מובייל: גלילה אופקית מתחת ל-Hero
             display: { xs: "flex", md: "block" },
             flexDirection: "row",
             gap: 1.2,
@@ -226,7 +238,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
                   borderColor: isActive ? "primary.light" : "transparent",
                   transition: "transform 0.2s ease, border-color 0.2s ease",
                   "&:hover": { transform: "scale(1.03)" },
-                  // מובייל: ממדים קטנים לרוחב; דסקטופ: אריחים אנכיים
+                  // מובייל: תמונות קטנות לרוחב; דסקטופ: אריחים אנכיים
                   width: { xs: 120, sm: 140, md: "100%" },
                   height: { xs: 80, sm: 100, md: "auto" },
                   objectFit: "cover",
@@ -241,9 +253,48 @@ export default function Room({ slug: propSlug, embedded = false }) {
 
       <Divider sx={{ my: { xs: 3, md: 4 } }} />
 
-      {/* ===== Content blocks stacked ===== */}
+      {/* ===== Content blocks ===== */}
       <Grid container spacing={4}>
-        <Grid item xs={12} md={7}>
+        {/* במובייל Quick Facts קודם, על אזור רחב (full-bleed) */}
+        <Grid item xs={12} md={5} order={{ xs: 1, md: 2 }}>
+          <Box
+            sx={{
+              mx: { xs: -2, md: 0 }, // שוליים שליליים לביטול padding של ה-Container במובייל
+              px: { xs: 2, md: 0 }, // מחזירים padding פנימי נוח
+            }}
+          >
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: { xs: 0, md: 2 }, // במובייל קצה-לקצה
+                bgcolor: "background.paper",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, mb: 2, color: "text.secondary" }}
+              >
+                Room Quick Facts
+              </Typography>
+
+              <Grid container spacing={1.5}>
+                {facilities.map((f, i) => (
+                  <Grid key={i} item xs={6} md={12}>
+                    <Stack direction="row" alignItems="center" spacing={1.2}>
+                      <Box color="primary.main">{f.icon}</Box>
+                      <Typography variant="body1">{f.label}</Typography>
+                    </Stack>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} md={7} order={{ xs: 2, md: 1 }}>
           <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
             Room Description
           </Typography>
@@ -280,38 +331,10 @@ export default function Room({ slug: propSlug, embedded = false }) {
             </Button>
           )}
         </Grid>
-
-        <Grid item xs={12} md={5}>
-          <Box
-            sx={{
-              p: 3,
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 2,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 600, mb: 2, color: "text.secondary" }}
-            >
-              Room Quick Facts
-            </Typography>
-            <Stack spacing={1.5}>
-              {facilities.map((f, i) => (
-                <Stack
-                  key={i}
-                  direction="row"
-                  alignItems="center"
-                  spacing={1.2}
-                >
-                  <Box color="primary.main">{f.icon}</Box>
-                  <Typography variant="body1">{f.label}</Typography>
-                </Stack>
-              ))}
-            </Stack>
-          </Box>
-        </Grid>
       </Grid>
+
+      {/* Divider בין חדרים – מוצג רק במובייל; אם את רוצה רק כש־embedded, הוסיפי תנאי */}
+      <Divider sx={{ mt: 4, mb: 1, display: { xs: "block", md: "none" } }} />
     </Container>
   );
 }
