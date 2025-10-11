@@ -1,3 +1,4 @@
+// src/pages/rooms/Room.jsx
 import { useMemo, useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import {
@@ -18,7 +19,6 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dhje7hbxd";
 const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
 const slugify = (text = "") => text.toLowerCase().replace(/\s+/g, "-");
 
-// publicId → Cloudinary URL
 const cldUrl = (input) => {
   if (!input) return null;
   if (typeof input === "string" && input.startsWith("http")) return input;
@@ -47,9 +47,7 @@ const normalizeImageUrls = (data) => {
 
 export default function Room({ slug: propSlug, embedded = false }) {
   const params = useParams();
-  // אם הועבר slug כ־prop נשתמש בו; אחרת ניקח מה־route param (type)
   const roomSlug = (propSlug || params.type || "").toLowerCase();
-
   const { rooms, loading, error } = useRoomsConfig();
 
   const data = useMemo(() => {
@@ -57,10 +55,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
     const keys = Object.keys(rooms);
     if (!keys.length) return null;
 
-    // חיפוש לפי מפתח ממוּפה (title/label) או לפי השדה slug ב־value
     let found = null;
-
-    // 1) חיפוש לפי slug בשדה של הדאטה
     for (const key of keys) {
       const r = rooms[key];
       if (r?.slug && r.slug.toLowerCase() === roomSlug) {
@@ -68,7 +63,6 @@ export default function Room({ slug: propSlug, embedded = false }) {
         break;
       }
     }
-    // 2) אם לא נמצא — חיפוש לפי מפתח ממופה (title→slugify)
     if (!found) {
       for (const key of keys) {
         if (slugify(key) === roomSlug) {
@@ -103,15 +97,10 @@ export default function Room({ slug: propSlug, embedded = false }) {
     img.src = mainImage;
   }, [mainImage]);
 
-  // התנהגות שונה אם מוטמע
   if (loading) return null;
-  if ((error || !data) && !embedded) {
+  if ((error || !data) && !embedded)
     return <Navigate to="/resort/guest/rooms/bungalow" replace />;
-  }
-  if ((error || !data) && embedded) {
-    // במצב מוטמע לא מעבירים את המשתמש — פשוט לא מציגים בלוק
-    return null;
-  }
+  if ((error || !data) && embedded) return null;
 
   const images = normalizeImageUrls(data);
   const handleImageChange = (newImgSrc) => {
@@ -135,19 +124,20 @@ export default function Room({ slug: propSlug, embedded = false }) {
     },
   ];
 
-  // התאמות עיצוב קלות במצב מוטמע
-  const imageHeights = embedded ? { xs: 220, md: 420 } : { xs: 300, md: 520 };
+  // טיפוגרפיה/ריווח
   const titleVariant = embedded ? "h4" : "h3";
   const titleSize = embedded ? { xs: 24, md: 36 } : { xs: 28, md: 44 };
-  const outerPadding = embedded ? { xs: 2, md: 4 } : { xs: 2, md: 4 };
 
   return (
-    <Container maxWidth="lg" sx={{ pt: outerPadding, pb: { xs: 4, md: 8 } }}>
+    <Container
+      maxWidth="lg"
+      sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 4, md: 8 } }}
+    >
       <Typography
         variant={titleVariant}
         component="h1"
         sx={{
-          mb: { xs: 2.5, md: 3 },
+          mb: { xs: 2, md: 3 },
           fontWeight: 700,
           textAlign: "left",
           color: "primary.main",
@@ -157,24 +147,25 @@ export default function Room({ slug: propSlug, embedded = false }) {
         {data.title}
       </Typography>
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 2,
-          height: imageHeights,
-          width: "100%",
-        }}
+      {/* ===== Hero + Gallery =====
+          מובייל: טור (hero למעלה, גלריה מתחת)
+          דסקטופ: שורה (hero משמאל, גלריה צידית מימין)
+      */}
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={2}
+        sx={{ width: "100%" }}
       >
+        {/* Hero */}
         <Paper
           elevation={0}
           sx={{
-            flex: "0 0 80%",
+            flex: { md: "0 0 80%" },
+            width: "100%",
             borderRadius: 2,
             overflow: "hidden",
             border: "1px solid",
             borderColor: "divider",
-            height: "100%",
           }}
         >
           {mainImage && (
@@ -185,24 +176,33 @@ export default function Room({ slug: propSlug, embedded = false }) {
               onError={() => setMainImage(FALLBACK_IMG)}
               sx={{
                 width: "100%",
-                height: "100%",
+                // במובייל יחס 16:9; בדסקטופ גובה גבוה יותר
+                height: { xs: "56vw", sm: "50vw", md: 520 },
+                maxHeight: { xs: 420, md: 520 },
                 objectFit: "cover",
                 opacity: imgLoaded ? 1 : 0,
                 transition: "opacity 0.3s ease",
+                display: "block",
               }}
             />
           )}
         </Paper>
 
-        <Stack
-          spacing={1.2}
+        {/* Gallery */}
+        <Box
           sx={{
-            flex: "0 0 20%",
-            height: "100%",
-            overflowY: "auto",
+            // מובייל: שורת תמונות מתחת ל-hero (גלילה אופקית)
+            display: { xs: "flex", md: "block" },
+            flexDirection: "row",
+            gap: 1.2,
+            overflowX: { xs: "auto", md: "visible" },
+            overflowY: { xs: "hidden", md: "auto" },
+            p: { xs: 0.5, md: 0 },
+            flex: { md: "0 0 20%" },
+            maxHeight: { md: 520 },
             borderRadius: 2,
-            pr: 0.5,
-            "&::-webkit-scrollbar": { width: 6 },
+            pr: { md: 0.5 },
+            "&::-webkit-scrollbar": { height: 6, width: 6 },
             "&::-webkit-scrollbar-thumb": {
               backgroundColor: "divider",
               borderRadius: 8,
@@ -220,29 +220,28 @@ export default function Room({ slug: propSlug, embedded = false }) {
                 onClick={() => handleImageChange(full)}
                 onError={(e) => (e.currentTarget.src = FALLBACK_IMG)}
                 sx={{
-                  width: "100%",
-                  objectFit: "cover",
-                  borderRadius: 1,
                   cursor: "pointer",
+                  borderRadius: 1.2,
                   border: "2px solid",
                   borderColor: isActive ? "primary.light" : "transparent",
                   transition: "transform 0.2s ease, border-color 0.2s ease",
                   "&:hover": { transform: "scale(1.03)" },
-                  maxHeight:
-                    idx % 3 === 0
-                      ? { xs: 120, md: 180 }
-                      : idx % 3 === 1
-                      ? { xs: 100, md: 150 }
-                      : { xs: 90, md: 130 },
+                  // מובייל: ממדים קטנים לרוחב; דסקטופ: אריחים אנכיים
+                  width: { xs: 120, sm: 140, md: "100%" },
+                  height: { xs: 80, sm: 100, md: "auto" },
+                  objectFit: "cover",
+                  flex: { xs: "0 0 auto", md: "unset" },
+                  mb: { md: 1.2 },
                 }}
               />
             );
           })}
-        </Stack>
-      </Box>
+        </Box>
+      </Stack>
 
-      <Divider sx={{ my: { xs: 2.5, md: 4 } }} />
+      <Divider sx={{ my: { xs: 3, md: 4 } }} />
 
+      {/* ===== Content blocks stacked ===== */}
       <Grid container spacing={4}>
         <Grid item xs={12} md={7}>
           <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 600 }}>
