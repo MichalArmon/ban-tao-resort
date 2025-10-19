@@ -20,7 +20,14 @@ import RoomsMenuButton from "../guest/RoomMenuButton";
 
 const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
 const PAGES_GUEST = ["Rooms", "Treatments", "Classes", "Retreats"];
-const PAGES_ADMIN = ["Rooms", "Retreats", "Users", "My Booking"];
+const PAGES_ADMIN = [
+  "Rooms",
+  "Retreats",
+  "Treatments",
+  "Classes",
+  "Users",
+  "My Booking",
+];
 
 function PublicNav(props) {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
@@ -37,6 +44,17 @@ function PublicNav(props) {
 
   const handleOpenNavMenu = (e) => setAnchorElNav(e.currentTarget);
   const handleCloseNavMenu = () => setAnchorElNav(null);
+
+  // ✅ מיפוי נכון לנתיבי אדמין
+  const adminPathFor = (page) => {
+    const s = slug(page);
+    if (["rooms", "retreats", "treatments", "classes"].includes(s)) {
+      return `/admin/create/${s}`;
+    }
+    if (s === "users") return "/admin/users";
+    if (s === "my-booking") return "/admin/my-booking";
+    return `/admin/${s}`;
+  };
 
   return (
     <AppBar
@@ -109,11 +127,15 @@ function PublicNav(props) {
               const isRoomsGuest = isGuest && page === "Rooms";
               if (isRoomsGuest) return <RoomsMenuButton key="rooms-menu" />;
 
+              const to = isAdmin
+                ? adminPathFor(page)
+                : `${basePath}/${slug(page)}`;
+
               return (
                 <Button
                   key={page}
                   component={RouterLink}
-                  to={`${basePath}/${slug(page)}`}
+                  to={to}
                   onClick={handleCloseNavMenu}
                   color="inherit"
                   sx={{ textTransform: "none" }}
@@ -256,8 +278,9 @@ function PublicNav(props) {
           >
             <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
               {pages.map((page) => {
-                // במובייל: תמיד מסתמכים על basePath כדי לשמר /resort/guest/*
-                const to = `${basePath}/${slug(page)}`;
+                const to = isAdmin
+                  ? adminPathFor(page)
+                  : `${basePath}/${slug(page)}`;
 
                 return (
                   <MenuItem

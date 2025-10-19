@@ -4,52 +4,51 @@ import { GLOBAL_API_BASE } from "../config/api";
 
 const BookingContext = createContext();
 
-// בסיס ה־API הכללי (מוזן מהקובץ שלך)
+// בסיס ה־API
 const API_BASE_URL = `${GLOBAL_API_BASE}/bookings`;
 
-/* עזר: פורמט YYYY-MM-DD */
-const formatDate = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+/* ---------- Helpers ---------- */
+const pad2 = (n) => String(n).padStart(2, "0");
+const formatDate = (dateObj) => {
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
-
 const getTodayDate = () => formatDate(new Date());
 const getTomorrowDate = () => {
   const t = new Date();
-  const n = new Date(t);
-  n.setDate(n.getDate() + 1);
-  return formatDate(n);
+  t.setDate(t.getDate() + 1);
+  return formatDate(t);
 };
 
-// Hook צריכה
+// Hook לצריכה
 export const useBooking = () => useContext(BookingContext);
 
-// ----------------------------------------------------
-// --- Booking Provider ---
-// ----------------------------------------------------
+/* =================================================================== */
+/*                           Booking Provider                          */
+/* =================================================================== */
 export const BookingProvider = ({ children }) => {
-  // תאריכים
+  /* ---------- Dates ---------- */
   const [checkIn, setCheckIn] = useState(getTodayDate());
   const [checkOut, setCheckOut] = useState(getTomorrowDate());
 
-  // תוצאות זמינות/סטטוס
+  /* ---------- Availability state ---------- */
   const [availableRooms, setAvailableRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState("");
 
-  // אורחים/חדרים
+  /* ---------- Guests / Rooms ---------- */
   const [guests, setGuests] = useState(2);
   const [rooms, setRooms] = useState(1);
 
-  // בחירת חדר + הצעת מחיר (משמש ב-RoomCard)
+  /* ---------- Room selection + Quote ---------- */
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [finalQuote, setFinalQuote] = useState(null);
 
-  // --- Core Fetch Function: Check Availability ---
-  // מקבל roomType אופציונלי (slug או _id)
+  /* =================================================================== */
+  /*                         Availability (rooms)                         */
+  /* =================================================================== */
+  // roomType יכול להיות slug או _id (אופציונלי)
   const fetchAvailability = useCallback(
     async (roomType) => {
       if (!checkIn || !checkOut || guests < 1 || rooms < 1) {
@@ -76,17 +75,17 @@ export const BookingProvider = ({ children }) => {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch availability.");
+          throw new Error(data?.message || "Failed to fetch availability.");
         }
 
         setAvailableRooms(
           Array.isArray(data.availableRooms) ? data.availableRooms : []
         );
-        setMessage(data.message || "");
+        setMessage(data?.message || "");
       } catch (err) {
         console.error("Availability check failed:", err);
         setError(
-          err.message || "An unexpected error occurred. Please try again."
+          err?.message || "An unexpected error occurred. Please try again."
         );
         setAvailableRooms([]);
       } finally {
@@ -96,90 +95,107 @@ export const BookingProvider = ({ children }) => {
     [checkIn, checkOut, guests, rooms]
   );
 
-  // --- Core Fetch Function: Get Quote ---
-  // roomType יכול להיות slug או _id, בהתאם לתמיכה בשרת
-  const fetchQuote = async (roomType, currentCheckIn, currentCheckOut) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/get-quote`, {
+  /* =================================================================== */
+  /*                               Quote                                 */
+  /* =================================================================== */
+  // מחזיר { totalPrice, isRetreatPrice, currency? }
+  const fetchQuote = useCallback(
+    async (roomType, currentCheckIn, currentCheckOut) => {
+      const body = {
+        checkIn: currentCheckIn ?? checkIn,
+        checkOut: currentCheckOut ?? checkOut,
+        roomType: roomType ?? null,
+      };
+      const res = await fetch(`${API_BASE_URL}/get-quote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          checkIn: currentCheckIn,
-          checkOut: currentCheckOut,
-          roomType,
-        }),
+        body: JSON.stringify(body),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to get quote.");
-      }
-      // מחזיר { totalPrice, isRetreatPrice, currency? }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to get quote.");
       return data;
-    } catch (error) {
-      console.error("Quote fetch failed:", error);
-      throw error;
-    }
-  };
+    },
+    [checkIn, checkOut]
+  );
 
-  // ----------------------------------------------------------------------
-  // ריטריטים: צביעת לוח שנה
-  // ----------------------------------------------------------------------
+  /* =================================================================== */
+  /*                        Retreats calendar (UI)                        */
+  /* =================================================================== */
+  // מחזיר תמיד אובייקט ימים של החודש המבוקש: { 'YYYY-MM-DD': [ {_id,name,type,color,price} ] }
   const fetchMonthlyRetreatsMap = useCallback(async (year, month) => {
     try {
       const url = `${GLOBAL_API_BASE}/retreats/monthly-map?year=${year}&month=${month}`;
-      const response = await fetch(url);
-      if (!response.ok)
-        throw new Error("Failed to fetch retreat calendar data.");
-      const data = await response.json();
-      return data?.days || {};
-    } catch (error) {
-      console.error("Retreats map fetch failed:", error);
-      return {};
-    }
-  }, []);
-
-  const fetchRetreatsCalendar = useCallback(async (months = 24) => {
-    try {
-      const url = `${GLOBAL_API_BASE}/retreats/calendar?months=${months}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Failed retreats calendar: ${res.status}`);
+      if (!res.ok) throw new Error(`Failed retreats map (${res.status})`);
       const data = await res.json();
-      return data?.days || {};
+      return data?.days || {}; // תמיד מחזיר days של אותו חודש
     } catch (e) {
-      console.error("fetchRetreatsCalendar failed:", e);
+      console.error("Retreats map fetch failed:", e);
       return {};
     }
   }, []);
 
-  const value = {
-    // לוח שנה של ריטריטים
-    fetchRetreatsCalendar,
-    fetchMonthlyRetreatsMap,
+  // מאחד כמה חודשים לפורמט אחיד אחד:
+  // מחזיר תמיד: { days: { 'YYYY-MM-DD': [ {_id,name,type,color,price}, ... ] } }
+  const fetchRetreatsCalendar = useCallback(
+    async (monthsAhead = 24) => {
+      const merged = { days: {} };
+      try {
+        const now = new Date();
+        for (let i = 0; i < monthsAhead; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+          const y = d.getFullYear();
+          const m = d.getMonth() + 1; // 1..12
 
-    // State
+          const monthDays = await fetchMonthlyRetreatsMap(y, m);
+          for (const [iso, items] of Object.entries(monthDays)) {
+            if (!merged.days[iso]) merged.days[iso] = [];
+            // אם אותו תאריך כבר קיים (מריבוי בקשות) – מאחדים
+            merged.days[iso].push(...items);
+          }
+        }
+      } catch (e) {
+        console.error("fetchRetreatsCalendar failed:", e);
+      }
+      return merged;
+    },
+    [fetchMonthlyRetreatsMap]
+  );
+
+  /* =================================================================== */
+  /*                                Value                                */
+  /* =================================================================== */
+  const value = {
+    // Calendar (retreats)
+    fetchRetreatsCalendar, // ← מחזיר { days: {...} }
+    fetchMonthlyRetreatsMap, // ← מחזיר { ... } של חודש בודד
+
+    // Dates
     checkIn,
     setCheckIn,
     checkOut,
     setCheckOut,
+
+    // Availability state
     availableRooms,
     loading,
     error,
     message,
+
+    // Guests / Rooms
     guests,
     setGuests,
     rooms,
     setRooms,
 
-    // בחירת חדר/הצעת מחיר (ל-RoomCard)
+    // Selection / Quote
     selectedRoomId,
     setSelectedRoomId,
     finalQuote,
     setFinalQuote,
 
     // Functions
-    fetchAvailability, // מקבל roomType אופציונלי
+    fetchAvailability,
     fetchQuote,
   };
 

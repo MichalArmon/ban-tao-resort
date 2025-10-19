@@ -34,6 +34,7 @@ import Room from "./pages/rooms/Room";
 import AdminRooms from "./pages/admin/AdminRooms";
 import AdminTest from "./pages/admin/AdminTest";
 import RoomsAll from "./pages/rooms/RoomsAll";
+import AdminCreate from "./pages/admin/AdminCreate";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -103,7 +104,7 @@ export default function AppRoutes() {
       {/* ========================== */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHome />} />
-        <Route path="rooms" element={<AdminRooms />} />
+        <Route path="create/:entity" element={<AdminCreate />} />
         <Route
           path="retreats"
           element={<div style={{ padding: 24 }}>ADMIN RETREATS ✅</div>}

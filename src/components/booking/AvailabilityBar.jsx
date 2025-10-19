@@ -1,6 +1,12 @@
 // src/components/AvailabilityBar.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Stack, Button, CircularProgress, TextField } from "@mui/material";
+import {
+  Stack,
+  Button,
+  CircularProgress,
+  TextField,
+  Tooltip,
+} from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -10,14 +16,43 @@ import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { useNavigate } from "react-router-dom";
 import GuestRoomPopover from "./GuestRoomPopover";
+import { alpha } from "@mui/material/styles"; // ✅ משתמשים ב-MUI alpha
 
 dayjs.extend(isSameOrBefore);
 
 import { useBooking } from "../../context/BookingContext";
 import { useRooms } from "../../context/RoomContext";
 
+/* ---------- Helpers ---------- */
+
+// map יכול להיות {days:{...}} או מפה שטוחה
+function getDayInfo(map, iso) {
+  if (!map) return null;
+  const raw = map.days?.[iso] ?? map[iso];
+  if (!raw) return null;
+  return Array.isArray(raw) ? raw[0] : raw;
+}
+
+function slugify(str) {
+  return String(str || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
+// צבעי ברירת מחדל לפי סוג (HEX נקיים)
+const TYPE_COLORS = {
+  yoga: "#a2868eff",
+  detox: "#2196f3",
+  meditation: "#9c27b0",
+  workshop: "#ff9800",
+  skiing: "#03a9f4",
+  cooking: "#ffc107",
+  other: "#5f5f5f",
+};
+
 const AvailabilityBar = () => {
-  // Booking state/actions
   const {
     checkIn,
     setCheckIn,
@@ -27,23 +62,17 @@ const AvailabilityBar = () => {
     setGuests,
     rooms,
     setRooms,
-    fetchAvailability, // נקרא עם roomType (slug/_id) או null
+    fetchAvailability,
     loading,
     fetchRetreatsCalendar,
   } = useBooking();
 
-  // Rooms state/actions
   const { types, ensureTypes, loadingTypes, typesError } = useRooms();
-
   const navigate = useNavigate();
 
-  // 📅 Retreats calendar
-  const [retreatDates, setRetreatDates] = useState({});
-
-  // 🏷️ Room Type שנבחר (ברירת מחדל: Any)
+  const [retreatDates, setRetreatDates] = useState({}); // { days: { 'YYYY-MM-DD': [ ... ] } }
   const [selectedType, setSelectedType] = useState(null);
 
-  // 🗓️ Date constraints
   const minCheckIn = useMemo(() => dayjs().startOf("day"), []);
   const farFuture = useMemo(() => dayjs().add(3, "year").endOf("day"), []);
   const minCheckOut = useMemo(
@@ -51,7 +80,6 @@ const AvailabilityBar = () => {
     [checkIn, minCheckIn]
   );
 
-  // ✨ slug for retreat/day navigation
   const makeSlug = useCallback((info, key) => {
     const base = (
       info?.slug ||
@@ -60,140 +88,123 @@ const AvailabilityBar = () => {
       key ||
       ""
     ).toString();
-    return base
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+    return slugify(base);
   }, []);
 
-  // ⬇️ טוען ריטריטים
+  // טוען מפה מאוחדת (למשל 24 חודשים קדימה)
   useEffect(() => {
     let mounted = true;
     (async () => {
-      try {
-        const map = await fetchRetreatsCalendar(24);
-        if (mounted) setRetreatDates(map || {});
-      } catch (err) {
-        console.error("Failed to load retreats calendar:", err);
-      }
+      const map = await fetchRetreatsCalendar(24);
+      if (mounted) setRetreatDates(map || {});
     })();
     return () => {
       mounted = false;
     };
   }, [fetchRetreatsCalendar]);
 
-  // ⬇️ טוען סוגי חדרים (החדשים) עבור הבורר
+  // סוגי חדרים לבורר
   useEffect(() => {
-    (async () => {
-      try {
-        await ensureTypes();
-      } catch (e) {
-        console.error("Failed to ensure room types:", e);
-      }
-    })();
+    ensureTypes().catch(() => {});
   }, [ensureTypes]);
 
-  // 🎨 יום מותאם: צובע ומנווט לריטריט במקום לבחור תאריך
-  const CustomDay = (props) => {
+  // יום מותאם: עיגול גדול מלא (כמו “החום”), Tooltip של שם הריטריט, וניווט לפי slug
+  const ColoredDay = (props) => {
     const { day, className, ...rest } = props;
     if (!day || !dayjs.isDayjs(day)) {
       return <PickersDay {...rest} day={day} className={className} />;
     }
-    const key = day.format("YYYY-MM-DD");
-    const info = retreatDates[key];
-    const type = info?.type?.toLowerCase();
 
-    const colors = {
-      yoga: "rgba(76,175,80,0.15)",
-      detox: "rgba(33,150,243,0.15)",
-      meditation: "rgba(156,39,176,0.15)",
-      workshop: "rgba(255,152,0,0.18)",
-    };
-    const bg = type ? colors[type] : "transparent";
-    const hoverBg = type ? bg.replace("0.15", "0.25") : "inherit";
+    const iso = day.format("YYYY-MM-DD");
+    const info = getDayInfo(retreatDates, iso);
+    if (!info) {
+      return <PickersDay {...rest} day={day} className={className} />;
+    }
+
+    // ✅ color מהשרת אם קיים, אחרת לפי סוג; את האטימות עושים עם alpha
+    const base =
+      info?.color || TYPE_COLORS[(info?.type || "").toLowerCase()] || "#5f5f5f";
+
+    const fill = alpha(base, 0.55);
+    const hoverFill = alpha(base, 0.7);
+
+    const slug = info?.slug || makeSlug(info, iso);
 
     const goToRetreat = () => {
-      const slug = makeSlug(info, key);
-      navigate(`/resort/retreats/${slug}`, { state: info });
+      // אם ה-Router שלך עם basename="/resort", אל תוסיפי אותו כאן
+      navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
     };
 
-    const handleClick = (e) => {
-      if (info) {
-        e.preventDefault();
-        e.stopPropagation();
-        goToRetreat();
-        return;
-      }
-      rest.onClick?.(e);
-    };
-
-    const handleKeyDown = (e) => {
-      if (info && (e.key === "Enter" || e.key === " ")) {
-        e.preventDefault();
-        e.stopPropagation();
-        goToRetreat();
-      } else {
-        rest.onKeyDown?.(e);
-      }
-    };
-
-    return (
+    const node = (
       <PickersDay
         {...rest}
         day={day}
         className={className}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        role={info ? "link" : undefined}
-        title={info ? info.name || info.type : undefined}
-        aria-label={info ? `Retreat: ${info.name || info.type}` : undefined}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          goToRetreat();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            goToRetreat();
+          } else if (rest.onKeyDown) {
+            rest.onKeyDown(e);
+          }
+        }}
+        role="link"
+        aria-label={`Retreat: ${info.name || info.type}`}
         sx={{
-          backgroundColor: bg,
-          borderRadius: "50%",
-          cursor: info ? "pointer" : "default",
-          textDecoration: "none",
-          "&:hover": { backgroundColor: hoverBg },
+          position: "relative",
+          // עיגול גדול – כמעט בגודל מלא של התא (בדיוק כמו ה"עיגול החום")
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: 2, // 👈 זה הגודל שביקשת
+            borderRadius: "50%",
+            backgroundColor: fill, // מילוי מלא, בלי בורדר
+            pointerEvents: "none",
+            transition: "background-color 120ms ease",
+          },
+          cursor: "pointer",
+          "&:hover::before": { backgroundColor: hoverFill },
           "&.Mui-selected": {
-            backgroundColor: "primary.main",
-            color: "primary.contrastText",
+            backgroundColor: "primary.main !important",
+            color: "primary.contrastText !important",
           },
         }}
       />
     );
+
+    // Tooltip עם שם הריטריט מעל היום
+    return (
+      <Tooltip
+        title={info?.name || info?.type || "Retreat"}
+        arrow
+        placement="top"
+      >
+        <span>{node}</span>
+      </Tooltip>
+    );
   };
 
-  // 👥 Guests/Rooms (מינימום 1)
   const handleSetGuests = useCallback(
-    (value) => setGuests(Math.max(1, value)),
+    (v) => setGuests(Math.max(1, v)),
     [setGuests]
   );
   const handleSetRooms = useCallback(
-    (value) => setRooms(Math.max(1, value)),
+    (v) => setRooms(Math.max(1, v)),
     [setRooms]
   );
 
-  // 🔍 Search availability — שולח תמיד slug אם קיים, או null (Any)
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
     const roomTypeSlug = selectedType?.slug ?? null;
     await fetchAvailability(roomTypeSlug);
   };
 
-  // 👉 אופציה (לא חובה): להריץ חיפוש אוטומטי כשמחליפים סוג, אם תאריכים מלאים
-  // useEffect(() => {
-  //   if (checkIn && checkOut) {
-  //     fetchAvailability(selectedType?.slug ?? null);
-  //   }
-  // }, [selectedType, checkIn, checkOut, fetchAvailability]);
-
-  // 🧯 ולידציה לכפתור
-  const isSearchDisabled =
-    !checkIn ||
-    !checkOut ||
-    dayjs(checkOut).isSameOrBefore(dayjs(checkIn), "day");
-
-  // 🧮 אופציות ל־Autocomplete מה־types
   const typeOptions = useMemo(() => {
     const list = Array.isArray(types) ? types : [];
     return list.map((t) => ({
@@ -202,6 +213,19 @@ const AvailabilityBar = () => {
       raw: t,
     }));
   }, [types]);
+
+  const isSearchDisabled =
+    !checkIn ||
+    !checkOut ||
+    dayjs(checkOut).isSameOrBefore(dayjs(checkIn), "day");
+
+  // תואם גם v5 (renderDay) וגם v6 (slots.day)
+  const renderColoredDay = useCallback(
+    (date, _valueOrProps, pickersDayProps) => (
+      <ColoredDay {...(pickersDayProps || _valueOrProps)} day={date} />
+    ),
+    []
+  );
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -246,22 +270,23 @@ const AvailabilityBar = () => {
           label="Check-In"
           value={checkIn ? dayjs(checkIn) : null}
           onChange={(newValue) => {
-            const key = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
-            const info = key && retreatDates[key];
+            const iso = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
+            const info = iso && getDayInfo(retreatDates, iso);
             if (info) {
-              const slug = makeSlug(info, key);
-              navigate(`/resort/retreats/${slug}`, { state: info });
+              const slug = info?.slug || makeSlug(info, iso);
+              navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
               return;
             }
-            setCheckIn(newValue ? dayjs(newValue).format("YYYY-MM-DD") : "");
+            setCheckIn(newValue ? iso : "");
           }}
           minDate={minCheckIn}
           maxDate={farFuture}
-          slots={{ day: CustomDay }}
-          slotProps={{
-            textField: { size: "medium", InputLabelProps: { shrink: true } },
-            popper: { disablePortal: true },
-          }}
+          // v5
+          renderDay={(date, value, props) =>
+            renderColoredDay(date, value, props)
+          }
+          // v6
+          slots={{ day: (props) => <ColoredDay {...props} /> }}
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
 
@@ -270,22 +295,23 @@ const AvailabilityBar = () => {
           label="Check-Out"
           value={checkOut ? dayjs(checkOut) : null}
           onChange={(newValue) => {
-            const key = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
-            const info = key && retreatDates[key];
+            const iso = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
+            const info = iso && getDayInfo(retreatDates, iso);
             if (info) {
-              const slug = makeSlug(info, key);
-              navigate(`/resort/retreats/${slug}`, { state: info });
+              const slug = info?.slug || makeSlug(info, iso);
+              navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
               return;
             }
-            setCheckOut(newValue ? dayjs(newValue).format("YYYY-MM-DD") : "");
+            setCheckOut(newValue ? iso : "");
           }}
           minDate={minCheckOut}
           maxDate={farFuture}
-          slots={{ day: CustomDay }}
-          slotProps={{
-            textField: { size: "medium", InputLabelProps: { shrink: true } },
-            popper: { disablePortal: true, sx: { zIndex: 2000 } },
-          }}
+          // v5
+          renderDay={(date, value, props) =>
+            renderColoredDay(date, value, props)
+          }
+          // v6
+          slots={{ day: (props) => <ColoredDay {...props} /> }}
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
 
