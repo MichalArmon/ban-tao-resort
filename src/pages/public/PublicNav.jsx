@@ -269,8 +269,9 @@ function PublicNav(props) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              height: "100dvh",
+              height: "100svh",
               justifyContent: "center",
+              zIndex: (t) => t.zIndex.modal + 1,
 
               gap: 5,
               px: 2,
