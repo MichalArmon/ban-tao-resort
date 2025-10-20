@@ -38,6 +38,7 @@ function RetreatsHero() {
         marginRight: "-50vw",
         height: { xs: "80vh", md: "70vh" },
         overflow: "hidden",
+        backgroundColor: "black", // כדי שלא יראו רקע בהבזקי טעינה
       }}
     >
       <Box sx={{ position: "absolute", inset: 0, overflow: "hidden" }}>
@@ -52,11 +53,25 @@ function RetreatsHero() {
             position: "absolute",
             top: "50%",
             left: "50%",
-            width: "120vw",
-            height: "120vh",
             transform: "translate(-50%, -50%)",
             border: 0,
             pointerEvents: "none",
+
+            // ברירת מחדל: כיסוי לפי יחס 16:9
+            width: "100vw",
+            height: "56.25vw", // 9/16 של הרוחב
+
+            // מסך צר/גבוה יותר מ-16:9 → מכסים לפי גובה
+            "@media (max-aspect-ratio: 16/9)": {
+              width: "177.78vh", // 16/9 * 100
+              height: "100vh",
+            },
+
+            // מסך רחב יותר מ-16:9 → מכסים לפי רוחב
+            "@media (min-aspect-ratio: 16/9)": {
+              width: "100vw",
+              height: "56.25vw",
+            },
           }}
         />
       </Box>
@@ -331,11 +346,19 @@ export default function RetreatsLanding() {
   );
 
   return (
-    <Box sx={{ bgcolor: "background.default", color: "text.primary" }}>
+    <Box
+      sx={{
+        bgcolor: "background.default",
+        color: "text.primary",
+      }}
+    >
       <RetreatsHero />
 
       {/* Quick Actions */}
-      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+      <Container
+        maxWidth="lg"
+        sx={{ py: { xs: 3, md: 5 }, display: { xs: "none", sm: "block" } }}
+      >
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1.5}
