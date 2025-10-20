@@ -271,11 +271,10 @@ function PublicNav(props) {
               alignItems: "center",
               height: "100dvh",
               justifyContent: "center",
-              px: 0,
-              alignItems: "center",
+
               gap: 5,
               px: 2,
-              py: 0,
+              pb: 5,
 
               textAlign: "center",
               boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
