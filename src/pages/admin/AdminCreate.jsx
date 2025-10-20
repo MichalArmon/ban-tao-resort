@@ -15,7 +15,8 @@ import {
 import RoomForm from "./RoomForm"; // טופס יצירת סוג חדר/חדר
 import RetreatForm from "./RetreatForm"; // טופס יצירת ריטריט
 import TreatmentForm from "./TreatmentForm"; // טופס יצירת טיפול
-import ClassForm from "./ClassForm"; // טופס יצירת סדנה/שיעור
+import ClassForm from "./ClassForm";
+import AdminWorkshops from "./AdminWorkshops"; // טופס יצירת סדנה/שיעור
 // אפשר להוסיף גם UsersForm בהמשך
 
 const ENTITY_MAP = {
@@ -34,10 +35,10 @@ const ENTITY_MAP = {
     component: TreatmentForm,
     cta: { label: "Go to Treatments", to: "/admin/create/treatments" },
   },
-  classes: {
+  workshops: {
     title: "Create Class",
-    component: ClassForm,
-    cta: { label: "Go to Classes", to: "/admin/create/classes" },
+    component: AdminWorkshops,
+    cta: { label: "Go to workshops", to: "/admin/create/workshops" },
   },
 };
 
@@ -79,9 +80,9 @@ export default function AdminCreate() {
           <Button
             variant="outlined"
             component={RouterLink}
-            to="/admin/create/classes"
+            to="/admin/create/workshops"
           >
-            Classes
+            Workshops
           </Button>
         </Stack>
       </Box>
@@ -107,8 +108,8 @@ export default function AdminCreate() {
               <Button component={RouterLink} to="/admin/create/treatments">
                 Treatments
               </Button>
-              <Button component={RouterLink} to="/admin/create/classes">
-                Classes
+              <Button component={RouterLink} to="/admin/create/workshops">
+                workshops
               </Button>
             </Stack>
           }

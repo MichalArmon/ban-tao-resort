@@ -36,6 +36,7 @@ import AdminTest from "./pages/admin/AdminTest";
 import RoomsAll from "./pages/rooms/RoomsAll";
 import AdminCreate from "./pages/admin/AdminCreate";
 import RetreatsLanding from "./pages/guest/RetreatsLanding";
+import ClassesLanding from "./pages/guest/ClassesLanding";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -79,7 +80,7 @@ export default function AppRoutes() {
         <Route path="signup" element={<SignUp />} />
         <Route path="login" element={<Login />} />
         <Route path="retreats" element={<RetreatsLanding />} />
-        <Route path="classes" element={<RetreatAll />} />
+        <Route path="workshops" element={<ClassesLanding />} />
         <Route path="rooms" element={<RoomsAll />} />
         {/* ברירת מחדל לנתיב rooms */}
         <Route
@@ -106,10 +107,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHome />} />
         <Route path="create/:entity" element={<AdminCreate />} />
-        <Route
-          path="retreats"
-          element={<div style={{ padding: 24 }}>ADMIN RETREATS ✅</div>}
-        />
+
         <Route
           path="users"
           element={<div style={{ padding: 24 }}>ADMIN USERS ✅</div>}

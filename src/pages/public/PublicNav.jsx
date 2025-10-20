@@ -19,12 +19,12 @@ import { pub } from "../../../utils/publicPath";
 import RoomsMenuButton from "../guest/RoomMenuButton";
 
 const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
-const PAGES_GUEST = ["Rooms", "Treatments", "Classes", "Retreats"];
+const PAGES_GUEST = ["Rooms", "Treatments", "Workshops", "Retreats"];
 const PAGES_ADMIN = [
   "Rooms",
   "Retreats",
   "Treatments",
-  "Classes",
+  "Workshops",
   "Users",
   "My Booking",
 ];
@@ -48,7 +48,7 @@ function PublicNav(props) {
   // ✅ מיפוי נכון לנתיבי אדמין
   const adminPathFor = (page) => {
     const s = slug(page);
-    if (["rooms", "retreats", "treatments", "classes"].includes(s)) {
+    if (["rooms", "retreats", "treatments", "workshops"].includes(s)) {
       return `/admin/create/${s}`;
     }
     if (s === "users") return "/admin/users";

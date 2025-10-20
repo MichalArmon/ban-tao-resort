@@ -1,4 +1,4 @@
-// main.jsx
+// 📁 src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -13,6 +13,7 @@ import { BookingProvider } from "./context/BookingContext";
 import { RoomsProvider } from "./context/RoomContext.jsx";
 import { UploadProvider } from "./context/UploadContext.jsx";
 import { RetreatsProvider } from "./context/RetreatsContext.jsx";
+import { WorkshopsProvider } from "./context/WorkshopsContext.jsx"; // ✅ חדש
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -21,14 +22,18 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <RetreatsProvider>
           <RoomsProvider>
             <BookingProvider>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <AuthProvider>
-                  <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-                    <AppRoutes />
-                  </BrowserRouter>
-                </AuthProvider>
-              </ThemeProvider>
+              <WorkshopsProvider>
+                {" "}
+                {/* ✅ עטפנו את כל האפליקציה */}
+                <ThemeProvider theme={theme}>
+                  <CssBaseline />
+                  <AuthProvider>
+                    <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
+                      <AppRoutes />
+                    </BrowserRouter>
+                  </AuthProvider>
+                </ThemeProvider>
+              </WorkshopsProvider>
             </BookingProvider>
           </RoomsProvider>
         </RetreatsProvider>
