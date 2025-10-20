@@ -2,6 +2,7 @@
 import { Outlet } from "react-router-dom";
 import { Box, Toolbar } from "@mui/material";
 import PublicNav from "../public/PublicNav";
+import ImageGallery from "../../components/ImageGallery";
 
 function GuestLayout() {
   return (

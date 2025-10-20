@@ -35,6 +35,7 @@ import AdminRooms from "./pages/admin/AdminRooms";
 import AdminTest from "./pages/admin/AdminTest";
 import RoomsAll from "./pages/rooms/RoomsAll";
 import AdminCreate from "./pages/admin/AdminCreate";
+import RetreatsLanding from "./pages/guest/RetreatsLanding";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -77,7 +78,7 @@ export default function AppRoutes() {
         <Route path="reservations" element={<Reservations />} />
         <Route path="signup" element={<SignUp />} />
         <Route path="login" element={<Login />} />
-        <Route path="retreats" element={<RetreatAll />} />
+        <Route path="retreats" element={<RetreatsLanding />} />
         <Route path="classes" element={<RetreatAll />} />
         <Route path="rooms" element={<RoomsAll />} />
         {/* ברירת מחדל לנתיב rooms */}

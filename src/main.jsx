@@ -12,23 +12,26 @@ import "./index.css";
 import { BookingProvider } from "./context/BookingContext";
 import { RoomsProvider } from "./context/RoomContext.jsx";
 import { UploadProvider } from "./context/UploadContext.jsx";
+import { RetreatsProvider } from "./context/RetreatsContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <CacheProvider value={rtlCache}>
       <UploadProvider>
-        <RoomsProvider>
-          <BookingProvider>
-            <ThemeProvider theme={theme}>
-              <CssBaseline />
-              <AuthProvider>
-                <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-                  <AppRoutes />
-                </BrowserRouter>
-              </AuthProvider>
-            </ThemeProvider>
-          </BookingProvider>
-        </RoomsProvider>
+        <RetreatsProvider>
+          <RoomsProvider>
+            <BookingProvider>
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <AuthProvider>
+                  <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
+                    <AppRoutes />
+                  </BrowserRouter>
+                </AuthProvider>
+              </ThemeProvider>
+            </BookingProvider>
+          </RoomsProvider>
+        </RetreatsProvider>
       </UploadProvider>
     </CacheProvider>
   </React.StrictMode>
