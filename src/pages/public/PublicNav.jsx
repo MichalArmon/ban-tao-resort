@@ -235,7 +235,7 @@ function PublicNav(props) {
             paper: {
               sx: {
                 width: "100%",
-                height: "150dvh",
+                height: "100dvh",
                 maxWidth: "none",
                 m: 0,
                 borderRadius: 0,
