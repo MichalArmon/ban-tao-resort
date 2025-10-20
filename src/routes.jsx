@@ -37,6 +37,7 @@ import RoomsAll from "./pages/rooms/RoomsAll";
 import AdminCreate from "./pages/admin/AdminCreate";
 import RetreatsLanding from "./pages/guest/RetreatsLanding";
 import ClassesLanding from "./pages/guest/ClassesLanding";
+import TreatmentsLanding from "./pages/guest/TreatmentsLanding";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -81,6 +82,7 @@ export default function AppRoutes() {
         <Route path="login" element={<Login />} />
         <Route path="retreats" element={<RetreatsLanding />} />
         <Route path="workshops" element={<ClassesLanding />} />
+        <Route path="treatments" element={<TreatmentsLanding />} />
         <Route path="rooms" element={<RoomsAll />} />
         {/* ברירת מחדל לנתיב rooms */}
         <Route

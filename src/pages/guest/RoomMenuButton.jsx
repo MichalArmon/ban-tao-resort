@@ -34,6 +34,7 @@ export default function RoomsMenuButton() {
           // ✅ 1. ביטול מוחלט של הריפוד האופקי בכפתור כולו
           px: 0,
           minWidth: "auto",
+          fontSize: 16,
 
           // ✅ 2. דריסת המרווח של עוטף האייקון
           "& .MuiButton-endIcon": {

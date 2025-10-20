@@ -14,30 +14,33 @@ import { RoomsProvider } from "./context/RoomContext.jsx";
 import { UploadProvider } from "./context/UploadContext.jsx";
 import { RetreatsProvider } from "./context/RetreatsContext.jsx";
 import { WorkshopsProvider } from "./context/WorkshopsContext.jsx"; // ✅ חדש
+import { TreatmentsProvider } from "./context/TreatmentsContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <CacheProvider value={rtlCache}>
-      <UploadProvider>
-        <RetreatsProvider>
-          <RoomsProvider>
-            <BookingProvider>
-              <WorkshopsProvider>
-                {" "}
-                {/* ✅ עטפנו את כל האפליקציה */}
-                <ThemeProvider theme={theme}>
-                  <CssBaseline />
-                  <AuthProvider>
-                    <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-                      <AppRoutes />
-                    </BrowserRouter>
-                  </AuthProvider>
-                </ThemeProvider>
-              </WorkshopsProvider>
-            </BookingProvider>
-          </RoomsProvider>
-        </RetreatsProvider>
-      </UploadProvider>
+      <TreatmentsProvider>
+        <UploadProvider>
+          <RetreatsProvider>
+            <RoomsProvider>
+              <BookingProvider>
+                <WorkshopsProvider>
+                  {" "}
+                  {/* ✅ עטפנו את כל האפליקציה */}
+                  <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <AuthProvider>
+                      <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
+                        <AppRoutes />
+                      </BrowserRouter>
+                    </AuthProvider>
+                  </ThemeProvider>
+                </WorkshopsProvider>
+              </BookingProvider>
+            </RoomsProvider>
+          </RetreatsProvider>
+        </UploadProvider>
+      </TreatmentsProvider>
     </CacheProvider>
   </React.StrictMode>
 );

@@ -27,6 +27,8 @@ const FALLBACK_IMG =
    HERO (YouTube 4K, Full Width)
    =========================== */
 function RetreatsHero() {
+  const YT_ID = "QU0oRjFPB8g"; // החליפי לסרטון שלך
+
   return (
     <Box
       sx={{
@@ -34,13 +36,15 @@ function RetreatsHero() {
         width: "100vw",
         left: "50%",
         right: "50%",
-        marginLeft: "-50vw",
-        marginRight: "-50vw",
-        height: { xs: "80vh", md: "70vh" },
+        ml: "-50vw",
+        mr: "-50vw",
+        height: { xs: "70vh", md: "68vh" },
         overflow: "hidden",
-        backgroundColor: "black", // כדי שלא יראו רקע בהבזקי טעינה
+        mb: { xs: 4, md: 6 },
+        bgcolor: "black",
       }}
     >
+      {/* ===== וידאו רקע ===== */}
       <Box sx={{ position: "absolute", inset: 0, overflow: "hidden" }}>
         <Box
           component="iframe"
@@ -54,20 +58,14 @@ function RetreatsHero() {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
+            width: "100vw",
+            height: "56.25vw", // יחס 16:9
             border: 0,
             pointerEvents: "none",
-
-            // ברירת מחדל: כיסוי לפי יחס 16:9
-            width: "100vw",
-            height: "56.25vw", // 9/16 של הרוחב
-
-            // מסך צר/גבוה יותר מ-16:9 → מכסים לפי גובה
             "@media (max-aspect-ratio: 16/9)": {
-              width: "177.78vh", // 16/9 * 100
+              width: "177.78vh",
               height: "100vh",
             },
-
-            // מסך רחב יותר מ-16:9 → מכסים לפי רוחב
             "@media (min-aspect-ratio: 16/9)": {
               width: "100vw",
               height: "56.25vw",
@@ -76,47 +74,62 @@ function RetreatsHero() {
         />
       </Box>
 
+      {/* ===== שכבת גרדיאנט ===== */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          display: "grid",
-          placeItems: "center",
-          textAlign: "center",
-          px: 2,
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.35) 100%)",
+            "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.45) 100%)",
+        }}
+      />
+
+      {/* ===== טקסטים וכפתורים ===== */}
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: "relative",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
         }}
       >
-        <Box>
+        <Stack
+          spacing={3}
+          sx={{ color: "#fff", maxWidth: { xs: "100%", md: "70%" } }}
+        >
+          <Typography
+            variant="overline"
+            sx={{ letterSpacing: 2, opacity: 0.9 }}
+          >
+            Ban Tao Village &gt; Retreats
+          </Typography>
+
           <Typography
             variant="h2"
-            sx={{ color: "#fff", fontWeight: 400, letterSpacing: 2, mb: 1 }}
-          >
-            Explore Your Retreat Experience
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{ color: "rgba(255,255,255,0.9)", mb: 3 }}
-          >
-            Where Self-Care Meets Adventures
-          </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<PlayArrowRounded />}
             sx={{
-              px: 4,
-              borderRadius: 0,
-              bgcolor: "primary.main",
-              "&:hover": { bgcolor: "primary.dark" },
+              fontWeight: 800,
+              lineHeight: 1.1,
+              textShadow: "0 6px 24px rgba(0,0,0,0.45)",
             }}
-            href="#upcoming"
           >
-            View Upcoming Retreats
-          </Button>
-        </Box>
-      </Box>
+            Discover Our Retreats
+          </Typography>
+
+          <Typography variant="h6" sx={{ opacity: 0.95 }}>
+            Transformative experiences designed to restore body, mind, and soul.
+          </Typography>
+
+          <Stack direction="row" spacing={2}>
+            <Button variant="contained" size="large" href="#upcoming">
+              View Upcoming Retreats
+            </Button>
+            <Button variant="outlined" size="large" color="inherit">
+              Contact Us
+            </Button>
+          </Stack>
+        </Stack>
+      </Container>
     </Box>
   );
 }

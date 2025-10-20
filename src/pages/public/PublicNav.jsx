@@ -138,7 +138,7 @@ function PublicNav(props) {
                   to={to}
                   onClick={handleCloseNavMenu}
                   color="inherit"
-                  sx={{ textTransform: "none" }}
+                  sx={{ textTransform: "none", fontSize: 16 }}
                 >
                   {page}
                 </Button>
@@ -162,7 +162,7 @@ function PublicNav(props) {
               component="img"
               src={pub("logo_B.svg")}
               alt="Ban Tao logo"
-              sx={{ width: 150, height: 150 }}
+              sx={{ width: 120, height: 120 }}
             />
           </Box>
 
