@@ -101,8 +101,8 @@ function PublicNav(props) {
                 src={pub("logo_B.svg")}
                 alt="Ban Tao"
                 sx={{
-                  width: 120,
-                  height: "auto",
+                  width: "auto",
+                  height: 44,
                   display: "block",
                   maxWidth: "60vw",
                   objectFit: "contain",
@@ -277,7 +277,7 @@ function PublicNav(props) {
               textAlign: "center",
               boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
 
-              pt: "calc(env(safe-area-inset-top, 0px) + 74px)", // ↓ מרווח מתחת ל-X בלבד
+              p: "calc(env(safe-area-inset-top, 0px) + 74px)", // ↓ מרווח מתחת ל-X בלבד
             }}
           >
             <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
