@@ -269,9 +269,9 @@ function PublicNav(props) {
               // display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              height: "100vh",
+              height: "100svh",
               justifyContent: "center",
-              zIndex: 2000,
+              zIndex: (t) => t.zIndex.modal + 1,
 
               gap: 5,
               px: 2,
@@ -331,7 +331,13 @@ function PublicNav(props) {
               More Info
             </Button>
 
-            <Stack direction="row" spacing={6} alignItems="center" mt={2}>
+            <Stack
+              direction="row"
+              spacing={3}
+              alignItems="center"
+              mt={3}
+              justifyContent="center"
+            >
               <IconButton
                 sx={{ color: "primary.main" }}
                 aria-label="WhatsApp"
