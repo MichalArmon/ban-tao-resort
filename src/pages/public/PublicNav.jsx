@@ -270,10 +270,14 @@ function PublicNav(props) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "flex-start",
               gap: 6,
               px: 0,
+              py: 5,
               textAlign: "center",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+
+              pt: "calc(env(safe-area-inset-top, 0px) + 74px)", // ↓ מרווח מתחת ל-X בלבד
             }}
           >
             <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
