@@ -266,12 +266,12 @@ function PublicNav(props) {
           <Box
             sx={{
               width: "100%",
-              display: "flex",
+              // display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              height: "100svh",
+              height: "100vh",
               justifyContent: "center",
-              zIndex: (t) => t.zIndex.modal + 1,
+              zIndex: 2000,
 
               gap: 5,
               px: 2,
