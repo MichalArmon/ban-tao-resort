@@ -230,7 +230,9 @@ function PublicNav(props) {
           anchorPosition={{ top: 0, left: 0 }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           marginThreshold={0}
-          sx={{ display: { xs: "block", md: "none" } }}
+          sx={{
+            display: { xs: "block", md: "none" },
+          }}
           slotProps={{
             paper: {
               sx: {
@@ -239,7 +241,7 @@ function PublicNav(props) {
                 maxWidth: "none",
                 m: 0,
                 borderRadius: 0,
-                boxShadow: "none",
+                boxShadow: " 0 12px 28px rgba(0,0,0,0.10)",
                 position: "relative",
                 bgcolor: "background.default",
                 color: "text.primary",
@@ -269,7 +271,11 @@ function PublicNav(props) {
               // display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              height: "100svh",
+
+              minHeight: "100svh",
+              maxHeight: "100svh",
+              overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
               justifyContent: "center",
               zIndex: (t) => t.zIndex.modal + 1,
 
@@ -336,6 +342,7 @@ function PublicNav(props) {
               spacing={3}
               alignItems="center"
               mt={3}
+              pb={3}
               justifyContent="center"
             >
               <IconButton
