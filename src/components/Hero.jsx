@@ -120,7 +120,7 @@ export default function Hero() {
         sx={{
           zIndex: 2,
           letterSpacing: { xs: ".08em", md: "10px" },
-          fontWeight: { xs: 700, md: 300 },
+          fontWeight: { xs: 700, md: 100 },
           color: "rgba(255,255,255,0.92)",
           lineHeight: 1,
           fontSize: "clamp(60px, 10vw, 220px)",
@@ -128,7 +128,7 @@ export default function Hero() {
           px: 2,
         }}
       >
-        B̂āN TAO
+        BAN TAO
       </Typography>
 
       {/* פס תחתון */}

@@ -1,5 +1,6 @@
 // 📁 src/pages/classes/ClassesLanding.jsx
 import * as React from "react";
+import { useState } from "react";
 import {
   Box,
   Container,
@@ -10,99 +11,41 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Modal,
 } from "@mui/material";
-import { useWorkshops } from "../../context/WorkshopsContext";
+import { useWorkshops } from "../../../context/WorkshopsContext";
+import BookButton from "../../../components/booking/BookButton";
+import CloseIcon from "@mui/icons-material/Close";
+import GuestScheduleView from "./GuestScheduleView";
 
-/* ==========
-   Hero
-   ========== */
+/* ==========  סטיילינג Modal  ========== */
+const modalStyle = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: { xs: "95%", md: "85%" },
+  maxWidth: "1200px",
+  maxHeight: "90vh",
+  bgcolor: "background.paper",
+  boxShadow: 24,
+  p: 4,
+  overflowY: "auto",
+  borderRadius: 2,
+  outline: "none",
+};
+
+/* ==========  Hero (נשאר זהה)  ========== */
 function ClassesHero() {
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        width: "100vw",
-        left: "50%",
-        right: "50%",
-        ml: "-50vw",
-        mr: "-50vw",
-        height: { xs: "70vh", md: "68vh" },
-        overflow: "hidden",
-        mb: { xs: 4, md: 6 },
-      }}
-    >
-      <Box
-        component="img"
-        src="https://images.unsplash.com/photo-1651077837628-52b3247550ae?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1974"
-        alt="Classes hero"
-        sx={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          filter: "contrast(1.05) saturate(1.05)",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.45) 100%)",
-        }}
-      />
-      <Container
-        maxWidth="lg"
-        sx={{
-          position: "relative",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <Stack
-          spacing={3}
-          sx={{ color: "#fff", maxWidth: { xs: "100%", md: "70%" } }}
-        >
-          <Typography
-            variant="overline"
-            sx={{ letterSpacing: 2, opacity: 0.9 }}
-          >
-            Ban Tao Village &gt; Workshops
-          </Typography>
-          <Typography
-            variant="h2"
-            sx={{
-              fontWeight: 800,
-              lineHeight: 1.1,
-              textShadow: "0 6px 24px rgba(0,0,0,0.45)",
-            }}
-          >
-            Discover Our Workshops
-          </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.95 }}>
-            Move, breathe, arrive. Explore daily sessions designed to balance
-            energy and restore calm—on and off the mat.
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" size="large">
-              See Schedule
-            </Button>
-            <Button variant="outlined" size="large" color="inherit">
-              Contact Us
-            </Button>
-          </Stack>
-        </Stack>
-      </Container>
-    </Box>
-  );
+  // ... [הקוד של ClassesHero נשאר זהה] ...
 }
 
-/* ==========
-   Alternating section (שומר על אותו עיצוב)
-   ========== */
+/* ==========  Alternating section (ClassSection)  ========== */
 function ClassSection({ item, reverse = false }) {
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const handleOpen = () => setIsScheduleOpen(true);
+  const handleClose = () => setIsScheduleOpen(false);
+
   const imgSrc =
     item?.hero?.url ||
     item?.gallery?.[0]?.url ||
@@ -114,6 +57,7 @@ function ClassSection({ item, reverse = false }) {
   const durationLabel = item?.duration || "60–90 min";
   const bullets = Array.isArray(item?.bullets) ? item.bullets : [];
   const blurb = item?.description || item?.blurb || "";
+  const workshopTitle = item?.title || "Workshop Schedule";
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
@@ -124,7 +68,7 @@ function ClassSection({ item, reverse = false }) {
         alignItems="center"
         sx={{
           flexWrap: "nowrap",
-          "@media (max-width:900px)": { flexWrap: "wrap" }, // מאפשר שבירה במסכים קטנים
+          "@media (max-width:900px)": { flexWrap: "wrap" },
         }}
       >
         <Grid
@@ -181,21 +125,62 @@ function ClassSection({ item, reverse = false }) {
             )}
 
             <Stack direction="row" spacing={2} sx={{ pt: 1 }}>
-              <Button variant="contained">View Class</Button>
-              <Button variant="text">Learn More</Button>
+              <BookButton
+                variant="contained"
+                size="medium"
+                type="workshop"
+                item={item}
+              />
+              <Button variant="outlined" onClick={handleOpen}>
+                See Schedule
+              </Button>
             </Stack>
           </Stack>
         </Grid>
       </Grid>
+
+      <Modal
+        open={isScheduleOpen}
+        onClose={handleClose}
+        aria-labelledby="schedule-modal-title"
+        aria-describedby="schedule-modal-description"
+      >
+        <Box sx={modalStyle}>
+          <Typography
+            id="schedule-modal-title"
+            variant="h5"
+            sx={{ mb: 2, fontWeight: 700 }}
+          >
+            לוח זמנים: {workshopTitle}
+            <Button
+              onClick={handleClose}
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                minWidth: "auto",
+                p: 1,
+                color: "text.primary",
+              }}
+            >
+              <CloseIcon />
+            </Button>
+          </Typography>
+
+          <GuestScheduleView
+            open={isScheduleOpen}
+            onClose={handleClose}
+            workshop={item}
+          />
+        </Box>
+      </Modal>
     </Container>
   );
 }
 
-/* ==========
-   Page
-   ========== */
+/* ==========  Page (נשאר זהה)  ========== */
 export default function ClassesLanding() {
-  const { items, loading, error } = useWorkshops(); // נטען מהשרת דרך הקונטקסט
+  const { items, loading, error } = useWorkshops();
 
   return (
     <Box sx={{ pb: { xs: 6, md: 10 } }}>

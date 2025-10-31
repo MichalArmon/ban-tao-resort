@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/WorkshopForm.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Grid,
@@ -17,6 +18,7 @@ import {
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
+import { useNavigate, Link as RouterLink } from "react-router-dom"; // ⬅️ NEW
 import { get, post, put } from "../../config/api";
 import { useUpload } from "../../context/UploadContext";
 
@@ -63,6 +65,7 @@ const LEVELS = [
 ];
 
 export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
+  const navigate = useNavigate(); // ⬅️ NEW
   const isEdit = mode === "edit";
   const { uploadImage } = useUpload?.() || {};
   const [saving, setSaving] = useState(false);
@@ -232,6 +235,13 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  // ✨ ניווט ללוח השעות
+  const goToSchedule = () => {
+    // אם תרצי להעביר פרמטרים (למשל instructor/category) אפשר לבנות querystring כאן
+    // navigate(`/admin/schedule?from=${someDate}&days=7&instructor=${encodeURIComponent(form.instructor || "")}`);
+    navigate("/admin/create/workshops/schedule");
   };
 
   return (
@@ -493,7 +503,7 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
 
       <Divider sx={{ my: 3 }} />
 
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} sx={{ justifyContent: "flex-start" }}>
         <Button
           variant="contained"
           startIcon={<SaveIcon />}
@@ -502,6 +512,20 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
         >
           {isEdit ? "Save changes" : "Create workshop"}
         </Button>
+
+        {/* 🔗 כפתור מעבר ללוח השעות */}
+        <Button
+          variant="outlined"
+          component={RouterLink}
+          to="/admin/create/workshops/schedule"
+        >
+          Open Schedule
+        </Button>
+        {/* לחלופין: קישור ישיר בלי useNavigate
+        <Button variant="outlined" component={RouterLink} to="/admin/schedule">
+          Open Schedule
+        </Button>
+        */}
       </Stack>
     </Box>
   );

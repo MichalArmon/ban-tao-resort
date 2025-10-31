@@ -36,8 +36,11 @@ import AdminTest from "./pages/admin/AdminTest";
 import RoomsAll from "./pages/rooms/RoomsAll";
 import AdminCreate from "./pages/admin/AdminCreate";
 import RetreatsLanding from "./pages/guest/RetreatsLanding";
-import ClassesLanding from "./pages/guest/ClassesLanding";
+import ClassesLanding from "./pages/guest/woreshops/ClassesLanding";
 import TreatmentsLanding from "./pages/guest/TreatmentsLanding";
+import BookingCheckout from "./components/booking/BookingCheckout";
+import AdminScheduleGrid from "./pages/admin/AdminScheduleGrid";
+import AdminRecurringRules from "./pages/admin/AdminRecurringRules";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -84,6 +87,8 @@ export default function AppRoutes() {
         <Route path="workshops" element={<ClassesLanding />} />
         <Route path="treatments" element={<TreatmentsLanding />} />
         <Route path="rooms" element={<RoomsAll />} />
+        <Route path="checkout" element={<BookingCheckout />} />
+
         {/* ברירת מחדל לנתיב rooms */}
         <Route
           path="rooms"
@@ -109,6 +114,10 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHome />} />
         <Route path="create/:entity" element={<AdminCreate />} />
+        <Route
+          path="create/:entity/schedule"
+          element={<AdminRecurringRules />}
+        />
 
         <Route
           path="users"

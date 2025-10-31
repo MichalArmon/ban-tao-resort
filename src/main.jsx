@@ -15,32 +15,38 @@ import { UploadProvider } from "./context/UploadContext.jsx";
 import { RetreatsProvider } from "./context/RetreatsContext.jsx";
 import { WorkshopsProvider } from "./context/WorkshopsContext.jsx"; // ✅ חדש
 import { TreatmentsProvider } from "./context/TreatmentsContext.jsx";
+import { ScheduleProvider } from "./context/ScheduleContext.jsx";
+import { RecurringRulesProvider } from "./context/RecurringRulesContext.jsx";
 
+// 📁 src/main.jsx
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <CacheProvider value={rtlCache}>
-      <TreatmentsProvider>
-        <UploadProvider>
-          <RetreatsProvider>
-            <RoomsProvider>
-              <BookingProvider>
-                <WorkshopsProvider>
-                  {" "}
-                  {/* ✅ עטפנו את כל האפליקציה */}
-                  <ThemeProvider theme={theme}>
-                    <CssBaseline />
-                    <AuthProvider>
-                      <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-                        <AppRoutes />
-                      </BrowserRouter>
-                    </AuthProvider>
-                  </ThemeProvider>
-                </WorkshopsProvider>
-              </BookingProvider>
-            </RoomsProvider>
-          </RetreatsProvider>
-        </UploadProvider>
-      </TreatmentsProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
+            {/* 🩵 כל ה־Providers שלך צריכים לעטוף כאן */}
+            <UploadProvider>
+              <TreatmentsProvider>
+                <RoomsProvider>
+                  <RetreatsProvider>
+                    <WorkshopsProvider>
+                      <BookingProvider>
+                        <RecurringRulesProvider>
+                          <ScheduleProvider>
+                            <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
+                          </ScheduleProvider>
+                        </RecurringRulesProvider>
+                      </BookingProvider>
+                    </WorkshopsProvider>
+                  </RetreatsProvider>
+                </RoomsProvider>
+              </TreatmentsProvider>
+            </UploadProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </CacheProvider>
   </React.StrictMode>
 );

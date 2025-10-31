@@ -1,5 +1,10 @@
 import React, { useMemo } from "react";
-import { useParams, Link as RouterLink, Navigate } from "react-router-dom";
+import {
+  useParams,
+  Link as RouterLink,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import {
   Box,
   Card,
@@ -111,12 +116,19 @@ export default function AdminCreate() {
               <Button component={RouterLink} to="/admin/create/workshops">
                 workshops
               </Button>
+              <Button
+                component={RouterLink}
+                to="/admin/create/workshops/schedule"
+              >
+                workshops Schedule
+              </Button>
             </Stack>
           }
         />
         <Divider />
         <CardContent>
           {/* כאן נטען הטופס המתאים */}
+
           <FormComp />
         </CardContent>
       </Card>
