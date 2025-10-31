@@ -23,10 +23,8 @@ import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import moment from "moment";
-import { useRecurringRules } from "../../../context/RecurringRulesContext";
 import { useSchedule } from "../../../context/ScheduleContext";
 
-useSchedule;
 const DOW_LABELS = [
   "Sunday",
   "Monday",
@@ -40,16 +38,10 @@ const DOW_LABELS = [
 export default function GuestScheduleView({
   open,
   onClose,
-  workshop, // { _id, title, ... }
-  defaultDate, // Optional
-  onBook, // Optional: (occurrence) => void
+  workshop,
+  defaultDate,
+  onBook,
 }) {
-  // const {
-  //   loadRules,
-  //   getOccurrencesForWeek,
-  //   loading,
-  //   error: rulesError,
-  // } = useRecurringRules();
   const { guestSchedule, guestLoading, loadGuestSchedule, error } =
     useSchedule();
 
@@ -57,15 +49,15 @@ export default function GuestScheduleView({
     moment(defaultDate || new Date()).startOf("week")
   );
   const weekEnd = weekStart.clone().endOf("week");
+
   React.useEffect(() => {
     if (!open || !workshop?._id) return;
 
     const from = weekStart.format("YYYY-MM-DD");
     const to = weekEnd.format("YYYY-MM-DD");
 
-    // 👇 נשתמש ב-ref כדי למנוע קריאות כפולות
     const key = `${workshop._id}_${from}_${to}`;
-    if (window.__lastGuestLoadKey === key) return; // כבר נטען
+    if (window.__lastGuestLoadKey === key) return;
     window.__lastGuestLoadKey = key;
 
     console.log("📅 trying loadGuestSchedule", { open, workshop, from, to });
