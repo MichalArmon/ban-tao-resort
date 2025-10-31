@@ -21,6 +21,8 @@ import RoomForm from "./RoomForm"; // טופס יצירת סוג חדר/חדר
 import RetreatForm from "./RetreatForm"; // טופס יצירת ריטריט
 import TreatmentForm from "./TreatmentForm"; // טופס יצירת טיפול
 import ClassForm from "./ClassForm";
+
+import AdminCategories from "./AdminCategories";
 import AdminWorkshops from "./AdminWorkshops"; // טופס יצירת סדנה/שיעור
 // אפשר להוסיף גם UsersForm בהמשך
 
@@ -43,7 +45,13 @@ const ENTITY_MAP = {
   workshops: {
     title: "Create Class",
     component: AdminWorkshops,
-    cta: { label: "Go to workshops", to: "/admin/create/workshops" },
+    cta: { label: "Go to Workshops", to: "/admin/create/workshops" },
+  },
+  // ✅ חדש — קטגוריות
+  categories: {
+    title: "Create Category",
+    component: AdminCategories,
+    cta: { label: "Go to Categories", to: "/admin/create/categories" },
   },
 };
 
@@ -89,6 +97,9 @@ export default function AdminCreate() {
           >
             Workshops
           </Button>
+          <Button component={RouterLink} to="/admin/create/categories">
+            Categories
+          </Button>
         </Stack>
       </Box>
     );
@@ -114,17 +125,22 @@ export default function AdminCreate() {
                 Treatments
               </Button>
               <Button component={RouterLink} to="/admin/create/workshops">
-                workshops
+                Workshops
               </Button>
               <Button
                 component={RouterLink}
                 to="/admin/create/workshops/schedule"
               >
-                workshops Schedule
+                Workshops Schedule
+              </Button>
+              {/* ✅ זה מה שחסר לך */}
+              <Button component={RouterLink} to="/admin/create/categories">
+                Categories
               </Button>
             </Stack>
           }
         />
+
         <Divider />
         <CardContent>
           {/* כאן נטען הטופס המתאים */}

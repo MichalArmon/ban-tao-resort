@@ -2,7 +2,7 @@
 export const GLOBAL_API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://resort-server-kzy9.onrender.com/api/v1";
-
+console.log("🌍 Using API base:", GLOBAL_API_BASE);
 async function request(path, { method = "GET", body, headers } = {}) {
   const opts = {
     method,
@@ -13,9 +13,8 @@ async function request(path, { method = "GET", body, headers } = {}) {
   }
 
   const res = await fetch(`${GLOBAL_API_BASE}${path}`, opts);
-
-  // תומך גם ב-204 וגם בגוף טקסטואלי
   const text = await res.text();
+
   let data = null;
   try {
     data = text ? JSON.parse(text) : null;
@@ -23,11 +22,15 @@ async function request(path, { method = "GET", body, headers } = {}) {
     data = text || null;
   }
 
+  // ⚡ שינוי כאן — נציג error ברור שמגיע מהשרת
   if (!res.ok) {
     const msg =
-      (data && data.message) || res.statusText || `HTTP ${res.status}`;
+      (data && (data.error || data.message)) ||
+      res.statusText ||
+      `HTTP ${res.status}`;
     throw new Error(msg);
   }
+
   return data;
 }
 

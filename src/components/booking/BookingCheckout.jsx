@@ -1,7 +1,5 @@
-// 📁 src/components/booking/BookingCheckout.jsx
 import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -20,14 +18,15 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
-
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import GroupRounded from "@mui/icons-material/GroupRounded";
 import PaymentsRounded from "@mui/icons-material/PaymentsRounded";
 import PlaceRounded from "@mui/icons-material/PlaceRounded";
-
-// import { useBooking } from "../../context/BookingContext"; // אופציונלי
+import { useBooking } from "../../context/BookingContext";
+import { useSchedule } from "../../context/ScheduleContext";
+import { useCategories } from "../../context/CategoriesContext"; // ✅ חדש
 
 /* =========================================
  * Utils
@@ -46,7 +45,7 @@ function formatMoney(n, currency = "ILS") {
 }
 
 /* =========================================
- * Small presentational pieces
+ * Small pieces
  * =======================================*/
 function SummaryRow({ icon, label, value }) {
   return (
@@ -67,11 +66,12 @@ function SummaryRow({ icon, label, value }) {
   );
 }
 
-/** ❗️כאן זה רק כרטיס הסיכום — בלי טופס, בלי ניווט, בלי סטייט חיצוני */
 function BookingSummary({ sel }) {
   const title = sel?.item?.title || "Selected item";
   const img = sel?.item?.hero;
-  const price = sel?.price ?? 0;
+  const basePrice = sel?.item?.price ?? sel?.price ?? 0;
+  const totalPrice = sel?.price ?? basePrice;
+  const guests = Number(sel?.guests) || 1;
   const currency = sel?.currency ?? "ILS";
   const isRoom = sel?.type === "room";
 
@@ -81,20 +81,23 @@ function BookingSummary({ sel }) {
           sel.dates.checkOut
         ).toLocaleDateString()}`
       : "Select dates"
-    : sel?.dates?.sessionDate
-    ? new Date(sel.dates.sessionDate).toLocaleString()
+    : sel?.sessionDate
+    ? new Date(sel.sessionDate).toLocaleString()
     : "Select date/time";
+
+  const totalFormatted = formatMoney(totalPrice, currency);
+  const baseFormatted = formatMoney(basePrice, currency);
 
   return (
     <Card elevation={3} sx={{ borderRadius: 2, overflow: "hidden" }}>
-      {img ? (
+      {img && (
         <CardMedia
           component="img"
           image={img}
           alt={title}
           sx={{ height: 180, objectFit: "cover" }}
         />
-      ) : null}
+      )}
       <CardContent>
         <Typography variant="h6" gutterBottom>
           {title}
@@ -109,7 +112,7 @@ function BookingSummary({ sel }) {
           <SummaryRow
             icon={<GroupRounded fontSize="small" />}
             label="Guests"
-            value={sel?.guests || 1}
+            value={guests}
           />
           <SummaryRow
             icon={<PlaceRounded fontSize="small" />}
@@ -117,14 +120,24 @@ function BookingSummary({ sel }) {
             value={sel?.item?.location || "On site"}
           />
           <Divider sx={{ my: 1 }} />
-          <SummaryRow
-            icon={<PaymentsRounded fontSize="small" />}
-            label="Price"
-            value={formatMoney(price, currency)}
-          />
+          <Stack spacing={0.3}>
+            <SummaryRow
+              icon={<PaymentsRounded fontSize="small" />}
+              label="Total price"
+              value={totalFormatted}
+            />
+            {guests > 1 && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 4 }}
+              >
+                {`${baseFormatted} × ${guests} guests`}
+              </Typography>
+            )}
+          </Stack>
         </Stack>
-
-        <Alert severity="info" variant="outlined">
+        <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
           No payment is taken now. You’ll confirm on the next step.
         </Alert>
       </CardContent>
@@ -133,14 +146,114 @@ function BookingSummary({ sel }) {
 }
 
 /* =========================================
- * Page: BookingCheckout (default export)
+ * DatePicker צבעוני לסדנאות
+ * =======================================*/
+function WorkshopDatePickerInline({
+  guestSchedule,
+  sessionDate,
+  onSelectDate,
+}) {
+  const { categories } = useCategories();
+
+  // הכנה לפי תאריכים
+  const sessionsByDate = React.useMemo(() => {
+    const map = {};
+    guestSchedule.forEach((s) => {
+      const d = new Date(s.date).toISOString().split("T")[0];
+      const catColor =
+        categories.find((c) => c._id === s.categoryId)?.color || "#7f8c8d";
+      map[d] = { ...s, color: catColor };
+    });
+    return map;
+  }, [guestSchedule, categories]);
+
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    const iso = date.toISOString().split("T")[0];
+    const session = sessionsByDate[iso];
+    return { date, iso, session };
+  });
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+        Select a date:
+      </Typography>
+      <Stack direction="row" flexWrap="wrap" gap={1}>
+        {days.map((d) => {
+          const active = d.iso === sessionDate;
+          const hasSession = !!d.session;
+          const color = hasSession ? d.session.color : "#eee";
+          const label = d.date.getDate();
+          return (
+            <Tooltip
+              key={d.iso}
+              title={
+                hasSession
+                  ? `${new Date(d.session.date).toLocaleString("he-IL")} — ${
+                      d.session.studio
+                    }`
+                  : "No workshop"
+              }
+            >
+              <span>
+                <Button
+                  variant={active ? "contained" : "outlined"}
+                  size="small"
+                  onClick={() => hasSession && onSelectDate(d.iso)}
+                  disabled={!hasSession}
+                  sx={{
+                    minWidth: 50,
+                    bgcolor: active ? color : "transparent",
+                    borderColor: hasSession ? color : "#ccc",
+                    color: active ? "#fff" : "inherit",
+                    "&:hover": {
+                      bgcolor: hasSession ? color : "transparent",
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  {label}
+                </Button>
+              </span>
+            </Tooltip>
+          );
+        })}
+      </Stack>
+    </Box>
+  );
+}
+
+/* =========================================
+ * Main component
  * =======================================*/
 export default function BookingCheckout() {
-  const { state } = useLocation();
   const navigate = useNavigate();
+  const { selection } = useBooking();
+  const { guestSchedule, loadGuestSchedule } = useSchedule();
 
-  // אם יש useBooking — קחי משם את ה־selection; אחרת מה-state
-  const selection = state || null;
+  React.useEffect(() => {
+    if (selection?.type === "workshop") {
+      const today = new Date().toISOString().split("T")[0];
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      const next = nextMonth.toISOString().split("T")[0];
+      loadGuestSchedule(today, next);
+    }
+  }, [selection, loadGuestSchedule]);
+
+  const [bookingData, setBookingData] = React.useState({
+    guests: 1,
+    sessionDate: selection?.dates?.sessionDate || "",
+    price: selection?.item?.price ?? 0,
+  });
+
+  React.useEffect(() => {
+    const basePrice = selection?.item?.price ?? selection?.price ?? 0;
+    const total = basePrice * bookingData.guests;
+    setBookingData((b) => ({ ...b, price: total }));
+  }, [bookingData.guests, selection]);
 
   const [form, setForm] = React.useState({
     firstName: "",
@@ -163,25 +276,22 @@ export default function BookingCheckout() {
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
+  const handleBookingChange = (e) => {
+    const { name, value } = e.target;
+    setBookingData((b) => ({ ...b, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
     if (!form.firstName || !form.lastName || !form.email || !form.agree) {
       setError("Please fill the required fields and accept the terms.");
       return;
     }
-
     try {
       setSubmitting(true);
-
-      // כאן שימי את הקריאה האמיתית לשרת:
-      // await createBooking({ ... });
-
-      await new Promise((r) => setTimeout(r, 900)); // סימולציה
-
       navigate("/resort/checkout/thank-you", {
-        state: { selection, customer: form },
+        state: { selection: { ...selection, ...bookingData }, customer: form },
       });
     } catch (err) {
       setError(err?.message || "Failed to submit booking");
@@ -206,10 +316,9 @@ export default function BookingCheckout() {
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
-      {/* לייאאוט: טופס משמאל, סיכום מימין */}
       <Grid container spacing={3} alignItems="flex-start">
-        {/* שמאל/מרכז – הטופס */}
-        <Grid xs={12} md={7} lg={8} sx={{ width: " 60%" }}>
+        {/* שמאל – טופס */}
+        <Grid item xs={12} md={7} lg={8} sx={{ width: "60%" }}>
           <Paper
             variant="outlined"
             sx={{ p: { xs: 2, md: 3 }, borderRadius: 2, bgcolor: "#fff" }}
@@ -221,135 +330,144 @@ export default function BookingCheckout() {
               We’ll use this information to confirm your booking.
             </Typography>
 
-            <Box component="form" onSubmit={handleSubmit}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    name="firstName"
-                    label="First name"
-                    value={form.firstName}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    name="lastName"
-                    label="Last name"
-                    value={form.lastName}
-                    onChange={handleChange}
-                  />
-                </Grid>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{
+                maxWidth: 700,
+                mx: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2.5,
+                px: { xs: 2, sm: 3 },
+                py: { xs: 3, sm: 4 },
+              }}
+            >
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <TextField
+                  required
+                  name="firstName"
+                  label="First name"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  fullWidth
+                />
+                <TextField
+                  required
+                  name="lastName"
+                  label="Last name"
+                  value={form.lastName}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Stack>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    type="email"
-                    name="email"
-                    label="Email"
-                    value={form.email}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    name="phone"
-                    label="Phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                  />
-                </Grid>
+              <TextField
+                required
+                type="email"
+                name="email"
+                label="Email"
+                value={form.email}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                name="phone"
+                label="Phone"
+                value={form.phone}
+                onChange={handleChange}
+                fullWidth
+              />
 
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    name="address"
-                    label="Address"
-                    value={form.address}
-                    onChange={handleChange}
-                  />
-                </Grid>
+              <TextField
+                type="number"
+                name="guests"
+                label="Guests"
+                value={bookingData.guests}
+                onChange={handleBookingChange}
+                fullWidth
+                inputProps={{ min: 1 }}
+              />
 
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    name="city"
-                    label="City"
-                    value={form.city}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                <Grid item xs={6} sm={4}>
-                  <TextField
-                    fullWidth
-                    name="zip"
-                    label="ZIP"
-                    value={form.zip}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                <Grid item xs={6} sm={4}>
-                  <TextField
-                    select
-                    fullWidth
-                    name="country"
-                    label="Country"
-                    value={form.country}
-                    onChange={handleChange}
-                  >
-                    {COUNTRIES.map((c) => (
-                      <MenuItem key={c} value={c}>
-                        {c}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-
-                <Grid item xs={12} sm={8}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    minRows={2}
-                    name="notes"
-                    label="Notes (optional)"
-                    value={form.notes}
-                    onChange={handleChange}
-                  />
-                </Grid>
-                <Grid
-                  item
-                  xs={12}
-                  sm={4}
-                  sx={{ display: "flex", alignItems: "center" }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="agree"
-                        checked={form.agree}
-                        onChange={handleChange}
-                      />
-                    }
-                    label="I agree to the terms and privacy policy"
-                  />
-                </Grid>
-              </Grid>
-
-              {error && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {error}
-                </Alert>
+              {/* 🟣 תאריכים לסדנאות */}
+              {selection?.type === "workshop" && (
+                <WorkshopDatePickerInline
+                  guestSchedule={guestSchedule}
+                  sessionDate={bookingData.sessionDate}
+                  onSelectDate={(date) =>
+                    setBookingData((b) => ({ ...b, sessionDate: date }))
+                  }
+                />
               )}
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <TextField
+                  name="address"
+                  label="Address"
+                  value={form.address}
+                  onChange={handleChange}
+                  fullWidth
+                />
+                <TextField
+                  name="city"
+                  label="City"
+                  value={form.city}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Stack>
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <TextField
+                  name="zip"
+                  label="ZIP"
+                  value={form.zip}
+                  onChange={handleChange}
+                  fullWidth
+                />
+                <TextField
+                  select
+                  name="country"
+                  label="Country"
+                  value={form.country}
+                  onChange={handleChange}
+                  fullWidth
+                >
+                  {COUNTRIES.map((c) => (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
+
+              <TextField
+                multiline
+                minRows={2}
+                name="notes"
+                label="Notes (optional)"
+                value={form.notes}
+                onChange={handleChange}
+                fullWidth
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="agree"
+                    checked={form.agree}
+                    onChange={handleChange}
+                  />
+                }
+                label="I agree to the terms and privacy policy"
+              />
+
+              {error && <Alert severity="error">{error}</Alert>}
 
               <Stack
                 direction={{ xs: "column", sm: "row" }}
                 spacing={2}
-                sx={{ mt: 3 }}
+                justifyContent="center"
               >
                 <Button type="submit" variant="contained" disabled={submitting}>
                   {submitting ? (
@@ -366,17 +484,15 @@ export default function BookingCheckout() {
           </Paper>
         </Grid>
 
-        {/* ימין – סיכום הזמנה (דביק) */}
+        {/* ימין – סיכום */}
         <Grid
           item
           xs={12}
           md={5}
           lg={4}
-          sx={
-            ({ position: { md: "sticky" }, top: { md: 16 } }, { width: " 30%" })
-          }
+          sx={{ position: { md: "sticky" }, top: { md: 16 }, width: "30%" }}
         >
-          <BookingSummary sel={selection} />
+          <BookingSummary sel={{ ...selection, ...bookingData }} />
         </Grid>
       </Grid>
     </Container>

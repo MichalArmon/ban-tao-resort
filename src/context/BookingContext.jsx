@@ -7,9 +7,9 @@ const BookingContext = createContext();
 // ===== API base =====
 const API_BASE_URL = `${GLOBAL_API_BASE}/bookings`;
 const AVAILABILITY_URL = `${API_BASE_URL}/availability`;
-const QUOTE_URL = `${API_BASE_URL}/quote`; // v2 controller
-const QUOTE_FALLBACK_URL = `${API_BASE_URL}/get-quote`; // backward compat
-const CREATE_URL = `${API_BASE_URL}`; // POST /bookings  (זה הקיים בראוטר שלך)
+const QUOTE_URL = `${API_BASE_URL}/quote`;
+const QUOTE_FALLBACK_URL = `${API_BASE_URL}/get-quote`;
+const CREATE_URL = `${API_BASE_URL}`; // POST /bookings
 
 // Hook
 export const useBooking = () => useContext(BookingContext);
@@ -50,12 +50,15 @@ export const BookingProvider = ({ children }) => {
   const [guests, setGuests] = useState(2);
   const [rooms, setRooms] = useState(1);
 
-  /* ---------- Selection + Quote ---------- */
-  const [selectedRoomId, setSelectedRoomId] = useState(null); // roomType _id/slug
-  const [finalQuote, setFinalQuote] = useState(null); // { totalPrice, currency, isRetreatPrice, breakdown? }
+  /* ---------- Selection (NEW) ---------- */
+  const [selection, setSelection] = useState(null); // ✅ נוספה: שמירת פרטי בחירה (room/workshop/treatment)
+
+  /* ---------- Quote ---------- */
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [finalQuote, setFinalQuote] = useState(null);
   const [currency, setCurrency] = useState("USD");
 
-  /* ---------- Customer (BOOK form) ---------- */
+  /* ---------- Customer ---------- */
   const [customer, setCustomer] = useState({
     fullName: "",
     email: "",
@@ -66,7 +69,7 @@ export const BookingProvider = ({ children }) => {
   const nights = diffNights(checkIn, checkOut);
 
   /* =================================================================== */
-  /*                         Availability (rooms)                         */
+  /*                         Availability (rooms)                        */
   /* =================================================================== */
   const fetchAvailability = useCallback(
     async (roomType) => {
@@ -115,7 +118,7 @@ export const BookingProvider = ({ children }) => {
   );
 
   /* =================================================================== */
-  /*                               Quote                                 */
+  /*                               Quote                                */
   /* =================================================================== */
   const fetchQuote = useCallback(
     async ({ roomType, retreatId, currentCheckIn, currentCheckOut } = {}) => {
@@ -162,9 +165,8 @@ export const BookingProvider = ({ children }) => {
   );
 
   /* =================================================================== */
-  /*                           Create Booking                             */
+  /*                           Create Booking                            */
   /* =================================================================== */
-  // Rooms/Retreats flow (roomType/retreatId) — אם את משתמשת בו בפרונט
   const createBooking = useCallback(
     async ({ roomType, retreatId } = {}) => {
       setLoading(true);
@@ -207,37 +209,24 @@ export const BookingProvider = ({ children }) => {
   /* =================================================================== */
   /*               Create booking for workshops / treatments             */
   /* =================================================================== */
-  // שולח ל-POST /api/v1/bookings בדיוק לפי הקונטרולר שלך
   const createSimpleBooking = useCallback(
     async ({ type, itemId, sessionId, date }) => {
       setLoading(true);
       setError(null);
 
-      // ✅ ולידציות מוקדמות (כמו שביקשת, אך משאירים הודעות ברורות)
-      if (!type) {
-        setLoading(false);
-        throw new Error("Missing booking type.");
-      }
-      if (!itemId) {
-        setLoading(false);
-        throw new Error("Missing itemId.");
-      }
-      if (type === "workshop" && !sessionId) {
-        setLoading(false);
+      if (!type) throw new Error("Missing booking type.");
+      if (!itemId) throw new Error("Missing itemId.");
+      if (type === "workshop" && !sessionId)
         throw new Error("Missing sessionId for workshop.");
-      }
-      if (type === "treatment" && !date) {
-        setLoading(false);
+      if (type === "treatment" && !date)
         throw new Error("Missing date for treatment.");
-      }
 
       const payload = {
-        type, // "room" | "treatment" | "workshop" | "retreat"
+        type,
         itemId,
         ...(type === "workshop" && { sessionId }),
-        ...(type === "treatment" && { date }), // "YYYY-MM-DDTHH:mm"
+        ...(type === "treatment" && { date }),
         ...(type === "room" && {
-          // אם תשתמשי בזה גם לחדרים
           checkInDate: checkIn,
           checkOutDate: checkOut,
         }),
@@ -249,34 +238,24 @@ export const BookingProvider = ({ children }) => {
         },
       };
 
-      // 🟡 לוג דיבוג (מומלץ להשאיר בזמן פיתוח)
-      // console.log("[createSimpleBooking] POST", CREATE_URL, payload);
-
       try {
         const res = await fetch(CREATE_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
-        // קוראים raw כדי לתפוס הודעות לא-JSON
         const raw = await res.text();
         let data = {};
         try {
           data = raw ? JSON.parse(raw) : {};
-        } catch {
-          /* ignore non-JSON */
-        }
-
-        if (!res.ok) {
-          const msg =
+        } catch {}
+        if (!res.ok)
+          throw new Error(
             data?.message ||
-            data?.error ||
-            raw ||
-            `Failed to create booking (HTTP ${res.status})`;
-          throw new Error(msg);
-        }
-
+              data?.error ||
+              raw ||
+              `Failed to create booking (HTTP ${res.status})`
+          );
         if (data?.currency) setCurrency(data.currency);
         return data;
       } catch (err) {
@@ -291,7 +270,7 @@ export const BookingProvider = ({ children }) => {
   );
 
   /* =================================================================== */
-  /*                        Retreats calendar (UI)                        */
+  /*                        Retreats calendar (UI)                       */
   /* =================================================================== */
   const fetchMonthlyRetreatsMap = useCallback(async (year, month) => {
     try {
@@ -315,7 +294,6 @@ export const BookingProvider = ({ children }) => {
           const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
           const y = d.getFullYear();
           const m = d.getMonth() + 1;
-
           const monthDays = await fetchMonthlyRetreatsMap(y, m);
           for (const [iso, items] of Object.entries(monthDays)) {
             if (!merged.days[iso]) merged.days[iso] = [];
@@ -334,6 +312,10 @@ export const BookingProvider = ({ children }) => {
   /*                                Value                                */
   /* =================================================================== */
   const value = {
+    // Selection (NEW)
+    selection,
+    setSelection,
+
     // Calendar (retreats)
     fetchRetreatsCalendar,
     fetchMonthlyRetreatsMap,
@@ -364,15 +346,15 @@ export const BookingProvider = ({ children }) => {
     setFinalQuote,
     currency,
 
-    // Customer (BOOK form)
+    // Customer
     customer,
     setCustomer,
 
     // Functions
     fetchAvailability,
     fetchQuote,
-    createBooking, // rooms/retreats (אם בשימוש)
-    createSimpleBooking, // workshops/treatments (וגם room אם תרצי)
+    createBooking,
+    createSimpleBooking,
   };
 
   return (

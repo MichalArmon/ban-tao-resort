@@ -14,13 +14,15 @@ import {
   Card,
   IconButton,
   Alert,
+  Chip,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
-import { useNavigate, Link as RouterLink } from "react-router-dom"; // ⬅️ NEW
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { get, post, put } from "../../config/api";
 import { useUpload } from "../../context/UploadContext";
+import { useCategories } from "../../context/CategoriesContext"; // ⬅️ NEW
 
 // utils
 const slugify = (s = "") =>
@@ -30,6 +32,17 @@ const slugify = (s = "") =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+
+// מיפוי name -> enum הישן של Workshop.category
+const MAP_NAME_TO_ENUM = {
+  movement: "movement",
+  meditation: "meditation",
+  wellness: "wellness",
+  creativity: "creativity",
+};
+
+const toLegacyCategory = (name = "") =>
+  MAP_NAME_TO_ENUM[name?.toLowerCase?.()] || "other";
 
 const normalizeImage = (x) => {
   if (!x) return null;
@@ -49,14 +62,7 @@ const normalizeImage = (x) => {
 const normalizeGallery = (arr) =>
   Array.isArray(arr) ? arr.map(normalizeImage).filter(Boolean) : [];
 
-const CATEGORIES = [
-  { value: "movement", label: "Movement" },
-  { value: "meditation", label: "Meditation" },
-  { value: "wellness", label: "Wellness" },
-  { value: "creativity", label: "Creativity" },
-  { value: "other", label: "Other" },
-];
-
+// ⛔️ הסרנו את CATEGORIES הקבוע
 const LEVELS = [
   { value: "all", label: "All levels" },
   { value: "beginner", label: "Beginner" },
@@ -65,9 +71,13 @@ const LEVELS = [
 ];
 
 export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
-  const navigate = useNavigate(); // ⬅️ NEW
+  const navigate = useNavigate();
   const isEdit = mode === "edit";
   const { uploadImage } = useUpload?.() || {};
+
+  // ⬅️ NEW: קטגוריות מהקונטקסט
+  const { categories, loadCategories, loading: catsLoading } = useCategories();
+
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [alert, setAlert] = useState(null);
@@ -75,7 +85,10 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
   const [form, setForm] = useState({
     title: "",
     slug: "",
+    // שדה ישן לשמירת תאימות
     category: "other",
+    // שדה חדש:
+    categoryId: "",
     instructor: "",
     duration: "60 min",
     level: "all",
@@ -88,6 +101,12 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
     gallery: [],
   });
 
+  // ⬅️ NEW: טען קטגוריות
+  useEffect(() => {
+    // אם את רוצה לסנן לקטגוריות שמתאימות לסדנאות בלבד:
+    loadCategories?.("workshop");
+  }, [loadCategories]);
+
   // fetch existing when editing
   useEffect(() => {
     const run = async () => {
@@ -95,11 +114,18 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
       try {
         setLoading(true);
         const data = await get(`/workshops/${encodeURIComponent(slug)}`);
+
+        // נמצא את הקטגוריה לפי categoryId (אם קיים) כדי לרנדר צבע/שם
+        const selectedCat =
+          data?.categoryId &&
+          categories?.find((c) => c._id === String(data.categoryId));
+
         setForm((f) => ({
           ...f,
           title: data.title || "",
           slug: data.slug || "",
-          category: data.category || "other",
+          category: data.category || "other", // legacy
+          categoryId: data.categoryId || "",
           instructor: data.instructor || "",
           duration: data.duration || "60 min",
           level: data.level || "all",
@@ -110,6 +136,7 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
           bulletsInput: "",
           hero: normalizeImage(data.hero),
           gallery: normalizeGallery(data.gallery),
+          // לא חייבים לשמור name/color ב־form – נשלוף מה־categories לפי id
         }));
       } catch (e) {
         console.error("failed to load workshop:", e);
@@ -119,7 +146,8 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
       }
     };
     run();
-  }, [isEdit, slug]);
+    // חשוב: אם categories נטענו מאוחר יותר, אין בעיה – נשתמש בהם להצגה בלבד
+  }, [isEdit, slug, categories]);
 
   // auto-slugify on title change (create mode only if slug empty)
   useEffect(() => {
@@ -132,6 +160,17 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
     setForm((f) => ({
       ...f,
       [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
+    }));
+  };
+
+  // בחירת קטגוריה חדשה (ObjectId) + עדכון ה־legacy category משם הקטגוריה
+  const handleCategoryIdChange = (e) => {
+    const id = e.target.value;
+    const cat = categories?.find((c) => c._id === id);
+    setForm((f) => ({
+      ...f,
+      categoryId: id,
+      category: toLegacyCategory(cat?.name), // שמירה על תאימות
     }));
   };
 
@@ -175,7 +214,10 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
     () => ({
       title: form.title?.trim(),
       slug: form.slug?.trim(),
+      // ⬅️ משאירים את הישן לתאימות:
       category: form.category,
+      // ⬅️ החדש החשוב:
+      categoryId: form.categoryId || undefined,
       instructor: form.instructor?.trim(),
       duration: form.duration?.trim(),
       level: form.level,
@@ -212,6 +254,8 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
           ...f,
           title: "",
           slug: "",
+          category: "other",
+          categoryId: "",
           instructor: "",
           duration: "60 min",
           level: "all",
@@ -237,12 +281,15 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
     }
   };
 
-  // ✨ ניווט ללוח השעות
   const goToSchedule = () => {
-    // אם תרצי להעביר פרמטרים (למשל instructor/category) אפשר לבנות querystring כאן
-    // navigate(`/admin/schedule?from=${someDate}&days=7&instructor=${encodeURIComponent(form.instructor || "")}`);
     navigate("/admin/create/workshops/schedule");
   };
+
+  // הקטגוריה שנבחרה (לא חובה, לשימוש בצבע/תצוגה)
+  const selectedCategory = useMemo(
+    () => categories?.find((c) => c._id === form.categoryId),
+    [categories, form.categoryId]
+  );
 
   return (
     <Box component="form" onSubmit={onSubmit}>
@@ -274,22 +321,65 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
               fullWidth
               disabled={loading}
             />
+
+            {/* ⬅️ NEW: בחירת קטגוריה מתוך הקונטקסט */}
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={8}>
                 <TextField
                   select
-                  label="Category"
-                  value={form.category}
-                  onChange={handleChange("category")}
+                  label={catsLoading ? "Loading categories…" : "Category"}
+                  value={form.categoryId}
+                  onChange={handleCategoryIdChange}
                   fullWidth
+                  disabled={catsLoading}
                 >
-                  {CATEGORIES.map((c) => (
-                    <MenuItem key={c.value} value={c.value}>
-                      {c.label}
+                  {categories?.map((c) => (
+                    <MenuItem key={c._id} value={c._id}>
+                      {/* שם + סווטצ׳ צבע קטן */}
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box
+                          sx={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: "50%",
+                            bgcolor: c.color || "#ccc",
+                            border: "1px solid rgba(0,0,0,0.2)",
+                          }}
+                        />
+                        <span>{c.name}</span>
+                      </Stack>
                     </MenuItem>
                   ))}
                 </TextField>
               </Grid>
+
+              {/* הצגת צבע ושם נבחרים, לא חובה */}
+              <Grid item xs={12} sm={4}>
+                {selectedCategory ? (
+                  <Chip
+                    label={selectedCategory.name}
+                    sx={{
+                      bgcolor: selectedCategory.color || "transparent",
+                      color: "#000",
+                    }}
+                  />
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    No category selected
+                  </Typography>
+                )}
+              </Grid>
+            </Grid>
+
+            {/* שדה ה־legacy נשאר מוסתר? אפשר להשאירו גלוי לעריכה אם תרצי */}
+            {/* <TextField
+              label="Legacy Category (enum)"
+              value={form.category}
+              onChange={handleChange("category")}
+              fullWidth
+            /> */}
+
+            <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   select
@@ -305,9 +395,6 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
                   ))}
                 </TextField>
               </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   label="Instructor"
@@ -316,7 +403,10 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12} sm={3}>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   label="Duration"
                   value={form.duration}
@@ -325,7 +415,7 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   label="Price (optional)"
                   value={form.price}
@@ -513,7 +603,6 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
           {isEdit ? "Save changes" : "Create workshop"}
         </Button>
 
-        {/* 🔗 כפתור מעבר ללוח השעות */}
         <Button
           variant="outlined"
           component={RouterLink}
@@ -521,11 +610,6 @@ export default function WorkshopForm({ mode = "create", slug, onSuccess }) {
         >
           Open Schedule
         </Button>
-        {/* לחלופין: קישור ישיר בלי useNavigate
-        <Button variant="outlined" component={RouterLink} to="/admin/schedule">
-          Open Schedule
-        </Button>
-        */}
       </Stack>
     </Box>
   );

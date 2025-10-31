@@ -17,6 +17,7 @@ import { WorkshopsProvider } from "./context/WorkshopsContext.jsx"; // ✅ חד�
 import { TreatmentsProvider } from "./context/TreatmentsContext.jsx";
 import { ScheduleProvider } from "./context/ScheduleContext.jsx";
 import { RecurringRulesProvider } from "./context/RecurringRulesContext.jsx";
+import { CategoriesProvider } from "./context/CategoriesContext.jsx";
 
 // 📁 src/main.jsx
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -27,23 +28,25 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <AuthProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
             {/* 🩵 כל ה־Providers שלך צריכים לעטוף כאן */}
-            <UploadProvider>
-              <TreatmentsProvider>
-                <RoomsProvider>
-                  <RetreatsProvider>
-                    <WorkshopsProvider>
-                      <BookingProvider>
-                        <RecurringRulesProvider>
-                          <ScheduleProvider>
-                            <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
-                          </ScheduleProvider>
-                        </RecurringRulesProvider>
-                      </BookingProvider>
-                    </WorkshopsProvider>
-                  </RetreatsProvider>
-                </RoomsProvider>
-              </TreatmentsProvider>
-            </UploadProvider>
+            <CategoriesProvider>
+              <UploadProvider>
+                <TreatmentsProvider>
+                  <RoomsProvider>
+                    <RetreatsProvider>
+                      <WorkshopsProvider>
+                        <BookingProvider>
+                          <RecurringRulesProvider>
+                            <ScheduleProvider>
+                              <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
+                            </ScheduleProvider>
+                          </RecurringRulesProvider>
+                        </BookingProvider>
+                      </WorkshopsProvider>
+                    </RetreatsProvider>
+                  </RoomsProvider>
+                </TreatmentsProvider>
+              </UploadProvider>
+            </CategoriesProvider>
           </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>

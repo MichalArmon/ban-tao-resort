@@ -24,6 +24,7 @@ import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import moment from "moment";
 import { useSchedule } from "../../../context/ScheduleContext";
+import BookButton from "../../../components/booking/BookButton";
 
 const DOW_LABELS = [
   "Sunday",
@@ -212,13 +213,19 @@ export default function GuestScheduleView({
                         <TableCell>{workshop.title}</TableCell>
                         <TableCell>{occ.studio}</TableCell>
                         <TableCell align="right">
-                          <Button
+                          {/* <Button
                             size="small"
                             variant="contained"
                             onClick={() => onBook?.(occ)}
                           >
                             BOOK NOW
-                          </Button>
+                          </Button> */}
+                          <BookButton
+                            type="workshop"
+                            item={workshop} // ✅ שולחים את כל הסדנה (שם יש price)
+                            selectedDate={occ.start} // הזמן המדויק של הסשן
+                            price={workshop.price} // ✅ שולחים את המחיר מהאובייקט של הסדנה
+                          />
                         </TableCell>
                       </TableRow>
                     );
