@@ -1,3 +1,4 @@
+// 📁 src/context/WorkshopsContext.jsx
 import React, {
   createContext,
   useContext,
@@ -9,67 +10,80 @@ import React, {
 } from "react";
 import { get, post, put, del } from "../config/api";
 
-/* ============
-   API calls
-   ============ */
+/* =========================================
+   API calls — תקשורת עם השרת
+   ========================================= */
 async function apiListWorkshops(params = {}) {
-  // לדוגמה: { q, category, isActive, limit, skip, select, sort }
   const qs = new URLSearchParams(params).toString();
   return get(`/workshops${qs ? `?${qs}` : ""}`);
 }
 
+// לפי SLUG (לצד האורח)
 async function apiGetWorkshop(slug) {
   return get(`/workshops/${encodeURIComponent(slug)}`);
+}
+
+// לפי ID (לצד האדמין)
+async function apiGetWorkshopById(id) {
+  return get(`/workshops/id/${id}`);
 }
 
 async function apiCreateWorkshop(payload) {
   return post(`/workshops`, payload);
 }
 
+// לפי SLUG (לצד האורח)
 async function apiUpdateWorkshop(slug, payload) {
   return put(`/workshops/${encodeURIComponent(slug)}`, payload);
+}
+
+// לפי ID (לצד האדמין)
+async function apiUpdateWorkshopById(id, payload) {
+  return put(`/workshops/id/${id}`, payload);
 }
 
 async function apiDeleteWorkshop(slug) {
   return del(`/workshops/${encodeURIComponent(slug)}`);
 }
 
-/* ============
+/* =========================================
    Context
-   ============ */
+   ========================================= */
 const WorkshopsCtx = createContext(null);
 
 export function WorkshopsProvider({ children }) {
-  // Cache בסיסי לרשימה ולפריטים בודדים
-  const cacheListRef = useRef(null); // שומר את התוצאה האחרונה של list
+  const cacheListRef = useRef(null);
   const cacheItemRef = useRef(new Map()); // slug -> item
 
-  const [items, setItems] = useState([]); // לרנדר בעמודים
+  const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /* ----------
-     List
-     ---------- */
+  /* =========================================
+     📜 listWorkshops — שליפת כל הסדנאות
+     ========================================= */
   const listWorkshops = useCallback(
-    async (params = { isActive: true, sort: "title", limit: 200 }) => {
+    async (params = { sort: "title", limit: 200 }) => {
       try {
         setError(null);
         setLoading(true);
+
         const res = await apiListWorkshops(params);
-        const next = res?.items ?? [];
+        const next = Array.isArray(res) ? res : res?.items ?? [];
+
         setItems(next);
         setTotal(res?.total ?? next.length);
+
         cacheListRef.current = { params, res };
-        // קאש לפריטים בודדים
         for (const it of next) {
           if (it?.slug) cacheItemRef.current.set(it.slug, it);
         }
+
         return next;
       } catch (e) {
         console.error("listWorkshops failed:", e);
-        setError(e?.message || "Failed to load workshops");
+        setError(e?.message || "שגיאה בטעינת הסדנאות");
         return [];
       } finally {
         setLoading(false);
@@ -78,9 +92,9 @@ export function WorkshopsProvider({ children }) {
     []
   );
 
-  /* ----------
-     Get by slug (משתמש בקאש אם קיים)
-     ---------- */
+  /* =========================================
+     📘 getWorkshop — לפי SLUG (לאורחים)
+     ========================================= */
   const getWorkshop = useCallback(async (slug) => {
     if (!slug) return null;
     if (cacheItemRef.current.has(slug)) {
@@ -96,23 +110,41 @@ export function WorkshopsProvider({ children }) {
     }
   }, []);
 
-  /* ----------
-     Mutations (CRUD) — לשימוש באדמין
-     ---------- */
+  /* =========================================
+     📘 getWorkshopById — לפי ID (לאדמין)
+     ========================================= */
+  const getWorkshopById = useCallback(async (id) => {
+    if (!id) return null;
+    try {
+      const doc = await apiGetWorkshopById(id);
+      return doc;
+    } catch (e) {
+      console.error("getWorkshopById failed:", e);
+      throw e;
+    }
+  }, []);
+
+  /* =========================================
+     ✳️ createWorkshop — יצירת סדנה חדשה
+     ========================================= */
   const createWorkshop = useCallback(async (payload) => {
     const created = await apiCreateWorkshop(payload);
-    // עדכון קאש
     if (created?.slug) cacheItemRef.current.set(created.slug, created);
+
     setItems((arr) => {
       const exists = arr.some((x) => x.slug === created.slug);
       return exists
         ? arr.map((x) => (x.slug === created.slug ? created : x))
         : [created, ...arr];
     });
+
     setTotal((t) => t + 1);
     return created;
   }, []);
 
+  /* =========================================
+     🔁 updateWorkshop — לפי SLUG (לאורח)
+     ========================================= */
   const updateWorkshop = useCallback(async (slug, payload) => {
     const updated = await apiUpdateWorkshop(slug, payload);
     if (updated?.slug) cacheItemRef.current.set(updated.slug, updated);
@@ -120,6 +152,19 @@ export function WorkshopsProvider({ children }) {
     return updated;
   }, []);
 
+  /* =========================================
+     🔁 updateWorkshopById — לפי ID (לאדמין)
+     ========================================= */
+  const updateWorkshopById = useCallback(async (id, payload) => {
+    const updated = await apiUpdateWorkshopById(id, payload);
+    if (updated?.slug) cacheItemRef.current.set(updated.slug, updated);
+    setItems((arr) => arr.map((x) => (x._id === id ? updated : x)));
+    return updated;
+  }, []);
+
+  /* =========================================
+     ❌ deleteWorkshop
+     ========================================= */
   const deleteWorkshop = useCallback(async (slug) => {
     await apiDeleteWorkshop(slug);
     cacheItemRef.current.delete(slug);
@@ -128,14 +173,16 @@ export function WorkshopsProvider({ children }) {
     return true;
   }, []);
 
-  /* ----------
-     טעינה ראשונית — פעיל בלבד
-     ---------- */
+  /* =========================================
+     ⏱️ טעינה ראשונית
+     ========================================= */
   useEffect(() => {
-    // טוען כברירת מחדל את הפעילים, מסודרים לפי title
-    listWorkshops({ isActive: true, sort: "title", limit: 200 });
+    listWorkshops({ sort: "title", limit: 200 });
   }, [listWorkshops]);
 
+  /* =========================================
+     ערך הקונטקסט
+     ========================================= */
   const value = useMemo(
     () => ({
       // state
@@ -146,8 +193,10 @@ export function WorkshopsProvider({ children }) {
       // actions
       listWorkshops,
       getWorkshop,
+      getWorkshopById,
       createWorkshop,
       updateWorkshop,
+      updateWorkshopById,
       deleteWorkshop,
     }),
     [
@@ -157,8 +206,10 @@ export function WorkshopsProvider({ children }) {
       error,
       listWorkshops,
       getWorkshop,
+      getWorkshopById,
       createWorkshop,
       updateWorkshop,
+      updateWorkshopById,
       deleteWorkshop,
     ]
   );
@@ -168,6 +219,9 @@ export function WorkshopsProvider({ children }) {
   );
 }
 
+/* =========================================
+   Hook נוח לשימוש בקומפוננטות
+   ========================================= */
 export function useWorkshops() {
   const ctx = useContext(WorkshopsCtx);
   if (!ctx)

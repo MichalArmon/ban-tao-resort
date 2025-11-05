@@ -19,9 +19,9 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 
-import { useWorkshops } from "../../context/WorkshopsContext";
-import { useRecurringRules } from "../../context/RecurringRulesContext";
 import RuleFormModal from "./RuleFormModal";
+import { useRecurringRules } from "../../../context/RecurringRulesContext";
+import { useWorkshops } from "../../../context/WorkshopsContext";
 
 /* ===========================
    Constants

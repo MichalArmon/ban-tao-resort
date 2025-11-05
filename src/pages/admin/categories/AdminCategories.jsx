@@ -15,7 +15,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import DeleteRounded from "@mui/icons-material/DeleteRounded";
-import { useCategories } from "../../context/CategoriesContext"; // ✅ שימוש בקונטקסט
+import { useCategories } from "../../../context/CategoriesContext"; // ✅ שימוש בקונטקסט
 
 export default function AdminCategories() {
   const {

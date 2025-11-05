@@ -25,6 +25,7 @@ export default function BookButton({
         id: item._id,
         title: item.title || item.name || "Untitled",
         hero: item.hero?.url || item.heroUrl || null,
+        description: item.description,
         location: item.location || "Ban Tao Resort",
       },
       dates: {

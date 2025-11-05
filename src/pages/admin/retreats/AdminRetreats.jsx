@@ -16,7 +16,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
-import { get } from "../../config/api";
+import { get } from "../../../config/api";
 
 export default function AdminRetreats() {
   const [retreats, setRetreats] = useState([]);

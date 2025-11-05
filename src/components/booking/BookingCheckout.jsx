@@ -26,7 +26,7 @@ import PaymentsRounded from "@mui/icons-material/PaymentsRounded";
 import PlaceRounded from "@mui/icons-material/PlaceRounded";
 import { useBooking } from "../../context/BookingContext";
 import { useSchedule } from "../../context/ScheduleContext";
-import { useCategories } from "../../context/CategoriesContext"; // ✅ חדש
+import { useCategories } from "../../context/CategoriesContext";
 
 /* =========================================
  * Utils
@@ -69,6 +69,7 @@ function SummaryRow({ icon, label, value }) {
 function BookingSummary({ sel }) {
   const title = sel?.item?.title || "Selected item";
   const img = sel?.item?.hero;
+  const description = sel?.item?.description;
   const basePrice = sel?.item?.price ?? sel?.price ?? 0;
   const totalPrice = sel?.price ?? basePrice;
   const guests = Number(sel?.guests) || 1;
@@ -89,19 +90,44 @@ function BookingSummary({ sel }) {
   const baseFormatted = formatMoney(basePrice, currency);
 
   return (
-    <Card elevation={3} sx={{ borderRadius: 2, overflow: "hidden" }}>
+    <Card
+      elevation={3}
+      sx={{
+        borderRadius: 2,
+        overflow: "hidden",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {img && (
         <CardMedia
           component="img"
           image={img}
           alt={title}
-          sx={{ height: 180, objectFit: "cover" }}
+          sx={{ height: " auto", objectFit: "cover" }}
         />
       )}
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          {title}
-        </Typography>
+      <CardContent
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+          justifyContent: "space-between",
+        }}
+      >
+        <Box>
+          <Typography variant="h6">{title}</Typography>
+          {description && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 2, whiteSpace: "pre-line" }}
+            >
+              {description}
+            </Typography>
+          )}
+        </Box>
 
         <Stack spacing={1.2} sx={{ my: 1.5 }}>
           <SummaryRow
@@ -232,6 +258,7 @@ export default function BookingCheckout() {
   const navigate = useNavigate();
   const { selection } = useBooking();
   const { guestSchedule, loadGuestSchedule } = useSchedule();
+  console.log("🧭 selection.item:", selection?.item);
 
   React.useEffect(() => {
     if (selection?.type === "workshop") {
@@ -315,53 +342,76 @@ export default function BookingCheckout() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
-      <Grid container spacing={3} alignItems="flex-start">
-        {/* שמאל – טופס */}
-        <Grid item xs={12} md={7} lg={8} sx={{ width: "60%" }}>
-          <Paper
-            variant="outlined"
-            sx={{ p: { xs: 2, md: 3 }, borderRadius: 2, bgcolor: "#fff" }}
+    <Container
+      maxWidth="xl"
+      sx={{
+        py: { xs: 2, md: 4 },
+        display: "flex",
+        gap: 3,
+        alignItems: "stretch", // ✅ [FIX] מוודא שילדי הפלקס יימתחו לגובה הגדול ביותר
+        flexDirection: { xs: "column", md: "row" }, // מפריד את הילדים לשורות במובייל, ומחזיר ל-row בדסקטופ
+      }}
+    >
+      {/* שמאל – טופס ✔️✔️✔️ */}
+      <Grid item xs={12} md={7} lg={8} sx={{ width: { md: "60%", s: "100%" } }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2, md: 3 },
+            borderRadius: 2,
+            bgcolor: "#fff",
+            height: "100%", // ✅ [FIX] חשוב: ודא שה-Paper ממלא את כל גובה ה-Grid שלו
+          }}
+        >
+          <Typography variant="h5" gutterBottom>
+            Fill in your details
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            We’ll use this information to confirm your booking.
+          </Typography>
+
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              maxWidth: 700,
+              mx: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2.5,
+              px: { xs: 2, sm: 3 },
+              py: { xs: 1, sm: 1 },
+            }}
           >
-            <Typography variant="h5" gutterBottom>
-              Fill in your details
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              We’ll use this information to confirm your booking.
-            </Typography>
-
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              sx={{
-                maxWidth: 700,
-                mx: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 2.5,
-                px: { xs: 2, sm: 3 },
-                py: { xs: 3, sm: 4 },
-              }}
-            >
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <TextField
-                  required
-                  name="firstName"
-                  label="First name"
-                  value={form.firstName}
-                  onChange={handleChange}
-                  fullWidth
+            {/* 🟣 תאריכים לסדנאות */}
+            <Box sx={{ pb: { xs: 1, sm: 2 } }}>
+              {selection?.type === "workshop" && (
+                <WorkshopDatePickerInline
+                  guestSchedule={guestSchedule}
+                  sessionDate={bookingData.sessionDate}
+                  onSelectDate={(date) =>
+                    setBookingData((b) => ({ ...b, sessionDate: date }))
+                  }
                 />
-                <TextField
-                  required
-                  name="lastName"
-                  label="Last name"
-                  value={form.lastName}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Stack>
-
+              )}
+            </Box>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                required
+                name="firstName"
+                label="First name"
+                value={form.firstName}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                required
+                name="lastName"
+                label="Last name"
+                value={form.lastName}
+                onChange={handleChange}
+                fullWidth
+              />
               <TextField
                 required
                 type="email"
@@ -378,69 +428,56 @@ export default function BookingCheckout() {
                 onChange={handleChange}
                 fullWidth
               />
+            </Stack>
 
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                name="address"
+                label="Address"
+                value={form.address}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                name="city"
+                label="City"
+                value={form.city}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                name="zip"
+                label="ZIP"
+                value={form.zip}
+                onChange={handleChange}
+                fullWidth
+              />
+              <TextField
+                select
+                name="country"
+                label="Country"
+                value={form.country}
+                onChange={handleChange}
+                fullWidth
+              >
+                {COUNTRIES.map((c) => (
+                  <MenuItem key={c} value={c}>
+                    {c}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}></Stack>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 type="number"
                 name="guests"
                 label="Guests"
                 value={bookingData.guests}
                 onChange={handleBookingChange}
-                fullWidth
                 inputProps={{ min: 1 }}
               />
-
-              {/* 🟣 תאריכים לסדנאות */}
-              {selection?.type === "workshop" && (
-                <WorkshopDatePickerInline
-                  guestSchedule={guestSchedule}
-                  sessionDate={bookingData.sessionDate}
-                  onSelectDate={(date) =>
-                    setBookingData((b) => ({ ...b, sessionDate: date }))
-                  }
-                />
-              )}
-
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <TextField
-                  name="address"
-                  label="Address"
-                  value={form.address}
-                  onChange={handleChange}
-                  fullWidth
-                />
-                <TextField
-                  name="city"
-                  label="City"
-                  value={form.city}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Stack>
-
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <TextField
-                  name="zip"
-                  label="ZIP"
-                  value={form.zip}
-                  onChange={handleChange}
-                  fullWidth
-                />
-                <TextField
-                  select
-                  name="country"
-                  label="Country"
-                  value={form.country}
-                  onChange={handleChange}
-                  fullWidth
-                >
-                  {COUNTRIES.map((c) => (
-                    <MenuItem key={c} value={c}>
-                      {c}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Stack>
-
               <TextField
                 multiline
                 minRows={2}
@@ -450,50 +487,52 @@ export default function BookingCheckout() {
                 onChange={handleChange}
                 fullWidth
               />
+            </Stack>
 
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="agree"
-                    checked={form.agree}
-                    onChange={handleChange}
-                  />
-                }
-                label="I agree to the terms and privacy policy"
-              />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="agree"
+                  checked={form.agree}
+                  onChange={handleChange}
+                />
+              }
+              label="I agree to the terms and privacy policy"
+            />
 
-              {error && <Alert severity="error">{error}</Alert>}
+            {error && <Alert severity="error">{error}</Alert>}
 
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={2}
-                justifyContent="center"
-              >
-                <Button type="submit" variant="contained" disabled={submitting}>
-                  {submitting ? (
-                    <CircularProgress size={22} />
-                  ) : (
-                    "Confirm booking"
-                  )}
-                </Button>
-                <Button variant="text" onClick={() => navigate(-1)}>
-                  Back
-                </Button>
-              </Stack>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* ימין – סיכום */}
-        <Grid
-          item
-          xs={12}
-          md={5}
-          lg={4}
-          sx={{ position: { md: "sticky" }, top: { md: 16 }, width: "30%" }}
-        >
-          <BookingSummary sel={{ ...selection, ...bookingData }} />
-        </Grid>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              justifyContent="center"
+            >
+              <Button type="submit" variant="contained" disabled={submitting}>
+                {submitting ? (
+                  <CircularProgress size={22} />
+                ) : (
+                  "Confirm booking"
+                )}
+              </Button>
+              <Button variant="text" onClick={() => navigate(-1)}>
+                Back
+              </Button>
+            </Stack>
+          </Box>
+        </Paper>
+      </Grid>
+      {/* ימין – סיכום ✔️✔️✔️ */}
+      <Grid
+        item
+        xs={12}
+        md={5}
+        lg={4}
+        sx={{
+          width: { md: "30%", s: "100%" }, // השארתי את הגדרות הרוחב כפי שביקשת
+          alignSelf: "stretch", // ✅ [FIX] מבטיח שה-Grid הזה יימתח במפורש
+        }}
+      >
+        <BookingSummary sel={{ ...selection, ...bookingData }} />
       </Grid>
     </Container>
   );

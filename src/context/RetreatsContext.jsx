@@ -1,4 +1,3 @@
-// 📁 src/context/RetreatsContext.jsx
 import React, {
   createContext,
   useContext,
@@ -71,9 +70,9 @@ const computeStatus = (r, todayMs, plus60Ms) => {
   if (r?.published === false) return "soon";
 
   const startMs = startOfDay(r.startDate).getTime();
-  if (startMs > plus60Ms) return "soon"; // farther than 60 days → SOON
-  if (startMs >= todayMs) return "book"; // within 60 days → BOOK
-  return "book"; // running/past fallback
+  if (startMs > plus60Ms) return "soon";
+  if (startMs >= todayMs) return "book";
+  return "book";
 };
 
 const mapCard = (r, todayMs, plus60Ms) => ({
@@ -81,7 +80,7 @@ const mapCard = (r, todayMs, plus60Ms) => ({
   title: r.name,
   place: r.location || r.place || "",
   dateLabel: dateRangeLabel(r.startDate, r.endDate),
-  status: computeStatus(r, todayMs, plus60Ms), // "book" | "soon" | "private"
+  status: computeStatus(r, todayMs, plus60Ms),
   image: pickHero(r),
 });
 
@@ -100,7 +99,6 @@ export function RetreatsProvider({ children }) {
     setLoading(true);
     setErr(null);
     try {
-      // Server should return ALL public retreats (no 30-day window).
       const list = await get("/retreats");
       setRetreats(Array.isArray(list) ? list : []);
       setLastFetchedAt(new Date());
@@ -115,12 +113,10 @@ export function RetreatsProvider({ children }) {
     fetchAll();
   }, [fetchAll]);
 
-  /* ---------- Reference dates ---------- */
   const todayMs = useMemo(() => startOfDay(new Date()).getTime(), []);
   const plus30Ms = useMemo(() => todayMs + 30 * MS_DAY, [todayMs]);
   const plus60Ms = useMemo(() => todayMs + 60 * MS_DAY, [todayMs]);
 
-  /* ---------- Sort all ---------- */
   const allSorted = useMemo(
     () =>
       (retreats || [])
@@ -133,13 +129,11 @@ export function RetreatsProvider({ children }) {
     [retreats]
   );
 
-  /* ---------- Future (NO 30-day limit) ---------- */
   const futureRetreats = useMemo(
     () => allSorted.filter((r) => startOfDay(r.endDate).getTime() >= todayMs),
     [allSorted, todayMs]
   );
 
-  /* ---------- Upcoming 30d (kept for convenience, NOT used to hide others) ---------- */
   const upcomingRetreats = useMemo(
     () =>
       allSorted.filter((r) => {
@@ -150,7 +144,6 @@ export function RetreatsProvider({ children }) {
     [allSorted, plus30Ms, todayMs]
   );
 
-  /* ---------- Buckets ---------- */
   const oneDayList = useMemo(
     () => futureRetreats.filter(isOneDay),
     [futureRetreats]
@@ -160,7 +153,6 @@ export function RetreatsProvider({ children }) {
     [futureRetreats]
   );
 
-  /* ---------- Cards (ready for UI) ---------- */
   const oneDayCards = useMemo(
     () => oneDayList.map((r) => mapCard(r, todayMs, plus60Ms)),
     [oneDayList, todayMs, plus60Ms]
@@ -170,7 +162,6 @@ export function RetreatsProvider({ children }) {
     [multiDayList, todayMs, plus60Ms]
   );
 
-  /* ---------- Calendar map ---------- */
   const calendarMap = useMemo(() => {
     const days = {};
     for (const r of allSorted) {
@@ -198,22 +189,15 @@ export function RetreatsProvider({ children }) {
   );
 
   const value = {
-    /* state */
     loading,
     error,
     lastFetchedAt,
-
-    /* raw lists */
-    retreats: allSorted, // ALL (sorted)
-    futureRetreats, // ALL future (no 30-day limit)
-    upcomingRetreats, // Only next 30 days (optional)
-
-    /* buckets/cards for UI */
-    oneDayCards, // from ALL future
-    multiDayCards, // from ALL future
+    retreats: allSorted,
+    futureRetreats,
+    upcomingRetreats,
+    oneDayCards,
+    multiDayCards,
     calendarMap,
-
-    /* helpers */
     refresh: fetchAll,
     getById,
   };

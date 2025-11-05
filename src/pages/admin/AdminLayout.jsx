@@ -5,7 +5,7 @@ function AdminLayout() {
   return (
     <>
       <PublicNav sx={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }} />
-      <main style={{ margin: "80px" }}>
+      <main style={{ margin: "120px" }}>
         <Outlet />
       </main>
     </>

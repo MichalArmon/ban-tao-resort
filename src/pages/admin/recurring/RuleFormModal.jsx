@@ -13,7 +13,7 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import { useRecurringRules } from "../../context/RecurringRulesContext";
+import { useRecurringRules } from "../../../context/RecurringRulesContext";
 
 // --------------------------------------------------
 // Lists & helpers

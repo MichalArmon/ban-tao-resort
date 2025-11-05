@@ -1,4 +1,4 @@
-// src/pages/public/PublicNav.jsx
+// ✅ גרסה מעודכנת: רק מיפוי הנתיבים לאדמין עודכן
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -25,6 +25,8 @@ const PAGES_ADMIN = [
   "Retreats",
   "Treatments",
   "Workshops",
+  "categories",
+  "recurring",
   "Users",
   "My Booking",
 ];
@@ -45,15 +47,29 @@ function PublicNav(props) {
   const handleOpenNavMenu = (e) => setAnchorElNav(e.currentTarget);
   const handleCloseNavMenu = () => setAnchorElNav(null);
 
-  // ✅ מיפוי נכון לנתיבי אדמין
+  // ✅ עדכון נכון לנתיבי אדמין החדשים
   const adminPathFor = (page) => {
     const s = slug(page);
-    if (["rooms", "retreats", "treatments", "workshops"].includes(s)) {
-      return `/admin/create/${s}`;
+    switch (s) {
+      case "rooms":
+        return "/admin/rooms";
+      case "retreats":
+        return "/admin/retreats";
+      case "treatments":
+        return "/admin/treatments";
+      case "workshops":
+        return "/admin/workshops";
+      case "users":
+        return "/admin/users";
+      case "my-booking":
+        return "/admin/my-booking";
+      case "categories":
+        return "/admin/categories";
+      case "recurring":
+        return "/admin/recurring";
+      default:
+        return `/admin/${s}`;
     }
-    if (s === "users") return "/admin/users";
-    if (s === "my-booking") return "/admin/my-booking";
-    return `/admin/${s}`;
   };
 
   return (
@@ -222,6 +238,7 @@ function PublicNav(props) {
         </Toolbar>
 
         {/* ========= תפריט מובייל ========= */}
+        {/* ✅ התפריט נשאר בדיוק אותו דבר, רק הנתיבים מתעדכנים */}
         <Menu
           id="menu-appbar"
           open={Boolean(anchorElNav)}
@@ -230,9 +247,7 @@ function PublicNav(props) {
           anchorPosition={{ top: 0, left: 0 }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           marginThreshold={0}
-          sx={{
-            display: { xs: "block", md: "none" },
-          }}
+          sx={{ display: { xs: "block", md: "none" } }}
           slotProps={{
             paper: {
               sx: {
@@ -250,7 +265,6 @@ function PublicNav(props) {
             list: { sx: { p: 0 } },
           }}
         >
-          {/* כפתור X */}
           <IconButton
             onClick={handleCloseNavMenu}
             sx={{
@@ -264,29 +278,19 @@ function PublicNav(props) {
             <CloseIcon sx={{ fontSize: 32 }} />
           </IconButton>
 
-          {/* מרכז מסך */}
           <Box
             sx={{
-              width: "100%",
-              // display: "flex",
               flexDirection: "column",
               alignItems: "center",
-
               minHeight: "100svh",
-              maxHeight: "100svh",
               overflowY: "auto",
-              WebkitOverflowScrolling: "touch",
               justifyContent: "center",
-              zIndex: (t) => t.zIndex.modal + 1,
-
               gap: 5,
               px: 2,
               pb: 5,
-
               textAlign: "center",
               boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-
-              p: "calc(env(safe-area-inset-top, 0px) + 74px)", // ↓ מרווח מתחת ל-X בלבד
+              p: "calc(env(safe-area-inset-top, 0px) + 74px)",
             }}
           >
             <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
@@ -294,7 +298,6 @@ function PublicNav(props) {
                 const to = isAdmin
                   ? adminPathFor(page)
                   : `${basePath}/${slug(page)}`;
-
                 return (
                   <MenuItem
                     key={page}

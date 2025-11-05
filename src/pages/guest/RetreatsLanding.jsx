@@ -1,4 +1,3 @@
-// 📁 src/pages/retreats/RetreatsLanding.jsx
 import * as React from "react";
 import {
   Box,
@@ -15,9 +14,9 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import { useRetreats } from "../../context/RetreatsContext";
+import { useNavigate } from "react-router-dom";
 
 const YT_ID = "QU0oRjFPB8g";
 const FALLBACK_IMG =
@@ -27,8 +26,6 @@ const FALLBACK_IMG =
    HERO (YouTube 4K, Full Width)
    =========================== */
 function RetreatsHero() {
-  const YT_ID = "QU0oRjFPB8g"; // החליפי לסרטון שלך
-
   return (
     <Box
       sx={{
@@ -59,7 +56,7 @@ function RetreatsHero() {
             left: "50%",
             transform: "translate(-50%, -50%)",
             width: "100vw",
-            height: "56.25vw", // יחס 16:9
+            height: "56.25vw",
             border: 0,
             pointerEvents: "none",
             "@media (max-aspect-ratio: 16/9)": {
@@ -138,7 +135,9 @@ function RetreatsHero() {
    Card (BOOK / SOON / PRIVATE)
    =========================== */
 const RetreatCard = React.memo(function RetreatCard({ item }) {
-  const { title, place, dateLabel, status, image } = item;
+  const navigate = useNavigate();
+  const { title, place, dateLabel, status, image, slug } = item;
+
   const s = String(status || "").toLowerCase();
   const isSoon = s === "soon";
   const isPrivate = s === "private";
@@ -163,20 +162,20 @@ const RetreatCard = React.memo(function RetreatCard({ item }) {
         component="img"
         image={image}
         alt={title}
-        loading="lazy" // ← טעינה עצלה לתמונות
+        loading="lazy"
         referrerPolicy="no-referrer"
         onError={(e) => {
           const img = e.currentTarget;
-          if (img.dataset.fallbackApplied === "1") return; // מונע לולאה
+          if (img.dataset.fallbackApplied === "1") return;
           img.dataset.fallbackApplied = "1";
-          img.onerror = null; // נטרול handler נוסף
+          img.onerror = null;
           img.src = FALLBACK_IMG;
         }}
         sx={{
           height: 240,
           width: { md: 300, lg: 300, sm: "100%" },
           objectFit: "cover",
-        }} // שומר על העיצוב שלך
+        }}
       />
 
       <CardContent
@@ -218,6 +217,11 @@ const RetreatCard = React.memo(function RetreatCard({ item }) {
           variant={isDisabled ? "outlined" : "contained"}
           size="medium"
           disabled={isDisabled}
+          onClick={() => {
+            if (!isDisabled && slug) {
+              navigate(`/resort/guest/retreats/${slug}`);
+            }
+          }}
           sx={{
             borderRadius: 1,
             ...(isDisabled
@@ -251,7 +255,6 @@ const RetreatCard = React.memo(function RetreatCard({ item }) {
 export default function RetreatsLanding() {
   const { loading, error, retreats } = useRetreats();
 
-  // ---- Helpers (local) ----
   const MS_DAY = 24 * 60 * 60 * 1000;
   const startOfDay = (d) => {
     const x = new Date(d);
@@ -259,6 +262,16 @@ export default function RetreatsLanding() {
     return x;
   };
   const toMs = (d) => startOfDay(d).getTime();
+
+  function slugify(str = "") {
+    return str
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/--+/g, "-");
+  }
 
   const computeStatus = React.useCallback((r) => {
     const todayMs = toMs(new Date());
@@ -282,11 +295,10 @@ export default function RetreatsLanding() {
       s.getFullYear() === e.getFullYear() &&
       s.getMonth() === e.getMonth() &&
       s.getDate() === e.getDate();
-    if (sameDay) {
+    if (sameDay)
       return s
         .toLocaleDateString("en-GB", { day: "numeric", month: "long" })
         .toUpperCase();
-    }
     const sameMonth =
       s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth();
     if (sameMonth) {
@@ -307,7 +319,6 @@ export default function RetreatsLanding() {
 
   const pickHero = (r) => r?.hero || r?.gallery?.[0]?.url || FALLBACK_IMG;
 
-  // יציבות רפרנס לכרטיסים כדי שממו יעבוד טוב
   const mapCard = React.useCallback(
     (r) => ({
       id: r._id || r.name,
@@ -316,20 +327,19 @@ export default function RetreatsLanding() {
       dateLabel: dateRangeLabel(r.startDate, r.endDate),
       status: computeStatus(r),
       image: pickHero(r),
+      slug: r.slug || slugify(r.name || r.title || ""),
     }),
     [computeStatus]
   );
 
-  // ---- Build future lists ----
   const futureSorted = React.useMemo(
     () =>
       (retreats || [])
-        .filter((r) => toMs(r.endDate) >= toMs(new Date())) // future or ongoing
+        .filter((r) => toMs(r.endDate) >= toMs(new Date()))
         .sort((a, b) => toMs(a.startDate) - toMs(b.startDate)),
     [retreats]
   );
 
-  // Section 1: next 3 (any type)
   const top3 = React.useMemo(() => futureSorted.slice(0, 3), [futureSorted]);
   const top3Ids = React.useMemo(
     () => new Set(top3.map((r) => String(r._id || r.name))),
@@ -337,7 +347,6 @@ export default function RetreatsLanding() {
   );
   const top3Cards = React.useMemo(() => top3.map(mapCard), [top3, mapCard]);
 
-  // Section 2: one-day next 3 (from ALL future)
   const isOneDay = (r) => toMs(r.startDate) === toMs(r.endDate);
   const oneDayTop3 = React.useMemo(
     () => futureSorted.filter(isOneDay).slice(0, 3),
@@ -348,7 +357,6 @@ export default function RetreatsLanding() {
     [oneDayTop3, mapCard]
   );
 
-  // Section 3: ALL remaining future (exclude section 1)
   const restFuture = React.useMemo(
     () => futureSorted.filter((r) => !top3Ids.has(String(r._id || r.name))),
     [futureSorted, top3Ids]
@@ -359,12 +367,7 @@ export default function RetreatsLanding() {
   );
 
   return (
-    <Box
-      sx={{
-        bgcolor: "background.default",
-        color: "text.primary",
-      }}
-    >
+    <Box sx={{ bgcolor: "background.default", color: "text.primary" }}>
       <RetreatsHero />
 
       {/* Quick Actions */}
@@ -436,7 +439,7 @@ export default function RetreatsLanding() {
             Upcoming Retreats
           </Typography>
           <Typography
-            variant="h6" // יותר גדול מ-subtitle2
+            variant="h6"
             align="center"
             color="text.secondary"
             sx={{ mb: 3 }}
@@ -478,7 +481,7 @@ export default function RetreatsLanding() {
 
           <Divider sx={{ my: { xs: 4, md: 6 } }} />
 
-          {/* ===== Section 2: One-day retreats (next 3 from all future) ===== */}
+          {/* ===== Section 2: One-day retreats ===== */}
           <Typography
             variant="h5"
             sx={{
@@ -492,7 +495,7 @@ export default function RetreatsLanding() {
             1 Day Retreats
           </Typography>
           <Typography
-            variant="h6" // יותר גדול מ-subtitle2
+            variant="h6"
             align="center"
             color="text.secondary"
             sx={{ mb: 3 }}
@@ -534,7 +537,7 @@ export default function RetreatsLanding() {
 
           <Divider sx={{ my: { xs: 4, md: 6 } }} />
 
-          {/* ===== Section 3: All remaining future (no limit) ===== */}
+          {/* ===== Section 3: All remaining future ===== */}
           <Typography
             variant="h5"
             sx={{
@@ -548,7 +551,7 @@ export default function RetreatsLanding() {
             More Upcoming Retreats
           </Typography>
           <Typography
-            variant="h6" // יותר גדול מ-subtitle2
+            variant="h6"
             align="center"
             color="text.secondary"
             sx={{ mb: 3 }}
