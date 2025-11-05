@@ -66,7 +66,7 @@ function SummaryRow({ icon, label, value }) {
   );
 }
 
-function BookingSummary({ sel }) {
+function BookingSummary({ sel, onConfirm, submitting }) {
   const title = sel?.item?.title || "Selected item";
   const img = sel?.item?.hero;
   const description = sel?.item?.description;
@@ -105,7 +105,7 @@ function BookingSummary({ sel }) {
           component="img"
           image={img}
           alt={title}
-          sx={{ height: " auto", objectFit: "cover" }}
+          sx={{ height: "auto", objectFit: "cover" }}
         />
       )}
       <CardContent
@@ -163,9 +163,21 @@ function BookingSummary({ sel }) {
             )}
           </Stack>
         </Stack>
-        <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
+
+        <Alert severity="info" variant="outlined" sx={{ mt: 2, mb: 2 }}>
           No payment is taken now. You’ll confirm on the next step.
         </Alert>
+
+        {/* ✅ Confirm button moved here */}
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          disabled={submitting}
+          fullWidth
+          sx={{ mt: "auto" }}
+        >
+          {submitting ? <CircularProgress size={22} /> : "Confirm booking"}
+        </Button>
       </CardContent>
     </Card>
   );
@@ -309,7 +321,7 @@ export default function BookingCheckout() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     setError("");
     if (!form.firstName || !form.lastName || !form.email || !form.agree) {
       setError("Please fill the required fields and accept the terms.");
@@ -348,11 +360,11 @@ export default function BookingCheckout() {
         py: { xs: 2, md: 4 },
         display: "flex",
         gap: 3,
-        alignItems: "stretch", // ✅ [FIX] מוודא שילדי הפלקס יימתחו לגובה הגדול ביותר
-        flexDirection: { xs: "column", md: "row" }, // מפריד את הילדים לשורות במובייל, ומחזיר ל-row בדסקטופ
+        alignItems: "stretch",
+        flexDirection: { xs: "column", md: "row" },
       }}
     >
-      {/* שמאל – טופס ✔️✔️✔️ */}
+      {/* שמאל – טופס */}
       <Grid item xs={12} md={7} lg={8} sx={{ width: { md: "60%", s: "100%" } }}>
         <Paper
           variant="outlined"
@@ -360,7 +372,7 @@ export default function BookingCheckout() {
             p: { xs: 2, md: 3 },
             borderRadius: 2,
             bgcolor: "#fff",
-            height: "100%", // ✅ [FIX] חשוב: ודא שה-Paper ממלא את כל גובה ה-Grid שלו
+            height: "100%",
           }}
         >
           <Typography variant="h5" gutterBottom>
@@ -383,7 +395,6 @@ export default function BookingCheckout() {
               py: { xs: 1, sm: 1 },
             }}
           >
-            {/* 🟣 תאריכים לסדנאות */}
             <Box sx={{ pb: { xs: 1, sm: 2 } }}>
               {selection?.type === "workshop" && (
                 <WorkshopDatePickerInline
@@ -468,7 +479,6 @@ export default function BookingCheckout() {
               </TextField>
             </Stack>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}></Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 type="number"
@@ -502,37 +512,30 @@ export default function BookingCheckout() {
 
             {error && <Alert severity="error">{error}</Alert>}
 
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              justifyContent="center"
-            >
-              <Button type="submit" variant="contained" disabled={submitting}>
-                {submitting ? (
-                  <CircularProgress size={22} />
-                ) : (
-                  "Confirm booking"
-                )}
-              </Button>
-              <Button variant="text" onClick={() => navigate(-1)}>
-                Back
-              </Button>
-            </Stack>
+            {/* נשאר רק כפתור חזרה כאן */}
+            <Button variant="text" onClick={() => navigate(-1)}>
+              Back
+            </Button>
           </Box>
         </Paper>
       </Grid>
-      {/* ימין – סיכום ✔️✔️✔️ */}
+
+      {/* ימין – סיכום */}
       <Grid
         item
         xs={12}
         md={5}
         lg={4}
         sx={{
-          width: { md: "30%", s: "100%" }, // השארתי את הגדרות הרוחב כפי שביקשת
-          alignSelf: "stretch", // ✅ [FIX] מבטיח שה-Grid הזה יימתח במפורש
+          width: { md: "30%", s: "100%" },
+          alignSelf: "stretch",
         }}
       >
-        <BookingSummary sel={{ ...selection, ...bookingData }} />
+        <BookingSummary
+          sel={{ ...selection, ...bookingData }}
+          onConfirm={handleSubmit}
+          submitting={submitting}
+        />
       </Grid>
     </Container>
   );
