@@ -17,6 +17,11 @@ import {
   TableCell,
   TableBody,
   Chip,
+  useMediaQuery,
+  useTheme,
+  Card,
+  CardContent,
+  Divider,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
@@ -43,6 +48,9 @@ export default function GuestScheduleView({
   defaultDate,
   onBook,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const { guestSchedule, guestLoading, loadGuestSchedule, error } =
     useSchedule();
 
@@ -53,17 +61,13 @@ export default function GuestScheduleView({
 
   React.useEffect(() => {
     if (!open || !workshop?._id) return;
-
     const from = weekStart.format("YYYY-MM-DD");
     const to = weekEnd.format("YYYY-MM-DD");
-
     const key = `${workshop._id}_${from}_${to}`;
     if (window.__lastGuestLoadKey === key) return;
     window.__lastGuestLoadKey = key;
-
-    console.log("📅 trying loadGuestSchedule", { open, workshop, from, to });
     loadGuestSchedule(from, to);
-  }, [open, workshop?._id, weekStart, weekEnd]);
+  }, [open, workshop?._id, weekStart, weekEnd, loadGuestSchedule]);
 
   const occurrences = React.useMemo(() => {
     if (!open || !workshop?._id) return [];
@@ -91,38 +95,70 @@ export default function GuestScheduleView({
   }, [occurrences]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ pr: 6 }}>
-        <Typography variant="h6" fontWeight={800}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+      sx={{
+        "& .MuiDialog-paper": {
+          borderRadius: isMobile ? 0 : 2,
+          m: isMobile ? 0 : 2,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          pr: 6,
+          py: { xs: 1.5, sm: 2 },
+          position: "relative",
+          bgcolor: isMobile ? "background.paper" : "transparent",
+        }}
+      >
+        <Typography variant={isMobile ? "h6" : "h5"} fontWeight={800}>
           {workshop?.title ?? ""}
         </Typography>
         <IconButton
           onClick={onClose}
           size="small"
-          sx={{ position: "absolute", right: 12, top: 12 }}
+          sx={{
+            position: "absolute",
+            right: 12,
+            top: 12,
+          }}
           aria-label="close"
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ pb: 3 }}>
+      <DialogContent dividers sx={{ pb: { xs: 1, sm: 3 } }}>
         <Stack
-          direction="row"
-          alignItems="center"
+          direction={isMobile ? "column" : "row"}
+          alignItems={isMobile ? "stretch" : "center"}
           justifyContent="space-between"
-          sx={{ mb: 2 }}
+          sx={{ mb: 2, gap: isMobile ? 1.5 : 0 }}
         >
-          <Typography variant="h5" fontWeight={700}>
+          <Typography
+            variant={isMobile ? "subtitle1" : "h5"}
+            fontWeight={700}
+            textAlign={isMobile ? "center" : "left"}
+          >
             🕒 Daily Workshop Schedule
           </Typography>
 
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack
+            direction={isMobile ? "column" : "row"}
+            spacing={1}
+            alignItems={isMobile ? "stretch" : "center"}
+          >
             <Button
               size="small"
               onClick={prevWeek}
               startIcon={<ChevronLeftRounded />}
               variant="outlined"
+              fullWidth={isMobile}
             >
               PREVIOUS WEEK
             </Button>
@@ -131,13 +167,19 @@ export default function GuestScheduleView({
               label={`${weekStart.format("MM/DD")} - ${weekEnd.format(
                 "MM/DD"
               )}`}
-              variant="outlined"
+              variant="filled"
+              sx={{
+                bgcolor: "action.hover",
+                alignSelf: "center",
+                fontSize: isMobile ? "0.75rem" : "inherit",
+              }}
             />
             <Button
               size="small"
               onClick={nextWeek}
               endIcon={<ChevronRightRounded />}
               variant="outlined"
+              fullWidth={isMobile}
             >
               NEXT WEEK
             </Button>
@@ -166,7 +208,11 @@ export default function GuestScheduleView({
             <Paper
               key={+bucket.date}
               variant="outlined"
-              sx={{ mb: 2, overflow: "hidden" }}
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                overflow: "hidden",
+              }}
             >
               <Box
                 sx={{
@@ -174,7 +220,7 @@ export default function GuestScheduleView({
                   py: 1.2,
                   bgcolor: "primary.light",
                   color: "primary.contrastText",
-                  opacity: 0.55,
+                  opacity: 0.75,
                 }}
               >
                 <Typography fontWeight={700}>
@@ -183,55 +229,97 @@ export default function GuestScheduleView({
                 </Typography>
               </Box>
 
-              <Table>
-                <TableHead>
-                  <TableRow
-                    sx={{
-                      "& th": {
-                        bgcolor: "action.hover",
-                        fontWeight: 700,
-                      },
-                    }}
-                  >
-                    <TableCell width="22%">Time</TableCell>
-                    <TableCell>Workshop / Class</TableCell>
-                    <TableCell width="18%">Studio</TableCell>
-                    <TableCell align="right" width="18%">
-                      Action
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
+              {/* 💡 דסקטופ: טבלה רגילה */}
+              {!isMobile ? (
+                <Table>
+                  <TableHead>
+                    <TableRow
+                      sx={{
+                        "& th": {
+                          bgcolor: "action.hover",
+                          fontWeight: 700,
+                        },
+                      }}
+                    >
+                      <TableCell width="22%">Time</TableCell>
+                      <TableCell>Workshop / Class</TableCell>
+                      <TableCell width="18%">Studio</TableCell>
+                      <TableCell align="right" width="18%">
+                        Action
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {bucket.items.map((occ) => {
+                      const range = `${moment(occ.start).format(
+                        "HH:mm"
+                      )} - ${moment(occ.end).format("HH:mm")}`;
+                      return (
+                        <TableRow key={occ._id}>
+                          <TableCell>{range}</TableCell>
+                          <TableCell>{workshop.title}</TableCell>
+                          <TableCell>{occ.studio}</TableCell>
+                          <TableCell align="right">
+                            <BookButton
+                              type="workshop"
+                              item={workshop}
+                              selectedDate={occ.start}
+                              price={workshop.price}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                /* 📱 מובייל: כרטיסונים */
+                <Stack spacing={1.5} sx={{ p: 2 }}>
                   {bucket.items.map((occ) => {
                     const range = `${moment(occ.start).format(
                       "HH:mm"
                     )} - ${moment(occ.end).format("HH:mm")}`;
                     return (
-                      <TableRow key={occ._id}>
-                        <TableCell>{range}</TableCell>
-                        <TableCell>{workshop.title}</TableCell>
-                        <TableCell>{occ.studio}</TableCell>
-                        <TableCell align="right">
-                          {/* <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => onBook?.(occ)}
+                      <Card
+                        key={occ._id}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          boxShadow: "none",
+                          borderColor: "divider",
+                        }}
+                      >
+                        <CardContent sx={{ p: 1.5 }}>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight={700}
+                            gutterBottom
                           >
-                            BOOK NOW
-                          </Button> */}
+                            {range}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mb: 0.5 }}>
+                            <strong>{workshop.title}</strong>
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 1 }}
+                          >
+                            Studio: {occ.studio}
+                          </Typography>
+                          <Divider sx={{ mb: 1 }} />
                           <BookButton
                             type="workshop"
-                            item={workshop} // ✅ שולחים את כל הסדנה (שם יש price)
-                            selectedDate={occ.start} // הזמן המדויק של הסשן
-                            price={workshop.price} // ✅ שולחים את המחיר מהאובייקט של הסדנה
+                            item={workshop}
+                            selectedDate={occ.start}
+                            price={workshop.price}
                           />
-                        </TableCell>
-                      </TableRow>
+                        </CardContent>
+                      </Card>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </Stack>
+              )}
             </Paper>
           ))}
       </DialogContent>
