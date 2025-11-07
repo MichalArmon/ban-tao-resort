@@ -1,6 +1,5 @@
-// src/components/GuestRoomPopover.jsx
-
-import React, { useState, useCallback } from "react";
+// 📁 src/components/GuestRoomPopover.jsx
+import React, { useState } from "react";
 import {
   Popover,
   Box,
@@ -12,13 +11,14 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import PersonIcon from "@mui/icons-material/Person";
-import HotelIcon from "@mui/icons-material/Hotel";
 import { useBooking } from "../../context/BookingContext";
 
-// Component for a single counter (e.g., Adults, Rooms)
+/* ============================================================
+   🧩 Counter Component (for Adults / Rooms)
+   ============================================================ */
 const Counter = ({ label, count, setCount, min = 1, max = 10 }) => {
-  const handleIncrement = () => setCount(count + 1);
-  const handleDecrement = () => setCount(count - 1);
+  const handleIncrement = () => setCount((prev) => Math.min(prev + 1, max));
+  const handleDecrement = () => setCount((prev) => Math.max(prev - 1, min));
 
   return (
     <Box
@@ -58,39 +58,34 @@ const Counter = ({ label, count, setCount, min = 1, max = 10 }) => {
   );
 };
 
-// Main Popover Component
-const GuestRoomPopover = ({ sx, ...props }) => {
+/* ============================================================
+   🌿 Main GuestRoomPopover Component
+   ============================================================ */
+const GuestRoomPopover = ({ sx }) => {
   const {
     guests,
     setGuests,
     rooms,
     setRooms,
-    fetchAvailability, // Fetch function to be called on confirmation
+    fetchAvailability, // פונקציה שמופעלת בלחיצה על Confirm
   } = useBooking();
 
-  // MUI Popover state
+  // מצב הפתיחה של הפופאובר
   const [anchorEl, setAnchorEl] = useState(null);
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleConfirm = () => {
-    handleClose();
-    // Automatically trigger search upon confirmation
-    fetchAvailability();
-  };
-
   const open = Boolean(anchorEl);
   const id = open ? "guest-room-popover" : undefined;
 
+  const handleClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+
+  const handleConfirm = () => {
+    handleClose();
+    fetchAvailability(); // מפעיל את החיפוש המעודכן
+  };
+
   return (
-    <Box sx={sx} {...props}>
-      {/* 🔑 The clickable element in the main bar */}
+    <Box sx={sx}>
+      {/* 🔘 כפתור פתיחת הפופאובר */}
       <Button
         aria-describedby={id}
         variant="outlined"
@@ -112,7 +107,7 @@ const GuestRoomPopover = ({ sx, ...props }) => {
         {guests} Guests, {rooms} Rooms
       </Button>
 
-      {/* The Actual Popover Menu */}
+      {/* 🪄 הפופאובר עצמו */}
       <Popover
         id={id}
         open={open}
@@ -129,7 +124,7 @@ const GuestRoomPopover = ({ sx, ...props }) => {
         sx={{ mt: 1 }}
       >
         <Box sx={{ p: 2, minWidth: 300 }}>
-          {/* Guests Counter */}
+          {/* 🔢 מונה אורחים */}
           <Counter
             label="Adults"
             count={guests}
@@ -140,7 +135,7 @@ const GuestRoomPopover = ({ sx, ...props }) => {
 
           <Divider sx={{ my: 1 }} />
 
-          {/* Rooms Counter */}
+          {/* 🏨 מונה חדרים */}
           <Counter
             label="Rooms"
             count={rooms}
@@ -149,11 +144,9 @@ const GuestRoomPopover = ({ sx, ...props }) => {
             max={5}
           />
 
-          {/* Children Counter is omitted for simplicity but can be added here */}
-
           <Divider sx={{ my: 1 }} />
 
-          {/* Confirmation Button */}
+          {/* ⚡ כפתור אישור */}
           <Button
             variant="contained"
             color="primary"

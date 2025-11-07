@@ -9,7 +9,6 @@ import {
   Switch,
   Typography,
   Box,
-  Divider,
   Button,
   Card,
   IconButton,
@@ -41,9 +40,9 @@ const cldUrl = (publicId) =>
   `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${publicId}`;
 
 export default function RoomForm() {
-  const { id } = useParams(); // ← עכשיו לפי ID, לא slug
+  const { id } = useParams(); // ← לפי ID
   const navigate = useNavigate();
-  const { types, ensureTypes } = useRooms();
+  const { rooms, ensureRooms } = useRooms();
 
   const [form, setForm] = useState({
     _id: "",
@@ -62,56 +61,94 @@ export default function RoomForm() {
     active: true,
   });
 
+  // 🌀 מצב טעינה — האם החדר עדיין נטען מהשרת
   const [loadingRoom, setLoadingRoom] = useState(true);
+
+  // ✅ הודעת הצלחה שתוצג אחרי שמירה מוצלחת
   const [ok, setOk] = useState("");
+
+  // ❌ הודעת שגיאה שתוצג אם משהו נכשל (כמו העלאה או שמירה)
   const [err, setErr] = useState("");
+
+  // 💾 האם אנחנו כרגע באמצע שמירה (כדי למנוע לחיצה כפולה ולהראות ספינר)
   const [saving, setSaving] = useState(false);
 
+  // ☁️ מביא את פונקציות ההעלאה (uploadImage / uploadImages) מהקונטקסט של Cloudinary
   const uploadCtx =
     (typeof useUpload === "function" ? useUpload() : null) || {};
+
+  // 🖼️ פונקציה להעלאת תמונה אחת (Hero)
+  // אם לא נמצאה פונקציה אמיתית בקונטקסט — תזרוק שגיאה ברורה
   const uploadImage =
     uploadCtx.uploadImage ??
     (async () => {
       throw new Error("Upload not available");
     });
+
+  // 🖼️ פונקציה להעלאת כמה תמונות יחד (גלריה)
+  // גם כאן יש פונקציה חלופית שמונעת קריסה אם אין קונטקסט תקין
   const uploadImages =
     uploadCtx.uploadImages ??
     (async () => {
       throw new Error("Upload not available");
     });
 
+  // 🔗 משתנים שמחזיקים הפניות (refs) לשדות הקובץ הנסתרים של ה־Hero ושל הגלריה
+  // נשתמש בהם כדי לפתוח את חלון בחירת התמונות בלחיצה על כפתור מעוצב
   const heroInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
+  // 🧱 פונקציה קטנה לעדכון שדה אחד בתוך ה־form בלי למחוק את כל השדות האחרים
+  // לדוגמה: setField("title", "Ocean Room")
   const setField = (key, value) =>
     setForm((prev) => ({
-      ...prev,
-      [key]: value,
+      ...prev, // משאיר את כל השדות הקודמים כמו שהם
+      [key]: value, // מעדכן רק את השדה שביקשנו
     }));
 
   /* ===========================================================
      טוען רשימת חדרים והחדר הנבחר לפי ID
      =========================================================== */
+  // 🌀 useEffect ראשון — דואג לטעון את רשימת החדרים מהשרת אם היא עדיין ריקה
   useEffect(() => {
-    if (!types.length) ensureTypes();
-  }, [types.length, ensureTypes]);
+    // אם הרשימה rooms עדיין ריקה (לא נטענה)
+    if (!rooms.length) {
+      // נקרא לפונקציה מהקונטקסט שתביא את כל החדרים מהשרת
+      ensureRooms();
+    }
+    // React יריץ את הקוד הזה שוב רק אם מספר החדרים ישתנה או אם הפונקציה עצמה תשתנה
+  }, [rooms.length, ensureRooms]);
 
+  // 🧱 useEffect שני — ממלא את הנתונים בטופס לפי ה־ID, או פותח טופס חדש
   useEffect(() => {
-    if (id && types.length > 0) {
-      const room = types.find((r) => r._id === id);
+    // אם יש לנו מזהה ID (כלומר עורכים חדר קיים) וגם כבר יש רשימת חדרים
+    if (id && rooms.length > 0) {
+      // מחפש את החדר המתאים לפי ה־ID
+      const room = rooms.find((r) => r._id === id);
+
+      // אם באמת נמצא חדר כזה
       if (room) {
+        // ממלא את כל שדות הטופס עם הנתונים שלו
         setForm({
-          ...room,
+          ...room, // כל הנתונים המקוריים מהשרת
+          // ממיר את המערך של ה־features לטקסט עם פסיקים כדי להציג בשדה הטופס
           featuresCSV: Array.isArray(room.features)
             ? room.features.join(", ")
             : "",
         });
       }
+
+      // מסמן שסיימנו לטעון את החדר (אפשר להציג את הטופס)
       setLoadingRoom(false);
-    } else if (!id && types.length > 0) {
-      setLoadingRoom(false); // מצב יצירה
     }
-  }, [id, types]);
+    // אחרת — אם אין מזהה (כלומר יוצרים חדר חדש)
+    else if (!id && rooms.length > 0) {
+      // גם כאן נסיים את מצב הטעינה ונראה טופס ריק
+      setLoadingRoom(false);
+    }
+
+    // רשימת המשתנים שכשישתנו — הקוד הזה ירוץ שוב
+  }, [id, rooms]);
 
   /* ===========================================================
      יצירה / עדכון
@@ -150,7 +187,8 @@ export default function RoomForm() {
 
     setSaving(true);
     try {
-      const url = id ? `/rooms/types/${id}` : "/rooms/types";
+      // ✅ הנתיבים החדשים
+      const url = id ? `/rooms/${id}` : "/rooms";
       const res = id ? await put(url, p) : await post(url, p);
       console.log("✅ save ok:", res);
       setOk(id ? "✅ עודכן בהצלחה" : "✅ נוצר בהצלחה");
@@ -188,7 +226,7 @@ export default function RoomForm() {
       </Typography>
 
       <Grid container spacing={4}>
-        {/* עמודת שדות טקסט */}
+        {/* 🩵 עמודת שדות טקסט */}
         <Grid item xs={12} md={6}>
           <Stack spacing={2}>
             <TextField
@@ -277,8 +315,7 @@ export default function RoomForm() {
           </Stack>
         </Grid>
 
-        {/* עמודת תמונות נשארת זהה */}
-        {/* עמודת תמונות */}
+        {/* 🩵 עמודת תמונות */}
         <Grid item xs={12} md={6}>
           <Stack spacing={3}>
             {/* === Hero Image === */}
@@ -434,7 +471,7 @@ export default function RoomForm() {
           </Stack>
         </Grid>
 
-        {/* שמירה */}
+        {/* 🩵 שמירה */}
         <Grid item xs={12}>
           <Stack spacing={2}>
             {err && <Alert severity="error">{err}</Alert>}

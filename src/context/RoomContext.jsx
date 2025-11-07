@@ -1,37 +1,38 @@
+// 📁 src/context/RoomsContext.jsx
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { get } from "../config/api";
 
 const RoomsContext = createContext(null);
 
 export const RoomsProvider = ({ children }) => {
-  const [types, setTypes] = useState([]);
-  const [loadingTypes, setLoadingTypes] = useState(false);
-  const [typesError, setTypesError] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [roomsError, setRoomsError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
 
   /* ============================================================
-     ⚡ טוען את כל סוגי החדרים (פעם אחת)
+     ⚡ טוען את כל החדרים (פעם אחת)
      ============================================================ */
-  const ensureTypes = useCallback(async () => {
-    if (types.length > 0) return; // כבר נטען
+  const ensureRooms = useCallback(async () => {
+    if (rooms.length > 0) return; // כבר נטען
     await refreshRooms();
-  }, [types]);
+  }, [rooms]);
 
   /* ============================================================
      🔁 רענון ידני של רשימת החדרים
      ============================================================ */
   const refreshRooms = useCallback(async () => {
-    setLoadingTypes(true);
-    setTypesError(null);
+    setLoadingRooms(true);
+    setRoomsError(null);
     try {
-      // ✅ הנתיב הזה תואם בדיוק ל־routes שלנו
-      const list = await get("/rooms/types");
-      setTypes(list || []);
+      // ✅ תואם לנתיב החדש שלך: GET /api/v1/rooms
+      const list = await get("/rooms");
+      setRooms(list || []);
     } catch (err) {
-      console.error("❌ Failed to load room types:", err);
-      setTypesError(err);
+      console.error("❌ Failed to load rooms:", err);
+      setRoomsError(err);
     } finally {
-      setLoadingTypes(false);
+      setLoadingRooms(false);
     }
   }, []);
 
@@ -41,8 +42,8 @@ export const RoomsProvider = ({ children }) => {
   const getRoomById = useCallback(async (id) => {
     if (!id) return null;
     try {
-      // ✅ שימי לב: הנתיב כולל types/:id (לא id פעמיים!)
-      const room = await get(`/rooms/types/${id}`);
+      // ✅ תואם לנתיב החדש: GET /api/v1/rooms/:id
+      const room = await get(`/rooms/${id}`);
       setSelectedRoom(room);
       return room;
     } catch (err) {
@@ -51,15 +52,31 @@ export const RoomsProvider = ({ children }) => {
     }
   }, []);
 
+  /* ============================================================
+     🔍 שליפת חדר לפי slug (לאורחים)
+     ============================================================ */
+  const getRoomBySlug = useCallback(async (slug) => {
+    if (!slug) return null;
+    try {
+      // ✅ תואם לנתיב החדש: GET /api/v1/rooms/slug/:slug
+      const room = await get(`/rooms/slug/${slug}`);
+      return room;
+    } catch (err) {
+      console.error("❌ Failed to load room by slug:", err);
+      throw err;
+    }
+  }, []);
+
   const value = {
-    types,
-    loadingTypes,
-    typesError,
-    ensureTypes,
+    rooms,
+    loadingRooms,
+    roomsError,
+    ensureRooms,
     refreshRooms,
     selectedRoom,
     setSelectedRoom,
-    getRoomById, // ✅ חשוב להחזיר לקונטקסט
+    getRoomById,
+    getRoomBySlug,
   };
 
   return (

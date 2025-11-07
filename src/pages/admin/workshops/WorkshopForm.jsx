@@ -165,263 +165,318 @@ export default function WorkshopForm() {
     );
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Button
-        startIcon={<ArrowBackRounded />}
-        onClick={() => navigate("/admin/workshops")}
-        sx={{ mb: 3 }}
+    <Box
+      sx={{
+        width: "100vw",
+        minHeight: "100vh",
+        position: "relative",
+        left: "50%",
+        right: "50%",
+        ml: "-50vw",
+        mr: "-50vw",
+        bgcolor: "background.default",
+        py: { xs: 3, md: 6 },
+        px: { xs: 2, md: 6 },
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: 1400,
+          mx: "auto",
+        }}
       >
-        חזרה לרשימה
-      </Button>
+        <Button
+          startIcon={<ArrowBackRounded />}
+          onClick={() => navigate("/admin/workshops")}
+          sx={{ mb: 3 }}
+        >
+          חזרה לרשימה
+        </Button>
 
-      <Typography variant="h5" fontWeight={700} mb={2}>
-        {id ? "עריכת סדנה קיימת" : "יצירת סדנה חדשה"}
-      </Typography>
+        <Typography variant="h5" fontWeight={700} mb={2}>
+          {id ? "עריכת סדנה קיימת" : "יצירת סדנה חדשה"}
+        </Typography>
 
-      <Grid container spacing={4}>
-        {/* ===== עמודת שדות ===== */}
-        <Grid item xs={12} md={6}>
-          <Stack spacing={2}>
-            <TextField
-              label="Title"
-              value={form.title}
-              onChange={(e) => setField("title", e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Instructor"
-              value={form.instructor}
-              onChange={(e) => setField("instructor", e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Duration"
-              value={form.duration}
-              onChange={(e) => setField("duration", e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Level"
-              value={form.level}
-              onChange={(e) => setField("level", e.target.value)}
-              select
-              fullWidth
-            >
-              {["all", "beginner", "intermediate", "advanced"].map((lv) => (
-                <MenuItem key={lv} value={lv}>
-                  {lv}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="Price"
-              type="number"
-              value={form.price}
-              onChange={(e) => setField("price", e.target.value)}
-              fullWidth
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={form.isActive}
-                  onChange={(e) => setField("isActive", e.target.checked)}
-                />
-              }
-              label="Active"
-            />
-            <TextField
-              label="Description"
-              value={form.description}
-              onChange={(e) => setField("description", e.target.value)}
-              fullWidth
-              multiline
-              minRows={3}
-            />
-            <TextField
-              label="Highlights (CSV)"
-              value={form.bulletsCSV}
-              onChange={(e) => setField("bulletsCSV", e.target.value)}
-              fullWidth
-              placeholder="e.g. Relaxation, Breathing"
-            />
-          </Stack>
-        </Grid>
-
-        {/* ===== עמודת תמונות ===== */}
-        <Grid item xs={12} md={6}>
-          <Stack spacing={3}>
-            {/* Hero */}
-            <Box>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>
-                Hero Image
-              </Typography>
-
-              <Stack direction="row" spacing={1}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<AddPhotoAlternateIcon />}
-                  onClick={() => heroInputRef.current?.click()}
-                >
-                  העלאת HERO
-                </Button>
-                <input
-                  ref={heroInputRef}
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setSaving(true);
-                    try {
-                      const folder = `ban-tao/workshops/${form.slug || "temp"}`;
-                      const uploaded = await uploadImage(file, folder, "hero");
-                      setField("hero", {
-                        publicId: uploaded.public_id,
-                        url: uploaded.secure_url,
-                        alt: uploaded.original_filename || "",
-                      });
-                      setOk("Hero image הועלה ✅");
-                    } catch (err) {
-                      setErr(err.message || "שגיאה בהעלאת Hero");
-                    } finally {
-                      setSaving(false);
-                      e.target.value = "";
-                    }
-                  }}
-                />
-              </Stack>
-
-              {form.hero?.url && (
-                <Box
-                  component="img"
-                  src={form.hero.url}
-                  alt={form.hero.alt || "Hero Preview"}
-                  sx={{
-                    width: "100%",
-                    height: 200,
-                    objectFit: "cover",
-                    borderRadius: 1,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    mt: 1,
-                  }}
-                />
-              )}
-            </Box>
-
-            {/* Gallery */}
-            <Box>
-              <Typography variant="subtitle1" fontWeight={600} mb={1}>
-                Gallery Images
-              </Typography>
-
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<AddPhotoAlternateIcon />}
-                  onClick={() => galleryInputRef.current?.click()}
-                >
-                  העלאת תמונות לגלריה
-                </Button>
-                <input
-                  ref={galleryInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onChange={async (e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (!files.length) return;
-                    setSaving(true);
-                    try {
-                      const folder = `ban-tao/workshops/${form.slug || "temp"}`;
-                      const uploaded = await uploadImages(files, folder);
-                      const newImgs = uploaded.map((u) => ({
-                        publicId: u.public_id,
-                        url: u.secure_url,
-                        alt: u.original_filename || "",
-                      }));
-                      setField("gallery", [
-                        ...(form.gallery || []),
-                        ...newImgs,
-                      ]);
-                      setOk(`${uploaded.length} תמונות נוספו ✅`);
-                    } catch (err) {
-                      setErr(err.message || "שגיאה בהעלאת גלריה");
-                    } finally {
-                      setSaving(false);
-                      e.target.value = "";
-                    }
-                  }}
-                />
-              </Stack>
-
-              <Grid container spacing={1} mt={1}>
-                {form.gallery?.map((img, i) => (
-                  <Grid item xs={6} sm={4} md={3} key={i}>
-                    <Card
-                      sx={{
-                        position: "relative",
-                        border: "1px solid",
-                        borderColor: "divider",
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={img.url}
-                        alt={img.alt || `Gallery ${i + 1}`}
-                        sx={{
-                          width: "100%",
-                          height: 120,
-                          objectFit: "cover",
-                          borderRadius: 1,
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          bgcolor: "rgba(255,255,255,0.8)",
-                        }}
-                        onClick={() =>
-                          setField(
-                            "gallery",
-                            form.gallery.filter((_, idx) => idx !== i)
-                          )
-                        }
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Card>
-                  </Grid>
+        <Grid container spacing={4} maxWidth="xl">
+          {/* ===== עמודת שדות ===== */}
+          <Grid item xs={12} md={6} sx={{ width: 800 }}>
+            <Stack spacing={2}>
+              <TextField
+                label="Title"
+                value={form.title}
+                onChange={(e) => setField("title", e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="Instructor"
+                value={form.instructor}
+                onChange={(e) => setField("instructor", e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="Duration"
+                value={form.duration}
+                onChange={(e) => setField("duration", e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="Level"
+                value={form.level}
+                onChange={(e) => setField("level", e.target.value)}
+                select
+                fullWidth
+              >
+                {["all", "beginner", "intermediate", "advanced"].map((lv) => (
+                  <MenuItem key={lv} value={lv}>
+                    {lv}
+                  </MenuItem>
                 ))}
-              </Grid>
-            </Box>
-          </Stack>
-        </Grid>
+              </TextField>
+              <TextField
+                label="Price"
+                type="number"
+                value={form.price}
+                onChange={(e) => setField("price", e.target.value)}
+                fullWidth
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.isActive}
+                    onChange={(e) => setField("isActive", e.target.checked)}
+                  />
+                }
+                label="Active"
+              />
+              <TextField
+                label="Description"
+                value={form.description}
+                onChange={(e) => setField("description", e.target.value)}
+                fullWidth
+                multiline
+                minRows={3}
+              />
+              <TextField
+                label="Highlights (CSV)"
+                value={form.bulletsCSV}
+                onChange={(e) => setField("bulletsCSV", e.target.value)}
+                fullWidth
+                placeholder="e.g. Relaxation, Breathing"
+              />
+            </Stack>
+          </Grid>
 
-        {/* ===== שמירה ===== */}
-        <Grid item xs={12}>
-          <Stack spacing={2}>
-            {err && <Alert severity="error">{err}</Alert>}
-            {ok && <Alert severity="success">{ok}</Alert>}
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSave}
-              disabled={saving}
-              startIcon={<SaveIcon />}
-            >
-              {id ? "עדכון סדנה" : "יצירת סדנה חדשה"}
-            </Button>
-          </Stack>
+          {/* ===== עמודת תמונות ===== */}
+          <Grid item xs={12} md={6}>
+            <Stack spacing={3}>
+              {/* Hero */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                  Hero Image
+                </Typography>
+
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddPhotoAlternateIcon />}
+                    onClick={() => heroInputRef.current?.click()}
+                  >
+                    העלאת HERO
+                  </Button>
+                  <input
+                    ref={heroInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setSaving(true);
+                      try {
+                        const folder = `ban-tao/workshops/${
+                          form.slug || "temp"
+                        }`;
+                        const uploaded = await uploadImage(
+                          file,
+                          folder,
+                          "hero"
+                        );
+                        setField("hero", {
+                          publicId: uploaded.public_id,
+                          url: uploaded.secure_url,
+                          alt: uploaded.original_filename || "",
+                        });
+                        setOk("Hero image הועלה ✅");
+                      } catch (err) {
+                        setErr(err.message || "שגיאה בהעלאת Hero");
+                      } finally {
+                        setSaving(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </Stack>
+
+                {form.hero?.url && (
+                  <Box
+                    component="img"
+                    src={form.hero.url}
+                    alt={form.hero.alt || "Hero Preview"}
+                    sx={{
+                      width: "100%",
+                      height: 200,
+                      objectFit: "cover",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      mt: 1,
+                    }}
+                  />
+                )}
+              </Box>
+
+              {/* Gallery */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                  Gallery Images
+                </Typography>
+
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddPhotoAlternateIcon />}
+                    onClick={() => galleryInputRef.current?.click()}
+                  >
+                    העלאת תמונות לגלריה
+                  </Button>
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={async (e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (!files.length) return;
+                      setSaving(true);
+                      try {
+                        const folder = `ban-tao/workshops/${
+                          form.slug || "temp"
+                        }`;
+                        const uploaded = await uploadImages(files, folder);
+                        const newImgs = uploaded.map((u) => ({
+                          publicId: u.public_id,
+                          url: u.secure_url,
+                          alt: u.original_filename || "",
+                        }));
+                        setField("gallery", [
+                          ...(form.gallery || []),
+                          ...newImgs,
+                        ]);
+                        setOk(`${uploaded.length} תמונות נוספו ✅`);
+                      } catch (err) {
+                        setErr(err.message || "שגיאה בהעלאת גלריה");
+                      } finally {
+                        setSaving(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </Stack>
+                <Grid container spacing={1} mt={1}>
+                  {form.gallery?.map((img, i) => {
+                    // ✨ נוודא שתמיד יש URL תקין
+                    const src =
+                      img.url ||
+                      img.secure_url ||
+                      (img.publicId
+                        ? `https://res.cloudinary.com/dhje7hbxd/image/upload/f_auto,q_auto/${img.publicId}`
+                        : null);
+
+                    return (
+                      <Grid item xs={6} sm={4} md={3} key={i}>
+                        <Card
+                          sx={{
+                            position: "relative",
+                            border: "1px solid",
+                            borderColor: "divider",
+                          }}
+                        >
+                          {src ? (
+                            <Box
+                              component="img"
+                              src={src}
+                              alt={img.alt || `Gallery ${i + 1}`}
+                              sx={{
+                                width: "100%",
+                                height: 120,
+                                objectFit: "cover",
+                                borderRadius: 1,
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: 120,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                bgcolor: "grey.100",
+                                color: "text.secondary",
+                                fontSize: 12,
+                              }}
+                            >
+                              אין תצוגה מקדימה
+                            </Box>
+                          )}
+
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: "absolute",
+                              top: 4,
+                              right: 4,
+                              bgcolor: "rgba(255,255,255,0.8)",
+                            }}
+                            onClick={() =>
+                              setField(
+                                "gallery",
+                                form.gallery.filter((_, idx) => idx !== i)
+                              )
+                            }
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            </Stack>
+          </Grid>
+
+          {/* ===== שמירה ===== */}
+          <Grid item xs={12}>
+            <Stack spacing={2}>
+              {err && <Alert severity="error">{err}</Alert>}
+              {ok && <Alert severity="success">{ok}</Alert>}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSave}
+                disabled={saving}
+                startIcon={<SaveIcon />}
+              >
+                {id ? "עדכון סדנה" : "יצירת סדנה חדשה"}
+              </Button>
+            </Stack>
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </Box>
   );
 }

@@ -26,7 +26,13 @@ async function uploadToCloudinary(file, folder) {
     throw new Error("Cloudinary upload failed: " + t);
   }
   const data = await res.json();
-  return data.public_id;
+  return {
+    public_id: data.public_id,
+    original_filename: data.original_filename,
+    width: data.width,
+    height: data.height,
+    format: data.format,
+  };
 }
 
 export function UploadProvider({ children }) {
@@ -37,9 +43,12 @@ export function UploadProvider({ children }) {
 
   const uploadImages = useCallback(async (files, folder) => {
     const arr = Array.from(files || []).filter(Boolean);
-    const ids = [];
-    for (const f of arr) ids.push(await uploadToCloudinary(f, folder));
-    return ids; // public_id[]
+    const results = [];
+    for (const f of arr) {
+      const data = await uploadToCloudinary(f, folder);
+      results.push(data);
+    }
+    return results; // array of { public_id, secure_url, ... }
   }, []);
 
   const value = useMemo(

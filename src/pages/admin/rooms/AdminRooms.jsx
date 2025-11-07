@@ -20,19 +20,22 @@ import { useRooms } from "../../../context/RoomContext";
 
 export default function AdminRooms() {
   const navigate = useNavigate();
-  const { types, loadingTypes, typesError, ensureTypes, setSelectedRoom } =
+
+  // ✅ עדכון לפי השמות החדשים בקונטקסט
+  const { rooms, loadingRooms, roomsError, ensureRooms, setSelectedRoom } =
     useRooms();
 
   useEffect(() => {
-    ensureTypes();
-  }, [ensureTypes]);
-  // 🩵 תוסיפי את זה ↓↓↓
+    ensureRooms();
+  }, [ensureRooms]);
+
   useEffect(() => {
-    console.log("💬 types from server:", types);
-  }, [types]);
+    console.log("💬 rooms from server:", rooms);
+  }, [rooms]);
 
   const handleEdit = (room) => {
-    navigate(`/admin/rooms/edit/${room._id}`); // מנווט לדף העריכה
+    setSelectedRoom(room);
+    navigate(`/admin/rooms/edit/${room._id}`);
   };
 
   return (
@@ -57,26 +60,26 @@ export default function AdminRooms() {
       </Stack>
 
       {/* טעינה */}
-      {loadingTypes && (
+      {loadingRooms && (
         <Stack alignItems="center" py={4}>
           <CircularProgress />
         </Stack>
       )}
 
       {/* שגיאה */}
-      {!!typesError && (
+      {!!roomsError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {typesError.message || "שגיאה בטעינת רשימת החדרים"}
+          {roomsError.message || "שגיאה בטעינת רשימת החדרים"}
         </Alert>
       )}
 
       {/* אין חדרים */}
-      {!loadingTypes && !typesError && types.length === 0 && (
+      {!loadingRooms && !roomsError && rooms.length === 0 && (
         <Typography color="text.secondary">לא נמצאו חדרים</Typography>
       )}
 
       {/* רשימת חדרים */}
-      {!loadingTypes && types.length > 0 && (
+      {!loadingRooms && rooms.length > 0 && (
         <Box
           sx={{
             overflowX: "auto",
@@ -98,9 +101,8 @@ export default function AdminRooms() {
             </TableHead>
 
             <TableBody>
-              {types.map((r) => (
+              {rooms.map((r) => (
                 <TableRow key={r._id || r.slug} hover>
-                  {/* 💡 לחיצה על שם החדר גם פותחת את העריכה */}
                   <TableCell
                     onClick={() => handleEdit(r)}
                     sx={{

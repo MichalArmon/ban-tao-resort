@@ -1,27 +1,31 @@
-import { useEffect, useState } from "react";
-import { get } from "../config/api"; // 👈 שימוש בעטיפה שלך
+// 📁 src/hooks/useRoomsConfig.js
+import { useEffect, useMemo, useState } from "react";
+import { get } from "../config/api"; // 👈 עטיפת fetch שלך
 
 export default function useRoomsConfig() {
   const [rooms, setRooms] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setErr] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       setLoading(true);
-      setErr(null);
+      setError(null);
       try {
-        // מושך מהשרת: GET {BASE}/rooms/types  (ה-BASE שלך כבר כולל /api/v1)
-        const list = await get("/rooms/types"); // ← מחזיר array של room types
-        // כדי לשמור התאמה ל-UI הקיים: map לפי הכותרת
+        // ✅ הנתיב המעודכן — בלי /types
+        const list = await get("/rooms"); // ← מחזיר array של rooms מהשרת
+
+        // נבנה map לפי הכותרת/slug כדי לשמור תאימות ל-UI הקיים
         const map = Object.fromEntries(
           (list || []).map((x) => [x.label || x.title || x.slug, x])
         );
+
         if (!cancelled) setRooms(map);
       } catch (e) {
-        if (!cancelled) setErr(e);
+        console.error("❌ useRoomsConfig failed:", e);
+        if (!cancelled) setError(e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -32,5 +36,5 @@ export default function useRoomsConfig() {
     };
   }, []);
 
-  return { rooms, loading, error: error };
+  return { rooms, loading, error };
 }

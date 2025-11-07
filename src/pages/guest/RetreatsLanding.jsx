@@ -317,7 +317,21 @@ export default function RetreatsLanding() {
     return `${d1} - ${d2}`;
   };
 
-  const pickHero = (r) => r?.hero || r?.gallery?.[0]?.url || FALLBACK_IMG;
+  const pickHero = (r) => {
+    if (!r) return FALLBACK_IMG;
+
+    // ✅ תמיכה בכל סוגי הנתונים האפשריים
+    if (typeof r.hero === "string" && r.hero) return r.hero;
+    if (r.hero?.url) return r.hero.url;
+    if (Array.isArray(r.hero) && r.hero[0]?.url) return r.hero[0].url;
+
+    if (Array.isArray(r.gallery) && r.gallery.length > 0) {
+      if (typeof r.gallery[0] === "string") return r.gallery[0];
+      if (r.gallery[0]?.url) return r.gallery[0].url;
+    }
+
+    return FALLBACK_IMG;
+  };
 
   const mapCard = React.useCallback(
     (r) => ({

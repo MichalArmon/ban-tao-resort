@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// 📁 src/pages/admin/treatments/AdminTreatments.jsx
+import React, { useEffect } from "react";
 import {
   Box,
   Typography,
@@ -19,7 +20,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useTreatments } from "../../../context/TreatmentsContext";
-import TreatmentForm from "./TreatmentForm";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminTreatments() {
   const {
@@ -29,9 +30,7 @@ export default function AdminTreatments() {
     listTreatments,
     deleteTreatment,
   } = useTreatments();
-
-  const [editing, setEditing] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     listTreatments();
@@ -48,39 +47,11 @@ export default function AdminTreatments() {
     }
   };
 
-  const handleEdit = (treatment) => {
-    setEditing(treatment);
-    setShowForm(true);
-  };
-
-  const handleCreate = () => {
-    setEditing(null);
-    setShowForm(true);
-  };
-
-  const handleSaved = () => {
-    setShowForm(false);
-    listTreatments();
-  };
-
   if (loading) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
         <CircularProgress />
         <Typography sx={{ mt: 1 }}>Loading treatments...</Typography>
-      </Box>
-    );
-  }
-
-  if (showForm) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <TreatmentForm
-          id={editing?._id || null}
-          initialData={editing}
-          onSaved={handleSaved}
-          onCancel={() => setShowForm(false)}
-        />
       </Box>
     );
   }
@@ -99,7 +70,7 @@ export default function AdminTreatments() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={handleCreate}
+          onClick={() => navigate("/admin/treatments/new")}
         >
           Add New Treatment
         </Button>
@@ -143,12 +114,17 @@ export default function AdminTreatments() {
                   </TableCell>
                   <TableCell>{t.isActive ? "Active" : "Inactive"}</TableCell>
                   <TableCell align="right">
-                    <IconButton color="primary" onClick={() => handleEdit(t)}>
+                    <IconButton
+                      color="primary"
+                      onClick={() =>
+                        navigate(`/admin/treatments/edit/${t._id}`)
+                      }
+                    >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => handleDelete(t._id || t.slug)}
+                      onClick={() => handleDelete(t._id)}
                     >
                       <DeleteIcon />
                     </IconButton>

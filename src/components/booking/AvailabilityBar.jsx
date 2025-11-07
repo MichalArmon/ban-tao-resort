@@ -1,4 +1,4 @@
-// src/components/AvailabilityBar.jsx
+// 📁 src/components/AvailabilityBar.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Stack,
@@ -16,16 +16,14 @@ import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { useNavigate } from "react-router-dom";
 import GuestRoomPopover from "./GuestRoomPopover";
-import { alpha } from "@mui/material/styles"; // ✅ משתמשים ב-MUI alpha
+import { alpha } from "@mui/material/styles";
 
 dayjs.extend(isSameOrBefore);
 
 import { useBooking } from "../../context/BookingContext";
-import { useRooms } from "../../context/RoomContext";
+import { useRooms } from "../../context/RoomContext"; // ✅ שם מעודכן
 
 /* ---------- Helpers ---------- */
-
-// map יכול להיות {days:{...}} או מפה שטוחה
 function getDayInfo(map, iso) {
   if (!map) return null;
   const raw = map.days?.[iso] ?? map[iso];
@@ -41,9 +39,8 @@ function slugify(str) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-// צבעי ברירת מחדל לפי סוג (HEX נקיים)
 const TYPE_COLORS = {
-  yoga: "#a2868eff",
+  yoga: "#a2868e",
   detox: "#2196f3",
   meditation: "#9c27b0",
   workshop: "#ff9800",
@@ -67,10 +64,11 @@ const AvailabilityBar = () => {
     fetchRetreatsCalendar,
   } = useBooking();
 
-  const { types, ensureTypes, loadingTypes, typesError } = useRooms();
+  // ✅ שמות מעודכנים מהקונטקסט החדש
+  const { rooms: roomList, ensureRooms, loadingRooms, roomsError } = useRooms();
   const navigate = useNavigate();
 
-  const [retreatDates, setRetreatDates] = useState({}); // { days: { 'YYYY-MM-DD': [ ... ] } }
+  const [retreatDates, setRetreatDates] = useState({});
   const [selectedType, setSelectedType] = useState(null);
 
   const minCheckIn = useMemo(() => dayjs().startOf("day"), []);
@@ -91,24 +89,29 @@ const AvailabilityBar = () => {
     return slugify(base);
   }, []);
 
-  // טוען מפה מאוחדת (למשל 24 חודשים קדימה)
+  // 🗓️ טוען מפה מאוחדת של ריטריטים (למשל שנה–שנתיים קדימה)
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const map = await fetchRetreatsCalendar(24);
-      if (mounted) setRetreatDates(map || {});
+      if (!fetchRetreatsCalendar) return;
+      try {
+        const map = await fetchRetreatsCalendar(24);
+        if (mounted) setRetreatDates(map || {});
+      } catch (e) {
+        console.error("Failed to load retreats calendar:", e);
+      }
     })();
     return () => {
       mounted = false;
     };
   }, [fetchRetreatsCalendar]);
 
-  // סוגי חדרים לבורר
+  // 🏨 טוען רשימת חדרים
   useEffect(() => {
-    ensureTypes().catch(() => {});
-  }, [ensureTypes]);
+    ensureRooms().catch(() => {});
+  }, [ensureRooms]);
 
-  // יום מותאם: עיגול גדול מלא (כמו “החום”), Tooltip של שם הריטריט, וניווט לפי slug
+  /* ---------- Custom day renderer ---------- */
   const ColoredDay = (props) => {
     const { day, className, ...rest } = props;
     if (!day || !dayjs.isDayjs(day)) {
@@ -121,17 +124,13 @@ const AvailabilityBar = () => {
       return <PickersDay {...rest} day={day} className={className} />;
     }
 
-    // ✅ color מהשרת אם קיים, אחרת לפי סוג; את האטימות עושים עם alpha
     const base =
       info?.color || TYPE_COLORS[(info?.type || "").toLowerCase()] || "#5f5f5f";
-
     const fill = alpha(base, 0.55);
     const hoverFill = alpha(base, 0.7);
-
     const slug = info?.slug || makeSlug(info, iso);
 
     const goToRetreat = () => {
-      // אם ה-Router שלך עם basename="/resort", אל תוסיפי אותו כאן
       navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
     };
 
@@ -150,21 +149,18 @@ const AvailabilityBar = () => {
             e.preventDefault();
             e.stopPropagation();
             goToRetreat();
-          } else if (rest.onKeyDown) {
-            rest.onKeyDown(e);
-          }
+          } else if (rest.onKeyDown) rest.onKeyDown(e);
         }}
         role="link"
         aria-label={`Retreat: ${info.name || info.type}`}
         sx={{
           position: "relative",
-          // עיגול גדול – כמעט בגודל מלא של התא (בדיוק כמו ה"עיגול החום")
           "&::before": {
             content: '""',
             position: "absolute",
-            inset: 2, // 👈 זה הגודל שביקשת
+            inset: 2,
             borderRadius: "50%",
-            backgroundColor: fill, // מילוי מלא, בלי בורדר
+            backgroundColor: fill,
             pointerEvents: "none",
             transition: "background-color 120ms ease",
           },
@@ -178,7 +174,6 @@ const AvailabilityBar = () => {
       />
     );
 
-    // Tooltip עם שם הריטריט מעל היום
     return (
       <Tooltip
         title={info?.name || info?.type || "Retreat"}
@@ -201,25 +196,25 @@ const AvailabilityBar = () => {
 
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
-    const roomTypeSlug = selectedType?.slug ?? null;
-    await fetchAvailability(roomTypeSlug);
+    const roomSlug = selectedType?.slug ?? null;
+    await fetchAvailability(roomSlug);
   };
 
+  // 🏷️ אפשרויות לבורר סוג חדר
   const typeOptions = useMemo(() => {
-    const list = Array.isArray(types) ? types : [];
-    return list.map((t) => ({
-      slug: t.slug,
-      label: t.label || t.title || t.slug,
-      raw: t,
+    const list = Array.isArray(roomList) ? roomList : [];
+    return list.map((r) => ({
+      slug: r.slug,
+      label: r.label || r.title || r.slug,
+      raw: r,
     }));
-  }, [types]);
+  }, [roomList]);
 
   const isSearchDisabled =
     !checkIn ||
     !checkOut ||
     dayjs(checkOut).isSameOrBefore(dayjs(checkIn), "day");
 
-  // תואם גם v5 (renderDay) וגם v6 (slots.day)
   const renderColoredDay = useCallback(
     (date, _valueOrProps, pickersDayProps) => (
       <ColoredDay {...(pickersDayProps || _valueOrProps)} day={date} />
@@ -250,7 +245,7 @@ const AvailabilityBar = () => {
         <Autocomplete
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 220 } }}
           options={typeOptions}
-          loading={loadingTypes}
+          loading={loadingRooms}
           value={selectedType}
           onChange={(_, val) => setSelectedType(val)}
           getOptionLabel={(opt) => (opt?.label ? String(opt.label) : "")}
@@ -259,7 +254,7 @@ const AvailabilityBar = () => {
             <TextField
               {...params}
               label="Room Type"
-              placeholder={typesError ? "Failed to load" : "Any"}
+              placeholder={roomsError ? "Failed to load" : "Any"}
               InputLabelProps={{ shrink: true }}
             />
           )}
@@ -281,11 +276,9 @@ const AvailabilityBar = () => {
           }}
           minDate={minCheckIn}
           maxDate={farFuture}
-          // v5
           renderDay={(date, value, props) =>
             renderColoredDay(date, value, props)
           }
-          // v6
           slots={{ day: (props) => <ColoredDay {...props} /> }}
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
@@ -306,11 +299,9 @@ const AvailabilityBar = () => {
           }}
           minDate={minCheckOut}
           maxDate={farFuture}
-          // v5
           renderDay={(date, value, props) =>
             renderColoredDay(date, value, props)
           }
-          // v6
           slots={{ day: (props) => <ColoredDay {...props} /> }}
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
@@ -324,7 +315,7 @@ const AvailabilityBar = () => {
           setRooms={handleSetRooms}
         />
 
-        {/* Search */}
+        {/* Search Button */}
         <Button
           variant="contained"
           size="large"

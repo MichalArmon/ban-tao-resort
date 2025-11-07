@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/treatments/TreatmentForm.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Grid,
@@ -13,35 +14,28 @@ import {
   Card,
   IconButton,
   Alert,
-  Chip,
+  CircularProgress,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
-import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import { useTreatments } from "../../../context/TreatmentsContext";
 import { useUpload } from "../../../context/UploadContext";
+import { useParams, useNavigate } from "react-router-dom";
 
+/* ---------- Cloudinary helper ---------- */
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dhje7hbxd";
 const cldUrl = (publicId) =>
   publicId
     ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/${publicId}`
     : "";
 
-const slugify = (s = "") =>
-  s
-    .toString()
-    .trim()
-    .replace(/[\u0590-\u05FF\w\s-]/g, (m) => m)
-    .replace(/[^\u0590-\u05FF\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .toLowerCase();
-
+/* ---------- Constants ---------- */
 const INTENSITY_OPTS = [
-  { value: "gentle", label: "gentle" },
-  { value: "moderate", label: "moderate" },
-  { value: "deep", label: "deep" },
+  { value: "gentle", label: "Gentle" },
+  { value: "moderate", label: "Moderate" },
+  { value: "deep", label: "Deep" },
 ];
 
 const CATEGORY_PRESETS = [
@@ -54,36 +48,25 @@ const CATEGORY_PRESETS = [
   "bodywork",
 ];
 
-const CONTRA_PRESETS = [
-  "pregnancy",
-  "hypertension",
-  "fever",
-  "acute-inflammation",
-  "recent-surgery",
-  "open-wounds",
-];
-
 const CURRENCY_PRESETS = ["THB", "USD", "EUR", "ILS"];
 
-export default function TreatmentForm({
-  id = null,
-  initialData = null,
-  onSaved = () => {},
-  onCancel = null,
-}) {
+/* ---------- Slugify helper ---------- */
+const slugify = (s = "") =>
+  s
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+export default function TreatmentForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const { createTreatment, updateTreatment, getTreatment } = useTreatments();
-  const uploadCtx =
-    (typeof useUpload === "function" ? useUpload() : null) || {};
-  const uploadImage =
-    uploadCtx.uploadImage ??
-    (async () => {
-      throw new Error("Upload not available");
-    });
-  const uploadImages =
-    uploadCtx.uploadImages ??
-    (async () => {
-      throw new Error("Upload not available");
-    });
+  const uploadCtx = useUpload();
+  const uploadImage = uploadCtx.uploadImage;
+  const uploadImages = uploadCtx.uploadImages;
 
   const [form, setForm] = useState({
     title: "",
@@ -91,15 +74,12 @@ export default function TreatmentForm({
     category: "",
     therapist: "",
     durationMinutes: 60,
-    level: "all",
     price: "",
     currency: "THB",
     isActive: true,
     isPrivate: false,
     isClosed: false,
     description: "",
-    bullets: [],
-    tags: [],
     intensity: "gentle",
     contraindications: [],
     heroPid: "",
@@ -109,35 +89,32 @@ export default function TreatmentForm({
   const [ok, setOk] = useState("");
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(!!id);
   const heroInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
   const nameSlug = useMemo(() => slugify(form.title || ""), [form.title]);
 
-  /* ---------- Load for edit ---------- */
+  /* ---------- Load existing treatment ---------- */
   useEffect(() => {
-    let ignore = false;
-    const loadOne = async () => {
-      if (!id && !initialData) return;
+    const load = async () => {
+      if (!id) return;
       try {
-        const data = initialData || (await getTreatment(id));
-        if (ignore || !data) return;
-        setForm((p) => ({
-          ...p,
+        setLoading(true);
+        const data = await getTreatment(id);
+        if (!data) throw new Error("Not found");
+        setForm({
           title: data.title || "",
           slug: data.slug || "",
           category: data.category || "",
           therapist: data.therapist || "",
           durationMinutes: data.durationMinutes || 60,
-          level: data.level || "all",
           price: data.price ?? "",
           currency: data.currency || "THB",
           isActive: !!data.isActive,
           isPrivate: !!data.isPrivate,
           isClosed: !!data.isClosed,
           description: data.description || "",
-          bullets: Array.isArray(data.bullets) ? data.bullets : [],
-          tags: Array.isArray(data.tags) ? data.tags : [],
           intensity: data.intensity || "gentle",
           contraindications: Array.isArray(data.contraindications)
             ? data.contraindications
@@ -146,25 +123,15 @@ export default function TreatmentForm({
           galleryPids: Array.isArray(data.gallery)
             ? data.gallery.map((g) => g.publicId || "").filter(Boolean)
             : [],
-        }));
+        });
       } catch (e) {
-        setErr(e?.message || "Failed to load treatment");
+        setErr(e.message || "Failed to load treatment");
+      } finally {
+        setLoading(false);
       }
     };
-    loadOne();
-    return () => {
-      ignore = true;
-    };
-  }, [id, initialData, getTreatment]);
-
-  /* ---------- Auto slug ---------- */
-  useEffect(() => {
-    setForm((f) => {
-      if (!f.title) return f;
-      if (f.slug && f.slug !== slugify(f.title)) return f;
-      return { ...f, slug: slugify(f.title) };
-    });
-  }, [form.title]);
+    load();
+  }, [id, getTreatment]);
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -186,15 +153,12 @@ export default function TreatmentForm({
       therapist: form.therapist || "",
       duration: form.durationMinutes ? `${form.durationMinutes} min` : "",
       durationMinutes: Number(form.durationMinutes) || 0,
-      level: form.level || "all",
       price: form.price === "" ? undefined : Number(form.price),
       currency: form.currency || "THB",
       isActive: !!form.isActive,
       isPrivate: !!form.isPrivate,
       isClosed: !!form.isClosed,
       description: (form.description || "").trim(),
-      bullets: (form.bullets || []).filter(Boolean),
-      tags: (form.tags || []).filter(Boolean),
       intensity: form.intensity || "gentle",
       contraindications: (form.contraindications || []).filter(Boolean),
       hero: heroObj,
@@ -210,11 +174,10 @@ export default function TreatmentForm({
     if (!payload.title) return setErr("Title is required");
     try {
       setSaving(true);
-      const res = id
-        ? await updateTreatment(id, payload)
-        : await createTreatment(payload);
+      if (id) await updateTreatment(id, payload);
+      else await createTreatment(payload);
       setOk(id ? "✅ Treatment updated" : "✅ Treatment created");
-      onSaved(res);
+      navigate("/admin/treatments");
     } catch (e) {
       setErr(e?.message || "Save failed");
     } finally {
@@ -248,33 +211,295 @@ export default function TreatmentForm({
     }
   };
 
+  /* ---------- Loading ---------- */
+  if (loading)
+    return (
+      <Box sx={{ p: 4, textAlign: "center" }}>
+        <CircularProgress />
+        <Typography mt={2}>Loading treatment...</Typography>
+      </Box>
+    );
+
   /* ---------- UI ---------- */
   return (
-    <Box>
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
+      {/* Header */}
       <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        sx={{ mb: 2 }}
+        sx={{ mb: 3 }}
       >
-        <Typography variant="h5">
+        <Button
+          startIcon={<ArrowBackRounded />}
+          onClick={() => navigate("/admin/treatments")}
+        >
+          Back to list
+        </Button>
+        <Typography variant="h5" fontWeight={700}>
           {id ? "Edit Treatment" : "New Treatment"}
         </Typography>
-        {onCancel && (
-          <Button size="small" startIcon={<CloseIcon />} onClick={onCancel}>
-            Close
-          </Button>
-        )}
+        <Box width={120} /> {/* spacer */}
       </Stack>
 
       {err && <Alert severity="error">{err}</Alert>}
       {ok && <Alert severity="success">{ok}</Alert>}
 
-      {/* כל שאר הטופס נשאר בדיוק כפי שהיה */}
-      {/* ... (שדות, תמונות, תגים וכו') ... */}
+      <Grid container spacing={4}>
+        {/* Left side — form fields */}
+        <Grid item xs={12} md={6}>
+          <Stack spacing={2}>
+            <TextField
+              label="Title"
+              value={form.title}
+              onChange={(e) => setField("title", e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Category"
+              select
+              value={form.category}
+              onChange={(e) => setField("category", e.target.value)}
+              fullWidth
+            >
+              {CATEGORY_PRESETS.map((c) => (
+                <MenuItem key={c} value={c}>
+                  {c}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Therapist"
+              value={form.therapist}
+              onChange={(e) => setField("therapist", e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Duration (minutes)"
+              type="number"
+              value={form.durationMinutes}
+              onChange={(e) => setField("durationMinutes", e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Price"
+              type="number"
+              value={form.price}
+              onChange={(e) => setField("price", e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Currency"
+              select
+              value={form.currency}
+              onChange={(e) => setField("currency", e.target.value)}
+              fullWidth
+            >
+              {CURRENCY_PRESETS.map((cur) => (
+                <MenuItem key={cur} value={cur}>
+                  {cur}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Description"
+              value={form.description}
+              onChange={(e) => setField("description", e.target.value)}
+              multiline
+              rows={3}
+              fullWidth
+            />
+            <TextField
+              label="Intensity"
+              select
+              value={form.intensity}
+              onChange={(e) => setField("intensity", e.target.value)}
+              fullWidth
+            >
+              {INTENSITY_OPTS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Contraindications (comma separated)"
+              value={form.contraindications.join(", ")}
+              onChange={(e) =>
+                setField(
+                  "contraindications",
+                  e.target.value.split(",").map((x) => x.trim())
+                )
+              }
+              fullWidth
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={form.isActive}
+                  onChange={(e) => setField("isActive", e.target.checked)}
+                />
+              }
+              label="Active"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={form.isPrivate}
+                  onChange={(e) => setField("isPrivate", e.target.checked)}
+                />
+              }
+              label="Private (by request only)"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={form.isClosed}
+                  onChange={(e) => setField("isClosed", e.target.checked)}
+                />
+              }
+              label="Temporarily Closed"
+            />
+          </Stack>
+        </Grid>
 
+        {/* Right side — images */}
+        <Grid item xs={12} md={6}>
+          {/* Hero */}
+          <Typography variant="subtitle1" fontWeight={600}>
+            Hero Image
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<AddPhotoAlternateIcon />}
+            onClick={() => heroInputRef.current?.click()}
+            sx={{ mb: 1 }}
+          >
+            {form.heroPid ? "Replace Hero" : "Upload Hero"}
+          </Button>
+          <input
+            ref={heroInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => onUploadHero(e.target.files?.[0])}
+          />
+
+          {form.heroPid && (
+            <Card
+              sx={{
+                width: "100%",
+                maxWidth: 500,
+                borderRadius: 2,
+                overflow: "hidden",
+                boxShadow: 3,
+                position: "relative",
+              }}
+            >
+              <Box
+                component="img"
+                src={cldUrl(form.heroPid)}
+                alt="Hero preview"
+                sx={{
+                  width: "100%",
+                  height: 280,
+                  objectFit: "cover",
+                }}
+              />
+              <IconButton
+                size="small"
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  bgcolor: "rgba(255,255,255,0.85)",
+                }}
+                onClick={() => setField("heroPid", "")}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Card>
+          )}
+
+          {/* Gallery */}
+          <Box mt={4}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Gallery Images
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<AddPhotoAlternateIcon />}
+              onClick={() => galleryInputRef.current?.click()}
+            >
+              Add Gallery Images
+            </Button>
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(e) => onUploadGallery(e.target.files)}
+            />
+
+            <Grid container spacing={2} mt={1}>
+              {form.galleryPids.map((pid, i) => (
+                <Grid item xs={6} sm={4} md={4} key={i}>
+                  <Card
+                    sx={{
+                      position: "relative",
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      boxShadow: 2,
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={cldUrl(pid)}
+                      alt={`Gallery ${i + 1}`}
+                      sx={{
+                        width: "100%",
+                        height: 140,
+                        objectFit: "cover",
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 6,
+                        right: 6,
+                        bgcolor: "rgba(255,255,255,0.8)",
+                      }}
+                      onClick={() =>
+                        setField(
+                          "galleryPids",
+                          form.galleryPids.filter((_, idx) => idx !== i)
+                        )
+                      }
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Card>
+                </Grid>
+              ))}
+
+              {form.galleryPids.length === 0 && (
+                <Grid item xs={12}>
+                  <Alert severity="info">
+                    No gallery images yet. Upload to preview them here.
+                  </Alert>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Save button */}
       <Divider sx={{ my: 3 }} />
-      <Stack direction="row" spacing={2} justifyContent="flex-end">
+      <Stack direction="row" justifyContent="flex-end">
         <Button
           variant="contained"
           startIcon={<SaveIcon />}

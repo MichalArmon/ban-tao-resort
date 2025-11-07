@@ -51,6 +51,7 @@ import TreatmentForm from "./pages/admin/treatments/TreatmentForm";
 import AdminCategories from "./pages/admin/categories/AdminCategories";
 import AdminRooms from "./pages/admin/rooms/AdminRooms";
 import RoomForm from "./pages/admin/rooms/RoomForm";
+import AdminBookings from "./pages/admin/bookings/AdminBookings";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -120,6 +121,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHome />} />
         <Route path="rooms" element={<AdminRooms />} />
+        <Route path="my-booking" element={<AdminBookings />} />
         <Route path="rooms/new" element={<RoomForm />} />
         <Route path="rooms/edit/:id" element={<RoomForm />} />
         <Route path="retreats" element={<AdminRetreats />} />

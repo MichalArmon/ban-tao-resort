@@ -1,20 +1,24 @@
-// src/components/RoomResults.jsx
-
+// 📁 src/components/RoomResults.jsx
 import React from "react";
 import {
   Box,
   Typography,
-  Paper,
   Divider,
   Alert,
-  CircularProgress, // 🔑 Added for loading state
+  CircularProgress,
 } from "@mui/material";
 import { useBooking } from "../../context/BookingContext";
 import RoomCard from "./RoomCard";
 
 const RoomResults = () => {
-  const { availableRooms, loading, error, message, checkIn, checkOut } =
-    useBooking();
+  const {
+    availableRooms = [], // ✅ ברירת מחדל למערך ריק כדי למנוע undefined
+    loading,
+    error,
+    message,
+    checkIn,
+    checkOut,
+  } = useBooking();
 
   // --- Handling Loading State ---
   if (loading) {
@@ -42,7 +46,7 @@ const RoomResults = () => {
   }
 
   // --- Handling No Results State ---
-  if (availableRooms.length === 0 && message) {
+  if (availableRooms?.length === 0 && message) {
     return (
       <Box sx={{ mt: 4 }}>
         <Alert severity="info">
@@ -56,7 +60,7 @@ const RoomResults = () => {
   }
 
   // --- Handling Initial State (No search yet) ---
-  if (availableRooms.length === 0 && !message && !error) {
+  if (availableRooms?.length === 0 && !message && !error) {
     return (
       <Box sx={{ textAlign: "center", py: 5 }}>
         <Typography variant="h6" color="text.secondary">
@@ -67,24 +71,20 @@ const RoomResults = () => {
   }
 
   // --- Displaying Results ---
-  if (availableRooms.length > 0) {
+  if (availableRooms?.length > 0) {
     return (
       <Box sx={{ mt: 4 }}>
         <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
           {availableRooms.length} Available Room Offers
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          {/* 🔑 Translated and formatted dates */}
-          Checking dates:{checkIn} to {checkOut}
+          Checking dates: {checkIn} to {checkOut}
         </Typography>
         <Divider sx={{ mb: 3 }} />
 
         {/* Loop and display all available room units */}
         {availableRooms.map((room) => (
-          <RoomCard
-            key={room._id} // Unique MongoDB ID
-            room={room}
-          />
+          <RoomCard key={room._id} room={room} />
         ))}
       </Box>
     );
