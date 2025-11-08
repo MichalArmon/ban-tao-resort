@@ -9,6 +9,8 @@ export default function BookButton({
   selectedDate,
   guests = 2,
   price = item?.price || 0,
+  ruleId = null,
+  sessionId = null,
 }) {
   const navigate = useNavigate();
   const { setSelection } = useBooking();
@@ -36,6 +38,8 @@ export default function BookButton({
       guests,
       price,
       currency: "ILS",
+      ruleId,
+      sessionId,
     };
 
     console.log("✅ Setting selection:", newSelection);

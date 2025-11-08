@@ -1,9 +1,8 @@
-// src/components/Hero.jsx
 import { useEffect, useState } from "react";
-import { Button, Paper, Typography } from "@mui/material";
+import { Button, Typography, Box, keyframes, Stack } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import { pub } from "../../utils/publicPath";
-import { Box, keyframes } from "@mui/system";
+import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 
 export default function Hero() {
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -13,10 +12,9 @@ export default function Hero() {
   const IMG_FULL = pub("HERO.jpg");
   const LOGO_ANIM = pub("resortweb.webm");
 
-  // ⏱ שליטה מדויקת בזמנים
-  const START_FADE_AFTER_MS = 3800; // מתי להתחיל להעלים את הווידאו
-  const VIDEO_FADE_MS = 450; // כמה זמן פייד הווידאו
-  const WHITE_LAG_AFTER_VIDEO_MS = 60; // השהייה קטנה עד תחילת פייד המסך הלבן
+  const START_FADE_AFTER_MS = 3800;
+  const VIDEO_FADE_MS = 450;
+  const WHITE_LAG_AFTER_VIDEO_MS = 60;
 
   useEffect(() => {
     const fallback = setTimeout(() => setShowLoader(false), 5000);
@@ -25,16 +23,11 @@ export default function Hero() {
 
   useEffect(() => {
     if (!imgLoaded) return;
-
-    // 1) מתחילים להעלים את הווידאו
     const t1 = setTimeout(() => setFadeVideo(true), START_FADE_AFTER_MS);
-
-    // 2) מעט אחרי שסיים להיעלם, מתחילים להעלים את המסך הלבן
     const t2 = setTimeout(
       () => setShowLoader(false),
       START_FADE_AFTER_MS + VIDEO_FADE_MS + WHITE_LAG_AFTER_VIDEO_MS
     );
-
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -57,17 +50,18 @@ export default function Hero() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: { xs: "100px", md: "40px" },
-        pb: "100px",
+        textAlign: "center",
+        gap: { xs: "30px", md: "40px" },
         overflow: "hidden",
         bgcolor: "#f2f2f2",
+        color: "white",
       }}
     >
       {/* תמונת רקע */}
       <Box
         component="img"
         src={IMG_FULL}
-        alt=""
+        alt="Ban Tao"
         onLoad={() => setImgLoaded(true)}
         decoding="async"
         fetchpriority="high"
@@ -78,6 +72,7 @@ export default function Hero() {
           width: "100%",
           height: "100%",
           objectFit: "cover",
+          filter: "brightness(0.7)",
         }}
       />
 
@@ -93,7 +88,7 @@ export default function Hero() {
           placeItems: "center",
           opacity: showLoader ? 1 : 0,
           pointerEvents: showLoader ? "auto" : "none",
-          transition: "opacity 600ms ease", // פייד של המסך הלבן
+          transition: "opacity 600ms ease",
         }}
       >
         <Box
@@ -106,7 +101,7 @@ export default function Hero() {
             width: { xs: 360, sm: 320, md: 680 },
             height: "auto",
             opacity: fadeVideo ? 0 : 1,
-            transition: `opacity ${VIDEO_FADE_MS}ms ease`, // פייד של הווידאו
+            transition: `opacity ${VIDEO_FADE_MS}ms ease`,
             "@media (prefers-reduced-motion: reduce)": {
               transition: "none",
             },
@@ -114,85 +109,119 @@ export default function Hero() {
         />
       </Box>
 
-      {/* כותרת */}
-      <Typography
-        component="h1"
+      {/* תוכן מרכזי */}
+      <Box
         sx={{
           zIndex: 2,
-          letterSpacing: { xs: ".08em", md: "10px" },
-          fontWeight: { xs: 700, md: 100 },
-          color: "rgba(255,255,255,0.92)",
-          lineHeight: 1,
-          fontSize: "clamp(60px, 10vw, 220px)",
-          textAlign: "center",
+          maxWidth: "900px",
           px: 2,
-        }}
-      >
-        BAN TAO
-      </Typography>
-
-      {/* פס תחתון */}
-      <Paper
-        sx={{
           display: "flex",
-          px: { md: "34px", xs: "0" },
-          py: { md: "20px", xs: "0" },
-          borderRadius: 15,
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: "30px",
-          backgroundColor: "background.default",
-          backdropFilter: "saturate(120%) blur(2px)",
         }}
       >
+        {/* כותרת עליונה */}
         <Typography
           sx={{
-            display: { xs: "none", md: "block" },
             textTransform: "uppercase",
-            WebkitTextFillColor: "transparent",
-            backgroundImage:
-              "linear-gradient(to right, currentColor 0%, currentColor calc(100% - var(--feather, 28%)), transparent 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "0% 100%",
-            animation: `${wipeIn} var(--dur, 2.8s) cubic-bezier(.22,1,.36,1) var(--delay, 300ms) both`,
-            willChange: "background-size",
-            "@media (prefers-reduced-motion: reduce)": {
-              animation: "none",
-              WebkitTextFillColor: "currentColor",
-              backgroundImage: "none",
-            },
-          }}
-          style={{
-            "--dur": "5s",
-            "--delay": "700ms",
-            "--feather": "50%",
+            letterSpacing: 2,
+            fontSize: { xs: "0.8rem", md: "1rem" },
+            opacity: 0.8,
+            mb: 1,
           }}
         >
-          B̂āN TAO • Village Boutique • KOH PHANGAN • CHALOKLUM
+          Discover Our World
         </Typography>
 
-        <Button
-          component={RouterLink}
-          Link
-          to="/resort/guest"
-          variant="contained"
-          size="large"
+        {/* כותרת ראשית */}
+        <Typography
+          variant="h1"
           sx={{
-            width: { xs: "min(90vw, 560px)", md: "auto" },
-            height: { xs: 72, md: 48 },
-            fontSize: { xs: "1.25rem", md: "1rem" },
-            px: { xs: 5, md: 3 },
-            py: { xs: 2, md: 1 },
-            borderRadius: { xs: 12, md: 8 },
-            bgcolor: "primary.main",
-            "&:hover": { bgcolor: "primary.dark" },
+            fontWeight: 600,
+            fontSize: { xs: "2.2rem", md: "6rem" },
+            mb: 2,
           }}
         >
-          Check Availability
-        </Button>
-      </Paper>
+          BAN TAO VILLAGE
+        </Typography>
+
+        {/* טקסט משנה */}
+        <Typography
+          sx={{
+            fontSize: { xs: "1rem", md: "1.2rem" },
+            mb: 4,
+            maxWidth: "600px",
+            color: "rgba(255,255,255,0.9)",
+          }}
+        >
+          A sanctuary for the senses — where nature, design, and wellness blend
+          in harmony.
+        </Typography>
+
+        {/* שני כפתורים זה לצד זה */}
+        <Stack
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Button
+            component={RouterLink}
+            to="/resort/guest"
+            variant="contained"
+            size="large"
+            sx={{
+              bgcolor: "primary.main",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1, // רווח בין הטקסט לאייקון
+              px: 4,
+              py: 1.4,
+              "&:hover": { bgcolor: "primary.dark" },
+            }}
+          >
+            TO OUR WEBSITE
+            <ArrowForwardIosRoundedIcon
+              sx={{
+                fontSize: 18,
+                ml: 0.5,
+                color: "inherit", // ✅ אותו צבע כמו הטקסט
+                opacity: 0.9,
+                transition: "transform 0.3s ease",
+                transform: "translateX(0)",
+                "&:hover": { transform: "translateX(4px)" }, // תנועה בהובר 🎯
+              }}
+            />
+          </Button>
+
+          <Button
+            component={RouterLink}
+            to="/contact"
+            variant="outlined"
+            size="large"
+            sx={{
+              px: 4,
+              py: 1.4,
+              color: "primary.contrastText", // או פשוט "white"
+              borderColor: "rgba(255,255,255,0.4)",
+              backgroundColor: "rgba(255,255,255,0.08)", // 🌫️ רקע עדין שקוף
+              backdropFilter: "blur(4px) saturate(120%)", // ✨ אפקט עדין של זכוכית
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.18)", // טיפה יותר מודגש בהובר
+              },
+            }}
+          >
+            CONTACT US
+          </Button>
+        </Stack>
+      </Box>
     </Box>
   );
 }

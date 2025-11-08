@@ -145,28 +145,7 @@ function ClassSection({ item, reverse = false }) {
         aria-labelledby="schedule-modal-title"
         aria-describedby="schedule-modal-description"
       >
-        <Box sx={modalStyle}>
-          <Typography
-            id="schedule-modal-title"
-            variant="h5"
-            sx={{ mb: 2, fontWeight: 700 }}
-          >
-            לוח זמנים: {workshopTitle}
-            <Button
-              onClick={handleClose}
-              sx={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                minWidth: "auto",
-                p: 1,
-                color: "text.primary",
-              }}
-            >
-              <CloseIcon />
-            </Button>
-          </Typography>
-
+        <Box>
           <GuestScheduleView
             open={isScheduleOpen}
             onClose={handleClose}

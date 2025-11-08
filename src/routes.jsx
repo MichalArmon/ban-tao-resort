@@ -52,6 +52,7 @@ import AdminCategories from "./pages/admin/categories/AdminCategories";
 import AdminRooms from "./pages/admin/rooms/AdminRooms";
 import RoomForm from "./pages/admin/rooms/RoomForm";
 import AdminBookings from "./pages/admin/bookings/AdminBookings";
+import GuestHome from "./pages/guest/GuestHome";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -89,7 +90,7 @@ export default function AppRoutes() {
 
       {/* אזור אורחים (Guest Area) */}
       <Route path="/resort/guest" element={<GuestLayout />}>
-        <Route index element={<AvailabilityPage />} />
+        <Route index element={<GuestHome />} />
         <Route path="booking" element={<Booking />} />
         <Route path="reservations" element={<Reservations />} />
         <Route path="signup" element={<SignUp />} />

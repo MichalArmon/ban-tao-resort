@@ -1,3 +1,4 @@
+// 📁 src/pages/guest/BookingCheckout.jsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -168,7 +169,7 @@ function BookingSummary({ sel, onConfirm, submitting }) {
           No payment is taken now. You’ll confirm on the next step.
         </Alert>
 
-        {/* ✅ Confirm button moved here */}
+        {/* ✅ Confirm button - עכשיו יוצר הזמנה אמיתית */}
         <Button
           onClick={onConfirm}
           variant="contained"
@@ -193,7 +194,6 @@ function WorkshopDatePickerInline({
 }) {
   const { categories } = useCategories();
 
-  // הכנה לפי תאריכים
   const sessionsByDate = React.useMemo(() => {
     const map = {};
     guestSchedule.forEach((s) => {
@@ -268,9 +268,8 @@ function WorkshopDatePickerInline({
  * =======================================*/
 export default function BookingCheckout() {
   const navigate = useNavigate();
-  const { selection } = useBooking();
+  const { selection, createBooking, clearSelection } = useBooking();
   const { guestSchedule, loadGuestSchedule } = useSchedule();
-  console.log("🧭 selection.item:", selection?.item);
 
   React.useEffect(() => {
     if (selection?.type === "workshop") {
@@ -323,17 +322,47 @@ export default function BookingCheckout() {
   const handleSubmit = async (e) => {
     e?.preventDefault?.();
     setError("");
+
     if (!form.firstName || !form.lastName || !form.email || !form.agree) {
       setError("Please fill the required fields and accept the terms.");
       return;
     }
+
     try {
       setSubmitting(true);
+
+      const fullName = `${form.firstName} ${form.lastName}`.trim();
+
+      const payload = {
+        type: selection?.type,
+        itemId: selection?.item?._id || selection?.item?.id,
+        totalPrice: bookingData.price,
+        guestCount: bookingData.guests,
+        currency: selection?.currency || "ILS",
+        date: bookingData.sessionDate || new Date().toISOString(),
+        checkInDate: selection?.dates?.checkIn || null,
+        checkOutDate: selection?.dates?.checkOut || null,
+        sessionId: bookingData.sessionId || null, // ✅ כאן החידוש
+        ruleId: bookingData.ruleId || selection?.ruleId || null,
+        guestInfo: {
+          fullName,
+          email: form.email,
+          phone: form.phone,
+          notes: form.notes,
+        },
+      };
+
+      console.log("📤 Sending booking payload:", payload);
+
+      const newBooking = await createBooking(payload);
+      clearSelection();
+
       navigate("/resort/checkout/thank-you", {
-        state: { selection: { ...selection, ...bookingData }, customer: form },
+        state: { booking: newBooking, customer: form },
       });
     } catch (err) {
-      setError(err?.message || "Failed to submit booking");
+      console.error("❌ Booking failed:", err);
+      setError(err?.message || "Failed to create booking");
     } finally {
       setSubmitting(false);
     }
@@ -400,12 +429,22 @@ export default function BookingCheckout() {
                 <WorkshopDatePickerInline
                   guestSchedule={guestSchedule}
                   sessionDate={bookingData.sessionDate}
-                  onSelectDate={(date) =>
-                    setBookingData((b) => ({ ...b, sessionDate: date }))
-                  }
+                  onSelectDate={(date) => {
+                    // מוצאים את הסשן המתאים לפי תאריך
+                    const selectedSession = guestSchedule.find(
+                      (s) => s.date.split("T")[0] === date
+                    );
+                    setBookingData((b) => ({
+                      ...b,
+                      sessionDate: date,
+                      sessionId: selectedSession?._id || null,
+                    }));
+                  }}
                 />
               )}
             </Box>
+
+            {/* טופס פרטים */}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 required
@@ -512,7 +551,6 @@ export default function BookingCheckout() {
 
             {error && <Alert severity="error">{error}</Alert>}
 
-            {/* נשאר רק כפתור חזרה כאן */}
             <Button variant="text" onClick={() => navigate(-1)}>
               Back
             </Button>

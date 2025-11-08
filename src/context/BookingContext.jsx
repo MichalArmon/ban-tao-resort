@@ -1,5 +1,12 @@
 // 📁 src/context/BookingContext.jsx
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { GLOBAL_API_BASE } from "../config/api";
 
 const BookingContext = createContext();
@@ -11,6 +18,54 @@ export const BookingProvider = ({ children }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // 🆕 בחירה נוכחית (האובייקט שBookButton שומר)
+  const [selection, setSelection] = useState(() => {
+    try {
+      const raw = localStorage.getItem("banTao.selection");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // 🆕 שמירה ב-localStorage בכל שינוי
+  useEffect(() => {
+    try {
+      if (selection)
+        localStorage.setItem("banTao.selection", JSON.stringify(selection));
+      else localStorage.removeItem("banTao.selection");
+    } catch {}
+  }, [selection]);
+
+  // 🆕 ניקוי הבחירה (למשל אחרי הזמנה מוצלחת)
+  const clearSelection = useCallback(() => setSelection(null), []);
+
+  /* ===================================================================
+   * 🆕 CREATE BOOKING — שולח הזמנה לשרת
+   * =================================================================== */
+  const createBooking = useCallback(async (payload) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data?.message || "Failed to create booking.");
+
+      console.log("✅ Booking created:", data);
+
+      // מוסיפים להזמנות בלוקאלי
+      setBookings((prev) => [...prev, data]);
+      return data;
+    } catch (err) {
+      console.error("❌ createBooking failed:", err);
+      throw err;
+    }
+  }, []);
 
   /* ===================================================================
    * 📋 FETCH ALL BOOKINGS — For Admin
@@ -90,14 +145,33 @@ export const BookingProvider = ({ children }) => {
   /* ===================================================================
    * ✈️ EXPORT VALUE
    * =================================================================== */
-  const value = {
-    bookings,
-    loading,
-    error,
-    fetchAllBookings,
-    fetchUserBookings,
-    updateBookingStatus,
-  };
+  const value = useMemo(
+    () => ({
+      bookings,
+      loading,
+      error,
+      fetchAllBookings,
+      fetchUserBookings,
+      updateBookingStatus,
+      createBooking, // 🆕 הוספנו כאן את הפונקציה החדשה
+
+      selection,
+      setSelection,
+      clearSelection,
+    }),
+    [
+      bookings,
+      loading,
+      error,
+      fetchAllBookings,
+      fetchUserBookings,
+      updateBookingStatus,
+      createBooking,
+      selection,
+      setSelection,
+      clearSelection,
+    ]
+  );
 
   return (
     <BookingContext.Provider value={value}>{children}</BookingContext.Provider>

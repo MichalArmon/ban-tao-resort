@@ -101,6 +101,7 @@ export default function GuestScheduleView({
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
+      disablePortal
       sx={{
         "& .MuiDialog-paper": {
           borderRadius: isMobile ? 0 : 2,
