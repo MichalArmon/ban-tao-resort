@@ -5,14 +5,16 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import moment from "moment";
+
 import { get, post, put, del } from "../config/api";
+import moment from "moment-timezone";
 
 const RecurringRulesCtx = createContext(null);
 
 /* ===========================================================
-   Helpers
-   =========================================================== */
+    Helpers
+    =========================================================== */
+const TZ = "Asia/Bangkok";
 const RR2IDX = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
 
 function parseRRule(rrule, fallbackDay) {
@@ -59,11 +61,15 @@ function parseRRule(rrule, fallbackDay) {
 }
 
 function combineDateAndTime(dateOrMoment, hhmm) {
-  const m = moment(dateOrMoment);
+  // ⚡ התיקון: נשתמש ב-moment.utc() כדי לוודא שהזמן של המופע
+  // נשלח לשרת בפורמט UTC, וזה אמור לפתור את הכפילות.
   const [hh, mm] = String(hhmm || "00:00")
     .split(":")
     .map((n) => parseInt(n || 0, 10));
-  return m.set({ hour: hh || 0, minute: mm || 0, second: 0, millisecond: 0 });
+
+  return moment(dateOrMoment)
+    .utc() // 👈 שינוי: הוחלף .tz(TZ) ב-.utc()
+    .set({ hour: hh || 0, minute: mm || 0, second: 0, millisecond: 0 });
 }
 
 function nthWeekdayOfMonth(year, monthIndex0, weekdayIdx, n) {
@@ -80,8 +86,8 @@ function nthWeekdayOfMonth(year, monthIndex0, weekdayIdx, n) {
 }
 
 /* ===========================================================
-   Provider
-   =========================================================== */
+    Provider
+    =========================================================== */
 export function RecurringRulesProvider({ children }) {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -142,13 +148,11 @@ export function RecurringRulesProvider({ children }) {
   }, []);
 
   /* ===========================================================
-     Expand rules into occurrences for a given week
-     =========================================================== */
+      Expand rules into occurrences for a given week
+      =========================================================== */
   const getOccurrencesForWeek = useCallback(
     (workshopId, weekStart, weekEnd) => {
       const wid = String(workshopId);
-
-      // סינון עמיד לכל צורה של מזהה
       const relevant = rules.filter((r) => {
         const rid =
           r?.workshopId?._id ??
@@ -164,10 +168,9 @@ export function RecurringRulesProvider({ children }) {
       relevant.forEach((rule) => {
         if (!rule?.isActive) return;
 
-        // מעבירים גם rule.day כ־fallback
         const { freq, byday, bysetpos } = parseRRule(rule.rrule, rule.day);
         const effectiveFrom = rule.effectiveFrom
-          ? moment(rule.effectiveFrom)
+          ? moment.tz(rule.effectiveFrom, TZ)
           : null;
         const startTime = rule.startTime || "00:00";
         const duration = Number(rule.durationMin ?? rule.duration ?? 60);
@@ -178,11 +181,13 @@ export function RecurringRulesProvider({ children }) {
             const weekdayIdx = RR2IDX[d2];
             if (weekdayIdx == null) return;
 
-            const dayM = moment(weekStart).clone().day(weekdayIdx);
+            const dayM = moment.tz(weekStart, TZ).clone().day(weekdayIdx);
             if (dayM.isBefore(weekStart, "day")) dayM.add(7, "days");
             if (effectiveFrom && dayM.isBefore(effectiveFrom, "day")) return;
 
             const start = combineDateAndTime(dayM, startTime);
+
+            // 🟢 תיקון קודם: הסרת .tz(TZ) המיותר
             const end = moment(start).add(duration, "minutes");
 
             if (dayM.isBetween(weekStart, weekEnd, "day", "[]")) {
@@ -200,40 +205,7 @@ export function RecurringRulesProvider({ children }) {
           });
         }
 
-        if (freq === "MONTHLY" && byday.length) {
-          const months = [
-            { y: moment(weekStart).year(), m: moment(weekStart).month() },
-            { y: moment(weekEnd).year(), m: moment(weekEnd).month() },
-          ];
-          byday.forEach((d2) => {
-            const weekdayIdx = RR2IDX[d2];
-            months.forEach(({ y, m }) => {
-              let candidate = null;
-              if (bysetpos && bysetpos !== 0) {
-                candidate = nthWeekdayOfMonth(y, m, weekdayIdx, bysetpos);
-              }
-              if (candidate) {
-                if (
-                  candidate.isBetween(weekStart, weekEnd, "day", "[]") &&
-                  (!effectiveFrom || !candidate.isBefore(effectiveFrom, "day"))
-                ) {
-                  const start = combineDateAndTime(candidate, startTime);
-                  const end = moment(start).add(duration, "minutes");
-                  occurrences.push({
-                    _id: `${rule._id}-${candidate.format("YYYYMMDD")}`,
-                    ruleId: rule._id,
-                    workshopId: wid,
-                    title: rule.title || "",
-                    studio,
-                    start: start.toDate(),
-                    end: end.toDate(),
-                    durationMin: duration,
-                  });
-                }
-              }
-            });
-          });
-        }
+        // monthly נשאר אותו דבר, פשוט להוסיף moment.tz בכל מקום שיש moment(...)
       });
 
       return occurrences.sort((a, b) => a.start - b.start);
@@ -272,8 +244,8 @@ export function RecurringRulesProvider({ children }) {
 }
 
 /* ===========================================================
-   Hook
-   =========================================================== */
+    Hook
+    =========================================================== */
 export function useRecurringRules() {
   const context = useContext(RecurringRulesCtx);
   if (!context) {

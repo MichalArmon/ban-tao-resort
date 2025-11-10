@@ -19,15 +19,16 @@ import {
   Stack,
   TextField,
   Typography,
-  Tooltip,
 } from "@mui/material";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import GroupRounded from "@mui/icons-material/GroupRounded";
 import PaymentsRounded from "@mui/icons-material/PaymentsRounded";
 import PlaceRounded from "@mui/icons-material/PlaceRounded";
 import { useBooking } from "../../context/BookingContext";
-import { useSchedule } from "../../context/ScheduleContext";
-import { useCategories } from "../../context/CategoriesContext";
+import { useSessions } from "../../context/SessionsContext";
+import moment from "moment-timezone";
+
+import WorkshopDatePickerInline from "./WorkshopDatePickerInline";
 
 /* =========================================
  * Utils
@@ -67,10 +68,12 @@ function SummaryRow({ icon, label, value }) {
   );
 }
 
+/* =========================================
+ * Booking summary card
+ * =======================================*/
 function BookingSummary({ sel, onConfirm, submitting }) {
   const title = sel?.item?.title || "Selected item";
   const img = sel?.item?.hero;
-  const description = sel?.item?.description;
   const basePrice = sel?.item?.price ?? sel?.price ?? 0;
   const totalPrice = sel?.price ?? basePrice;
   const guests = Number(sel?.guests) || 1;
@@ -83,8 +86,17 @@ function BookingSummary({ sel, onConfirm, submitting }) {
           sel.dates.checkOut
         ).toLocaleDateString()}`
       : "Select dates"
+    : sel?.sessionLabel
+    ? sel.sessionLabel
     : sel?.sessionDate
-    ? new Date(sel.sessionDate).toLocaleString()
+    ? new Date(sel.sessionDate).toLocaleString("he-IL", {
+        timeZone: sel?.tz || "Asia/Bangkok",
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }) + (sel?.studio ? ` — ${sel.studio}` : "")
     : "Select date/time";
 
   const totalFormatted = formatMoney(totalPrice, currency);
@@ -119,15 +131,6 @@ function BookingSummary({ sel, onConfirm, submitting }) {
       >
         <Box>
           <Typography variant="h6">{title}</Typography>
-          {description && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mb: 2, whiteSpace: "pre-line" }}
-            >
-              {description}
-            </Typography>
-          )}
         </Box>
 
         <Stack spacing={1.2} sx={{ my: 1.5 }}>
@@ -169,7 +172,6 @@ function BookingSummary({ sel, onConfirm, submitting }) {
           No payment is taken now. You’ll confirm on the next step.
         </Alert>
 
-        {/* ✅ Confirm button - עכשיו יוצר הזמנה אמיתית */}
         <Button
           onClick={onConfirm}
           variant="contained"
@@ -185,113 +187,32 @@ function BookingSummary({ sel, onConfirm, submitting }) {
 }
 
 /* =========================================
- * DatePicker צבעוני לסדנאות
- * =======================================*/
-function WorkshopDatePickerInline({
-  guestSchedule,
-  sessionDate,
-  onSelectDate,
-}) {
-  const { categories } = useCategories();
-
-  const sessionsByDate = React.useMemo(() => {
-    const map = {};
-    guestSchedule.forEach((s) => {
-      const d = new Date(s.date).toISOString().split("T")[0];
-      const catColor =
-        categories.find((c) => c._id === s.categoryId)?.color || "#7f8c8d";
-      map[d] = { ...s, color: catColor };
-    });
-    return map;
-  }, [guestSchedule, categories]);
-
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    const iso = date.toISOString().split("T")[0];
-    const session = sessionsByDate[iso];
-    return { date, iso, session };
-  });
-
-  return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-        Select a date:
-      </Typography>
-      <Stack direction="row" flexWrap="wrap" gap={1}>
-        {days.map((d) => {
-          const active = d.iso === sessionDate;
-          const hasSession = !!d.session;
-          const color = hasSession ? d.session.color : "#eee";
-          const label = d.date.getDate();
-          return (
-            <Tooltip
-              key={d.iso}
-              title={
-                hasSession
-                  ? `${new Date(d.session.date).toLocaleString("he-IL")} — ${
-                      d.session.studio
-                    }`
-                  : "No workshop"
-              }
-            >
-              <span>
-                <Button
-                  variant={active ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => hasSession && onSelectDate(d.iso)}
-                  disabled={!hasSession}
-                  sx={{
-                    minWidth: 50,
-                    bgcolor: active ? color : "transparent",
-                    borderColor: hasSession ? color : "#ccc",
-                    color: active ? "#fff" : "inherit",
-                    "&:hover": {
-                      bgcolor: hasSession ? color : "transparent",
-                      opacity: 0.9,
-                    },
-                  }}
-                >
-                  {label}
-                </Button>
-              </span>
-            </Tooltip>
-          );
-        })}
-      </Stack>
-    </Box>
-  );
-}
-
-/* =========================================
- * Main component
+ * MAIN COMPONENT
  * =======================================*/
 export default function BookingCheckout() {
   const navigate = useNavigate();
   const { selection, createBooking, clearSelection } = useBooking();
-  const { guestSchedule, loadGuestSchedule } = useSchedule();
+  const { sessions, loadSessions } = useSessions();
 
   React.useEffect(() => {
-    if (selection?.type === "workshop") {
-      const today = new Date().toISOString().split("T")[0];
-      const nextMonth = new Date();
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-      const next = nextMonth.toISOString().split("T")[0];
-      loadGuestSchedule(today, next);
+    if (selection?.type === "workshop" && selection?.item?._id) {
+      const today = moment().startOf("day").toDate();
+      const nextMonth = moment().add(1, "month").endOf("month").toDate();
+      loadSessions({
+        from: today,
+        to: nextMonth,
+        workshopId: selection.item._id,
+      });
     }
-  }, [selection, loadGuestSchedule]);
+  }, [selection, loadSessions]);
 
   const [bookingData, setBookingData] = React.useState({
     guests: 1,
-    sessionDate: selection?.dates?.sessionDate || "",
+    sessionDate: "",
+    sessionId: "",
+    sessionLabel: "",
     price: selection?.item?.price ?? 0,
   });
-
-  React.useEffect(() => {
-    const basePrice = selection?.item?.price ?? selection?.price ?? 0;
-    const total = basePrice * bookingData.guests;
-    setBookingData((b) => ({ ...b, price: total }));
-  }, [bookingData.guests, selection]);
 
   const [form, setForm] = React.useState({
     firstName: "",
@@ -308,6 +229,12 @@ export default function BookingCheckout() {
 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  React.useEffect(() => {
+    const basePrice = selection?.item?.price ?? selection?.price ?? 0;
+    const total = basePrice * bookingData.guests;
+    setBookingData((b) => ({ ...b, price: total }));
+  }, [bookingData.guests, selection]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -328,9 +255,13 @@ export default function BookingCheckout() {
       return;
     }
 
+    if (selection?.type === "workshop" && !bookingData.sessionId) {
+      setError("Please select a workshop date/time before confirming.");
+      return;
+    }
+
     try {
       setSubmitting(true);
-
       const fullName = `${form.firstName} ${form.lastName}`.trim();
 
       const payload = {
@@ -339,10 +270,8 @@ export default function BookingCheckout() {
         totalPrice: bookingData.price,
         guestCount: bookingData.guests,
         currency: selection?.currency || "ILS",
-        date: bookingData.sessionDate || new Date().toISOString(),
-        checkInDate: selection?.dates?.checkIn || null,
-        checkOutDate: selection?.dates?.checkOut || null,
-        sessionId: bookingData.sessionId || null, // ✅ כאן החידוש
+        date: bookingData.sessionDate,
+        sessionId: bookingData.sessionId,
         ruleId: bookingData.ruleId || selection?.ruleId || null,
         guestInfo: {
           fullName,
@@ -356,7 +285,6 @@ export default function BookingCheckout() {
 
       const newBooking = await createBooking(payload);
       clearSelection();
-
       navigate("/resort/checkout/thank-you", {
         state: { booking: newBooking, customer: form },
       });
@@ -368,19 +296,17 @@ export default function BookingCheckout() {
     }
   };
 
-  if (!selection) {
+  if (!selection)
     return (
       <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          No selection was provided. Please choose a room/treatment/workshop and
-          click BOOK again.
+        <Alert severity="warning">
+          No selection provided. Please choose an item and click BOOK again.
         </Alert>
         <Button variant="contained" onClick={() => navigate(-1)}>
           Go Back
         </Button>
       </Container>
     );
-  }
 
   return (
     <Container
@@ -393,58 +319,47 @@ export default function BookingCheckout() {
         flexDirection: { xs: "column", md: "row" },
       }}
     >
-      {/* שמאל – טופס */}
-      <Grid item xs={12} md={7} lg={8} sx={{ width: { md: "60%", s: "100%" } }}>
-        <Paper
-          variant="outlined"
-          sx={{
-            p: { xs: 2, md: 3 },
-            borderRadius: 2,
-            bgcolor: "#fff",
-            height: "100%",
-          }}
-        >
+      {/* Left side - form */}
+      <Grid item xs={12} md={7} lg={8}>
+        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
           <Typography variant="h5" gutterBottom>
             Fill in your details
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            We’ll use this information to confirm your booking.
-          </Typography>
 
+          {selection?.type === "workshop" && (
+            <WorkshopDatePickerInline
+              key={selection?._id || "picker"}
+              guestSchedule={sessions}
+              sessionDate={bookingData.sessionDate}
+              onSelectDate={(date, id, session) => {
+                setBookingData((b) => ({
+                  ...b,
+                  sessionDate: date,
+                  sessionId: id || "",
+                  sessionLabel: session
+                    ? `${new Date(session.start).toLocaleString("he-IL", {
+                        timeZone: session.tz || "Asia/Bangkok",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })} — ${session.studio || "Studio"}`
+                    : "",
+                  tz: session?.tz || "Asia/Bangkok",
+                  studio: session?.studio || "",
+                }));
+              }}
+            />
+          )}
+
+          {/* Form fields */}
           <Box
             component="form"
             onSubmit={handleSubmit}
-            sx={{
-              maxWidth: 700,
-              mx: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: 2.5,
-              px: { xs: 2, sm: 3 },
-              py: { xs: 1, sm: 1 },
-            }}
+            sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2.5 }}
           >
-            <Box sx={{ pb: { xs: 1, sm: 2 } }}>
-              {selection?.type === "workshop" && (
-                <WorkshopDatePickerInline
-                  guestSchedule={guestSchedule}
-                  sessionDate={bookingData.sessionDate}
-                  onSelectDate={(date) => {
-                    // מוצאים את הסשן המתאים לפי תאריך
-                    const selectedSession = guestSchedule.find(
-                      (s) => s.date.split("T")[0] === date
-                    );
-                    setBookingData((b) => ({
-                      ...b,
-                      sessionDate: date,
-                      sessionId: selectedSession?._id || null,
-                    }));
-                  }}
-                />
-              )}
-            </Box>
-
-            {/* טופס פרטים */}
+            {/* כל השדות נשארו בדיוק אותו דבר */}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 required
@@ -462,6 +377,9 @@ export default function BookingCheckout() {
                 onChange={handleChange}
                 fullWidth
               />
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 required
                 type="email"
@@ -495,6 +413,9 @@ export default function BookingCheckout() {
                 onChange={handleChange}
                 fullWidth
               />
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 name="zip"
                 label="ZIP"
@@ -526,6 +447,7 @@ export default function BookingCheckout() {
                 value={bookingData.guests}
                 onChange={handleBookingChange}
                 inputProps={{ min: 1 }}
+                fullWidth
               />
               <TextField
                 multiline
@@ -558,17 +480,8 @@ export default function BookingCheckout() {
         </Paper>
       </Grid>
 
-      {/* ימין – סיכום */}
-      <Grid
-        item
-        xs={12}
-        md={5}
-        lg={4}
-        sx={{
-          width: { md: "30%", s: "100%" },
-          alignSelf: "stretch",
-        }}
-      >
+      {/* Right side - summary */}
+      <Grid item xs={12} md={5} lg={4}>
         <BookingSummary
           sel={{ ...selection, ...bookingData }}
           onConfirm={handleSubmit}

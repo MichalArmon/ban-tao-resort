@@ -27,9 +27,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
-import moment from "moment";
-import { useSchedule } from "../../../context/ScheduleContext";
+import moment from "moment-timezone";
+
 import BookButton from "../../../components/booking/BookButton";
+import { useSessions } from "../../../context/SessionsContext";
 
 const DOW_LABELS = [
   "Sunday",
@@ -41,58 +42,51 @@ const DOW_LABELS = [
   "Saturday",
 ];
 
+const TZ = "Asia/Bangkok";
+
 export default function GuestScheduleView({
   open,
   onClose,
   workshop,
   defaultDate,
-  onBook,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const { guestSchedule, guestLoading, loadGuestSchedule, error } =
-    useSchedule();
+  const { sessions, loading, error, loadSessions } = useSessions();
 
   const [weekStart, setWeekStart] = React.useState(() =>
-    moment(defaultDate || new Date()).startOf("week")
+    moment.tz(defaultDate || new Date(), TZ).startOf("week")
   );
   const weekEnd = weekStart.clone().endOf("week");
 
   React.useEffect(() => {
     if (!open || !workshop?._id) return;
-    const from = weekStart.format("YYYY-MM-DD");
-    const to = weekEnd.format("YYYY-MM-DD");
-    const key = `${workshop._id}_${from}_${to}`;
-    if (window.__lastGuestLoadKey === key) return;
-    window.__lastGuestLoadKey = key;
-    loadGuestSchedule(from, to);
-  }, [open, workshop?._id, weekStart, weekEnd, loadGuestSchedule]);
-
-  const occurrences = React.useMemo(() => {
-    if (!open || !workshop?._id) return [];
-    return guestSchedule.filter(
-      (s) => String(s.workshopId) === String(workshop._id)
-    );
-  }, [guestSchedule, open, workshop?._id]);
-
-  const prevWeek = () => setWeekStart((m) => m.clone().subtract(7, "days"));
-  const nextWeek = () => setWeekStart((m) => m.clone().add(7, "days"));
+    const from = weekStart.toDate();
+    const to = weekEnd.toDate();
+    loadSessions({ from, to, workshopId: workshop._id });
+  }, [open, workshop?._id, weekStart, weekEnd, loadSessions]);
 
   const days = React.useMemo(() => {
+    if (!sessions?.length) return [];
+    const relevant = sessions.filter(
+      (s) => String(s.workshopId) === String(workshop._id)
+    );
     const map = new Map();
-    occurrences.forEach((occ) => {
-      const key = moment(occ.start).format("YYYY-MM-DD");
+    relevant.forEach((occ) => {
+      const key = moment.utc(occ.start).tz(TZ).format("YYYY-MM-DD");
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(occ);
     });
     return Array.from(map.entries())
       .map(([k, items]) => ({
-        date: moment(k).toDate(),
-        items: items.sort((a, b) => a.start - b.start),
+        date: moment.tz(k, TZ).toDate(),
+        items: items.sort((a, b) => new Date(a.start) - new Date(b.start)),
       }))
       .sort((a, b) => a.date - b.date);
-  }, [occurrences]);
+  }, [sessions, workshop?._id]);
+
+  const prevWeek = () => setWeekStart((m) => m.clone().subtract(7, "days"));
+  const nextWeek = () => setWeekStart((m) => m.clone().add(7, "days"));
 
   return (
     <Dialog
@@ -123,17 +117,12 @@ export default function GuestScheduleView({
         <IconButton
           onClick={onClose}
           size="small"
-          sx={{
-            position: "absolute",
-            right: 12,
-            top: 12,
-          }}
+          sx={{ position: "absolute", right: 12, top: 12 }}
           aria-label="close"
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
       <DialogContent dividers sx={{ pb: { xs: 1, sm: 3 } }}>
         <Stack
           direction={isMobile ? "column" : "row"}
@@ -148,7 +137,6 @@ export default function GuestScheduleView({
           >
             🕒 Daily Workshop Schedule
           </Typography>
-
           <Stack
             direction={isMobile ? "column" : "row"}
             spacing={1}
@@ -186,34 +174,26 @@ export default function GuestScheduleView({
             </Button>
           </Stack>
         </Stack>
-
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
-
-        {guestLoading && (
+        {loading && (
           <Box sx={{ textAlign: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         )}
-
-        {!guestLoading && !error && days.length === 0 && (
+        {!loading && !error && days.length === 0 && (
           <Alert severity="info">No sessions in this week.</Alert>
         )}
-
-        {!guestLoading &&
+        {!loading &&
           !error &&
           days.map((bucket) => (
             <Paper
               key={+bucket.date}
               variant="outlined"
-              sx={{
-                mb: 3,
-                borderRadius: 2,
-                overflow: "hidden",
-              }}
+              sx={{ mb: 3, borderRadius: 2, overflow: "hidden" }}
             >
               <Box
                 sx={{
@@ -225,21 +205,16 @@ export default function GuestScheduleView({
                 }}
               >
                 <Typography fontWeight={700}>
-                  {DOW_LABELS[new Date(bucket.date).getDay()]},{" "}
-                  {moment(bucket.date).format("MM/DD/YYYY")}
+                  {DOW_LABELS[moment(bucket.date).tz(TZ).day()]},{" "}
+                  {moment(bucket.date).tz(TZ).format("MM/DD/YYYY")}
                 </Typography>
               </Box>
-
-              {/* 💡 דסקטופ: טבלה רגילה */}
               {!isMobile ? (
                 <Table>
                   <TableHead>
                     <TableRow
                       sx={{
-                        "& th": {
-                          bgcolor: "action.hover",
-                          fontWeight: 700,
-                        },
+                        "& th": { bgcolor: "action.hover", fontWeight: 700 },
                       }}
                     >
                       <TableCell width="22%">Time</TableCell>
@@ -252,9 +227,11 @@ export default function GuestScheduleView({
                   </TableHead>
                   <TableBody>
                     {bucket.items.map((occ) => {
-                      const range = `${moment(occ.start).format(
-                        "HH:mm"
-                      )} - ${moment(occ.end).format("HH:mm")}`;
+                      const range = `${moment(occ.start)
+                        .tz(TZ)
+                        .format("HH:mm")} - ${moment(occ.end)
+                        .tz(TZ)
+                        .format("HH:mm")}`;
                       return (
                         <TableRow key={occ._id}>
                           <TableCell>{range}</TableCell>
@@ -264,8 +241,12 @@ export default function GuestScheduleView({
                             <BookButton
                               type="workshop"
                               item={workshop}
-                              selectedDate={occ.start}
+                              selectedDate={moment(occ.start)
+                                .tz(TZ)
+                                .format("YYYY-MM-DDTHH:mm:ss")}
                               price={workshop.price}
+                              sessionId={occ._id}
+                              ruleId={occ.ruleId}
                             />
                           </TableCell>
                         </TableRow>
@@ -274,12 +255,13 @@ export default function GuestScheduleView({
                   </TableBody>
                 </Table>
               ) : (
-                /* 📱 מובייל: כרטיסונים */
                 <Stack spacing={1.5} sx={{ p: 2 }}>
                   {bucket.items.map((occ) => {
-                    const range = `${moment(occ.start).format(
-                      "HH:mm"
-                    )} - ${moment(occ.end).format("HH:mm")}`;
+                    const range = `${moment(occ.start)
+                      .tz(TZ)
+                      .format("HH:mm")} - ${moment(occ.end)
+                      .tz(TZ)
+                      .format("HH:mm")}`;
                     return (
                       <Card
                         key={occ._id}
@@ -312,8 +294,12 @@ export default function GuestScheduleView({
                           <BookButton
                             type="workshop"
                             item={workshop}
-                            selectedDate={occ.start}
+                            selectedDate={moment(occ.start)
+                              .tz(TZ)
+                              .format("YYYY-MM-DDTHH:mm:ss")}
+                            sessionId={occ._id}
                             price={workshop.price}
+                            ruleId={occ.ruleId}
                           />
                         </CardContent>
                       </Card>

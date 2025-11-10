@@ -38,7 +38,6 @@ import RetreatsLanding from "./pages/guest/RetreatsLanding";
 import ClassesLanding from "./pages/guest/woreshops/ClassesLanding";
 import TreatmentsLanding from "./pages/guest/TreatmentsLanding";
 import BookingCheckout from "./components/booking/BookingCheckout";
-import AdminScheduleGrid from "./pages/admin/AdminScheduleGrid";
 
 import RetreatPage from "./pages/reatrets/RetreatPage";
 import AdminRetreats from "./pages/admin/RetreatForm";

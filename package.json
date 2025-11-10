@@ -25,6 +25,7 @@
     "framer-motion": "^12.23.22",
     "gsap": "^3.13.0",
     "moment": "^2.30.1",
+    "moment-timezone": "^0.6.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",

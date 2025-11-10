@@ -13,11 +13,13 @@ import { BookingProvider } from "./context/BookingContext";
 import { RoomsProvider } from "./context/RoomContext.jsx";
 import { UploadProvider } from "./context/UploadContext.jsx";
 import { RetreatsProvider } from "./context/RetreatsContext.jsx";
+
 import { WorkshopsProvider } from "./context/WorkshopsContext.jsx"; // ✅ חדש
 import { TreatmentsProvider } from "./context/TreatmentsContext.jsx";
-import { ScheduleProvider } from "./context/ScheduleContext.jsx";
+
 import { RecurringRulesProvider } from "./context/RecurringRulesContext.jsx";
 import { CategoriesProvider } from "./context/CategoriesContext.jsx";
+import { SessionsProvider } from "./context/SessionsContext.jsx";
 
 // 📁 src/main.jsx
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -36,9 +38,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                       <WorkshopsProvider>
                         <BookingProvider>
                           <RecurringRulesProvider>
-                            <ScheduleProvider>
+                            <SessionsProvider>
                               <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
-                            </ScheduleProvider>
+                            </SessionsProvider>
                           </RecurringRulesProvider>
                         </BookingProvider>
                       </WorkshopsProvider>

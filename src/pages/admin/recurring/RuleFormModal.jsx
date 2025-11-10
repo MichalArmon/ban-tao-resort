@@ -62,7 +62,7 @@ const POS_OPTIONS = [
   { value: -1, label: "Last" },
 ];
 
-const TZ = "Asia/Jerusalem";
+const TZ = "Asia/Bangkok";
 
 // modal style
 const style = {

@@ -1,4 +1,3 @@
-// 📁 src/context/WorkshopsContext.jsx
 import React, {
   createContext,
   useContext,
@@ -14,18 +13,21 @@ import { get, post, put, del } from "../config/api";
    API calls — תקשורת עם השרת
    ========================================= */
 async function apiListWorkshops(params = {}) {
-  const qs = new URLSearchParams(params).toString();
+  // ✅ נוסיף populate כברירת מחדל כדי להביא sessions
+  const query = { populate: "sessions", ...params };
+  const qs = new URLSearchParams(query).toString();
   return get(`/workshops${qs ? `?${qs}` : ""}`);
 }
 
 // לפי SLUG (לצד האורח)
 async function apiGetWorkshop(slug) {
-  return get(`/workshops/${encodeURIComponent(slug)}`);
+  // ✅ גם כאן נבקש לכלול sessions
+  return get(`/workshops/${encodeURIComponent(slug)}?populate=sessions`);
 }
 
 // לפי ID (לצד האדמין)
 async function apiGetWorkshopById(id) {
-  return get(`/workshops/id/${id}`);
+  return get(`/workshops/id/${id}?populate=sessions`);
 }
 
 async function apiCreateWorkshop(payload) {
@@ -44,6 +46,16 @@ async function apiUpdateWorkshopById(id, payload) {
 
 async function apiDeleteWorkshop(slug) {
   return del(`/workshops/${encodeURIComponent(slug)}`);
+}
+
+/* =========================================
+   ✳️ NEW: Sessions API (מפגשים)
+   ========================================= */
+
+// לפי workshopId – כל המפגשים של סדנה אחת
+async function apiListSessionsByWorkshop(workshopId) {
+  if (!workshopId) return [];
+  return get(`/sessions?workshopId=${encodeURIComponent(workshopId)}`);
 }
 
 /* =========================================
@@ -125,6 +137,19 @@ export function WorkshopsProvider({ children }) {
   }, []);
 
   /* =========================================
+     📆 NEW: getSessionsByWorkshopId — לפי WorkshopId
+     ========================================= */
+  const getSessionsByWorkshopId = useCallback(async (workshopId) => {
+    try {
+      const sessions = await apiListSessionsByWorkshop(workshopId);
+      return Array.isArray(sessions) ? sessions : [];
+    } catch (e) {
+      console.error("getSessionsByWorkshopId failed:", e);
+      return [];
+    }
+  }, []);
+
+  /* =========================================
      ✳️ createWorkshop — יצירת סדנה חדשה
      ========================================= */
   const createWorkshop = useCallback(async (payload) => {
@@ -194,6 +219,7 @@ export function WorkshopsProvider({ children }) {
       listWorkshops,
       getWorkshop,
       getWorkshopById,
+      getSessionsByWorkshopId, // ✅ חדש
       createWorkshop,
       updateWorkshop,
       updateWorkshopById,
@@ -207,6 +233,7 @@ export function WorkshopsProvider({ children }) {
       listWorkshops,
       getWorkshop,
       getWorkshopById,
+      getSessionsByWorkshopId,
       createWorkshop,
       updateWorkshop,
       updateWorkshopById,
