@@ -80,24 +80,23 @@ function BookingSummary({ sel, onConfirm, submitting }) {
   const currency = sel?.currency ?? "ILS";
   const isRoom = sel?.type === "room";
 
-  const dateLine = isRoom
-    ? sel?.dates?.checkIn && sel?.dates?.checkOut
-      ? `${new Date(sel.dates.checkIn).toLocaleDateString()} → ${new Date(
-          sel.dates.checkOut
-        ).toLocaleDateString()}`
-      : "Select dates"
-    : sel?.sessionLabel
-    ? sel.sessionLabel
-    : sel?.sessionDate
-    ? new Date(sel.sessionDate).toLocaleString("he-IL", {
-        timeZone: sel?.tz || "Asia/Bangkok",
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }) + (sel?.studio ? ` — ${sel.studio}` : "")
-    : "Select date/time";
+  // ✅ נציג את התאריך והשעה לפי Asia/Bangkok
+  let dateLine = "Select date/time";
+  if (isRoom && sel?.dates?.checkIn && sel?.dates?.checkOut) {
+    dateLine = `${new Date(
+      sel.dates.checkIn
+    ).toLocaleDateString()} → ${new Date(
+      sel.dates.checkOut
+    ).toLocaleDateString()}`;
+  } else if (sel?.sessionLabel) {
+    dateLine = sel.sessionLabel;
+  } else if (sel?.sessionDate) {
+    dateLine =
+      moment
+        .utc(sel.sessionDate)
+        .tz(sel?.tz || "Asia/Bangkok")
+        .format("DD.MM.YYYY, HH:mm") + (sel?.studio ? ` — ${sel.studio}` : "");
+  }
 
   const totalFormatted = formatMoney(totalPrice, currency);
   const baseFormatted = formatMoney(basePrice, currency);
@@ -225,9 +224,10 @@ export default function BookingCheckout() {
         sessionDate: selection.sessionDate, // התאריך שנבחר
         sessionId: selection.sessionId || "", // מזהה הסשן
         ruleId: selection.ruleId || null, // החוק (אם יש)
-        sessionLabel: moment(selection.sessionDate)
+        sessionLabel: moment
+          .utc(selection.sessionDate)
           .tz(selection?.tz || "Asia/Bangkok")
-          .format("DD/MM/YYYY — HH:mm"), // טקסט קריא לתצוגה
+          .format("DD/MM/YYYY — HH:mm"),
       }));
     }
   }, [selection]);
@@ -282,15 +282,22 @@ export default function BookingCheckout() {
       setSubmitting(true);
       const fullName = `${form.firstName} ${form.lastName}`.trim();
 
+      // ✅ נוודא שהתאריך נשלח לפי Asia/Bangkok כ-UTC אמיתי
+      const tz = bookingData.tz || "Asia/Bangkok";
+      const dateInBangkokUTC = bookingData.sessionDate
+        ? moment.tz(bookingData.sessionDate, tz).utc().toISOString()
+        : null;
+
       const payload = {
         type: selection?.type,
         itemId: selection?.item?._id || selection?.item?.id,
         totalPrice: bookingData.price,
         guestCount: bookingData.guests,
         currency: selection?.currency || "ILS",
-        date: bookingData.sessionDate,
+        date: dateInBangkokUTC, // ✅ שמירה בפורמט UTC אמיתי של תאילנד
         sessionId: bookingData.sessionId,
         ruleId: bookingData.ruleId || selection?.ruleId || null,
+        tz, // ✅ נשלח גם אזור זמן מפורש
         guestInfo: {
           fullName,
           email: form.email,
@@ -351,21 +358,22 @@ export default function BookingCheckout() {
               sessionDate={bookingData.sessionDate}
               onSelectDate={(date, id, session) => {
                 console.log("📅 onSelectDate called:", { date, id, session });
+
+                // ✅ חישוב נכון של זמן תאילנד
+                const tz = session?.tz || "Asia/Bangkok";
+                const startBangkok = moment.utc(session.start).tz(tz);
+                const sessionLabel = session
+                  ? `${startBangkok.format("DD/MM/YYYY, HH:mm")} — ${
+                      session.studio || "Studio"
+                    }`
+                  : "";
+
                 setBookingData((b) => ({
                   ...b,
                   sessionDate: date,
                   sessionId: id || "",
-                  sessionLabel: session
-                    ? `${new Date(session.start).toLocaleString("he-IL", {
-                        timeZone: session.tz || "Asia/Bangkok",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })} — ${session.studio || "Studio"}`
-                    : "",
-                  tz: session?.tz || "Asia/Bangkok",
+                  sessionLabel,
+                  tz,
                   studio: session?.studio || "",
                 }));
               }}

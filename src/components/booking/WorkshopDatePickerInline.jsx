@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useCategories } from "../../context/CategoriesContext";
+import moment from "moment-timezone";
 
 /** כלי עזר: תאריך YYYY-MM-DD ללא השפעת time-zone */
 function isoLocal(y, m /*0-11*/, d) {
@@ -115,7 +116,7 @@ export default function WorkshopDatePickerInline({
                 bgcolor: !hasSessions
                   ? "rgba(0,0,0,0.08)"
                   : isPast
-                  ? "rgba(0,0,0,0.05)" // אפור לימים ישנים
+                  ? "rgba(0,0,0,0.05)"
                   : isActive
                   ? color
                   : "transparent",
@@ -151,11 +152,8 @@ export default function WorkshopDatePickerInline({
           <Stack direction="row" flexWrap="wrap" gap={1}>
             {sessionsForDay.map((s) => {
               const tz = s.tz || "Asia/Bangkok";
-              const timeLabel = new Date(s.start).toLocaleTimeString("he-IL", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: tz,
-              });
+              // ✅ כל השעות מוצגות לפי זמן בנגקוק
+              const timeLabel = moment.utc(s.start).tz(tz).format("HH:mm");
               const isSelected = activeSessionId === s._id;
 
               return (
@@ -177,7 +175,7 @@ export default function WorkshopDatePickerInline({
                     },
                   }}
                 >
-                  {timeLabel} — {s.studio || "Studio"}
+                  {timeLabel} — {s.studio || "Studio"} (Bangkok)
                 </Button>
               );
             })}

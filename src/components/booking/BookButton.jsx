@@ -1,4 +1,3 @@
-// 📁 src/components/booking/BookButton.jsx
 import { Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import moment from "moment-timezone";
@@ -24,10 +23,8 @@ export default function BookButton({
       return;
     }
 
-    // 📅 Normalize the selected date to Bangkok timezone
-    const sessionDate = selectedDate
-      ? moment(selectedDate).tz(TZ).format("YYYY-MM-DDTHH:mm:ss")
-      : null;
+    // ❌ אל תבצעי המרה כפולה – הנתון כבר UTC
+    const sessionDate = selectedDate || null;
 
     const newSelection = {
       type,
@@ -38,7 +35,7 @@ export default function BookButton({
         description: item.description,
         location: item.location || "Ban Tao Resort",
       },
-      sessionDate, // ✅ always Asia/Bangkok
+      sessionDate, // ✅ נשמר כמו שהוא
       sessionId: sessionId || null,
       guests,
       price,

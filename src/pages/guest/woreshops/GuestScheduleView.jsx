@@ -73,7 +73,7 @@ export default function GuestScheduleView({
     );
     const map = new Map();
     relevant.forEach((occ) => {
-      const key = moment.utc(occ.start).tz(TZ).format("YYYY-MM-DD");
+      const key = moment(occ.start).tz(TZ).format("YYYY-MM-DD");
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(occ);
     });
@@ -123,6 +123,7 @@ export default function GuestScheduleView({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
+
       <DialogContent dividers sx={{ pb: { xs: 1, sm: 3 } }}>
         <Stack
           direction={isMobile ? "column" : "row"}
@@ -174,6 +175,7 @@ export default function GuestScheduleView({
             </Button>
           </Stack>
         </Stack>
+
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -187,6 +189,7 @@ export default function GuestScheduleView({
         {!loading && !error && days.length === 0 && (
           <Alert severity="info">No sessions in this week.</Alert>
         )}
+
         {!loading &&
           !error &&
           days.map((bucket) => (
@@ -209,6 +212,8 @@ export default function GuestScheduleView({
                   {moment(bucket.date).tz(TZ).format("MM/DD/YYYY")}
                 </Typography>
               </Box>
+
+              {/* 🧭 Desktop View */}
               {!isMobile ? (
                 <Table>
                   <TableHead>
@@ -217,7 +222,7 @@ export default function GuestScheduleView({
                         "& th": { bgcolor: "action.hover", fontWeight: 700 },
                       }}
                     >
-                      <TableCell width="22%">Time</TableCell>
+                      <TableCell width="22%">Time (Thailand)</TableCell>
                       <TableCell>Workshop / Class</TableCell>
                       <TableCell width="18%">Studio</TableCell>
                       <TableCell align="right" width="18%">
@@ -227,11 +232,13 @@ export default function GuestScheduleView({
                   </TableHead>
                   <TableBody>
                     {bucket.items.map((occ) => {
-                      const range = `${moment(occ.start)
-                        .tz(TZ)
-                        .format("HH:mm")} - ${moment(occ.end)
-                        .tz(TZ)
-                        .format("HH:mm")}`;
+                      console.log("OCC START RAW:", occ.start);
+                      // ✅ הצגה לפי אזור הזמן של תאילנד
+                      const start = moment(occ.start);
+                      const end = moment(occ.end);
+                      const range = `${start.format("HH:mm")} - ${end.format(
+                        "HH:mm"
+                      )}`;
                       return (
                         <TableRow key={occ._id}>
                           <TableCell>{range}</TableCell>
@@ -241,9 +248,7 @@ export default function GuestScheduleView({
                             <BookButton
                               type="workshop"
                               item={workshop}
-                              selectedDate={moment(occ.start)
-                                .tz(TZ)
-                                .format("YYYY-MM-DDTHH:mm:ss")}
+                              selectedDate={start.utc().toISOString()}
                               price={workshop.price}
                               sessionId={occ._id}
                               ruleId={occ.ruleId}
@@ -255,13 +260,14 @@ export default function GuestScheduleView({
                   </TableBody>
                 </Table>
               ) : (
+                /* 📱 Mobile View */
                 <Stack spacing={1.5} sx={{ p: 2 }}>
                   {bucket.items.map((occ) => {
-                    const range = `${moment(occ.start)
-                      .tz(TZ)
-                      .format("HH:mm")} - ${moment(occ.end)
-                      .tz(TZ)
-                      .format("HH:mm")}`;
+                    const start = moment(occ.start);
+                    const end = moment(occ.end);
+                    const range = `${start.format("HH:mm")} - ${end.format(
+                      "HH:mm"
+                    )}`;
                     return (
                       <Card
                         key={occ._id}
@@ -294,11 +300,9 @@ export default function GuestScheduleView({
                           <BookButton
                             type="workshop"
                             item={workshop}
-                            selectedDate={moment(occ.start)
-                              .tz(TZ)
-                              .format("YYYY-MM-DDTHH:mm:ss")}
-                            sessionId={occ._id}
+                            selectedDate={start.utc().toISOString()}
                             price={workshop.price}
+                            sessionId={occ._id}
                             ruleId={occ.ruleId}
                           />
                         </CardContent>
