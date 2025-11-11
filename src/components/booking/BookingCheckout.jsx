@@ -213,6 +213,24 @@ export default function BookingCheckout() {
     sessionLabel: "",
     price: selection?.item?.price ?? 0,
   });
+  // ✅ אם המשתמש הגיע מהכפתור BOOK – נכניס את התאריך והשעה שנבחרו
+  React.useEffect(() => {
+    if (
+      selection?.type === "workshop" && // רק אם מדובר בסדנה
+      selection?.sessionDate && // ויש תאריך נבחר
+      !bookingData.sessionDate // ורק אם עוד לא הוזן בצ'קאאוט
+    ) {
+      setBookingData((b) => ({
+        ...b,
+        sessionDate: selection.sessionDate, // התאריך שנבחר
+        sessionId: selection.sessionId || "", // מזהה הסשן
+        ruleId: selection.ruleId || null, // החוק (אם יש)
+        sessionLabel: moment(selection.sessionDate)
+          .tz(selection?.tz || "Asia/Bangkok")
+          .format("DD/MM/YYYY — HH:mm"), // טקסט קריא לתצוגה
+      }));
+    }
+  }, [selection]);
 
   const [form, setForm] = React.useState({
     firstName: "",
@@ -332,6 +350,7 @@ export default function BookingCheckout() {
               guestSchedule={sessions}
               sessionDate={bookingData.sessionDate}
               onSelectDate={(date, id, session) => {
+                console.log("📅 onSelectDate called:", { date, id, session });
                 setBookingData((b) => ({
                   ...b,
                   sessionDate: date,
