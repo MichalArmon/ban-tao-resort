@@ -1,3 +1,4 @@
+// 📁 src/pages/guest/GuestScheduleView.jsx
 import * as React from "react";
 import {
   Dialog,
@@ -27,7 +28,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
-import moment from "moment-timezone";
+import moment from "moment";
 
 import BookButton from "../../../components/booking/BookButton";
 import { useSessions } from "../../../context/SessionsContext";
@@ -42,8 +43,6 @@ const DOW_LABELS = [
   "Saturday",
 ];
 
-const TZ = "Asia/Bangkok";
-
 export default function GuestScheduleView({
   open,
   onClose,
@@ -55,10 +54,13 @@ export default function GuestScheduleView({
   const { sessions, loading, error, loadSessions } = useSessions();
 
   const [weekStart, setWeekStart] = React.useState(() =>
-    moment.tz(defaultDate || new Date(), TZ).startOf("week")
+    moment(defaultDate || new Date()).startOf("week")
   );
   const weekEnd = weekStart.clone().endOf("week");
 
+  /* ---------------------------------------------
+     Load sessions for the selected week
+  --------------------------------------------- */
   React.useEffect(() => {
     if (!open || !workshop?._id) return;
     const from = weekStart.toDate();
@@ -66,21 +68,28 @@ export default function GuestScheduleView({
     loadSessions({ from, to, workshopId: workshop._id });
   }, [open, workshop?._id, weekStart, weekEnd, loadSessions]);
 
+  /* ---------------------------------------------
+     Group sessions by day (using startLocal)
+  --------------------------------------------- */
   const days = React.useMemo(() => {
     if (!sessions?.length) return [];
     const relevant = sessions.filter(
       (s) => String(s.workshopId) === String(workshop._id)
     );
+
     const map = new Map();
     relevant.forEach((occ) => {
-      const key = moment(occ.start).tz(TZ).format("YYYY-MM-DD");
+      const key = moment(occ.startLocal).format("YYYY-MM-DD");
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(occ);
     });
+
     return Array.from(map.entries())
       .map(([k, items]) => ({
-        date: moment.tz(k, TZ).toDate(),
-        items: items.sort((a, b) => new Date(a.start) - new Date(b.start)),
+        date: new Date(k),
+        items: items.sort(
+          (a, b) => new Date(a.startLocal) - new Date(b.startLocal)
+        ),
       }))
       .sort((a, b) => a.date - b.date);
   }, [sessions, workshop?._id]);
@@ -138,6 +147,7 @@ export default function GuestScheduleView({
           >
             🕒 Daily Workshop Schedule
           </Typography>
+
           <Stack
             direction={isMobile ? "column" : "row"}
             spacing={1}
@@ -190,6 +200,9 @@ export default function GuestScheduleView({
           <Alert severity="info">No sessions in this week.</Alert>
         )}
 
+        {/* ----------------------------- */}
+        {/* Render each day bucket */}
+        {/* ----------------------------- */}
         {!loading &&
           !error &&
           days.map((bucket) => (
@@ -208,8 +221,8 @@ export default function GuestScheduleView({
                 }}
               >
                 <Typography fontWeight={700}>
-                  {DOW_LABELS[moment(bucket.date).tz(TZ).day()]},{" "}
-                  {moment(bucket.date).tz(TZ).format("MM/DD/YYYY")}
+                  {DOW_LABELS[moment(bucket.date).day()]},{" "}
+                  {moment(bucket.date).format("MM/DD/YYYY")}
                 </Typography>
               </Box>
 
@@ -222,7 +235,7 @@ export default function GuestScheduleView({
                         "& th": { bgcolor: "action.hover", fontWeight: 700 },
                       }}
                     >
-                      <TableCell width="22%">Time (Thailand)</TableCell>
+                      <TableCell width="22%">Time</TableCell>
                       <TableCell>Workshop / Class</TableCell>
                       <TableCell width="18%">Studio</TableCell>
                       <TableCell align="right" width="18%">
@@ -232,13 +245,13 @@ export default function GuestScheduleView({
                   </TableHead>
                   <TableBody>
                     {bucket.items.map((occ) => {
-                      console.log("OCC START RAW:", occ.start);
-                      // ✅ הצגה לפי אזור הזמן של תאילנד
-                      const start = moment(occ.start);
-                      const end = moment(occ.end);
+                      // ✅ השעה כבר לוקאלית – אין צורך בהמרה
+                      const start = moment(occ.startLocal);
+                      const end = moment(occ.endLocal);
                       const range = `${start.format("HH:mm")} - ${end.format(
                         "HH:mm"
                       )}`;
+
                       return (
                         <TableRow key={occ._id}>
                           <TableCell>{range}</TableCell>
@@ -248,7 +261,7 @@ export default function GuestScheduleView({
                             <BookButton
                               type="workshop"
                               item={workshop}
-                              selectedDate={start.utc().toISOString()}
+                              selectedDate={occ.startLocal}
                               price={workshop.price}
                               sessionId={occ._id}
                               ruleId={occ.ruleId}
@@ -263,8 +276,8 @@ export default function GuestScheduleView({
                 /* 📱 Mobile View */
                 <Stack spacing={1.5} sx={{ p: 2 }}>
                   {bucket.items.map((occ) => {
-                    const start = moment(occ.start);
-                    const end = moment(occ.end);
+                    const start = moment(occ.startLocal);
+                    const end = moment(occ.endLocal);
                     const range = `${start.format("HH:mm")} - ${end.format(
                       "HH:mm"
                     )}`;
@@ -300,7 +313,7 @@ export default function GuestScheduleView({
                           <BookButton
                             type="workshop"
                             item={workshop}
-                            selectedDate={start.utc().toISOString()}
+                            selectedDate={occ.startLocal}
                             price={workshop.price}
                             sessionId={occ._id}
                             ruleId={occ.ruleId}

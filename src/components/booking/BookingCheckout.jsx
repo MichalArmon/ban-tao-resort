@@ -26,14 +26,13 @@ import PaymentsRounded from "@mui/icons-material/PaymentsRounded";
 import PlaceRounded from "@mui/icons-material/PlaceRounded";
 import { useBooking } from "../../context/BookingContext";
 import { useSessions } from "../../context/SessionsContext";
-import moment from "moment-timezone";
-
+import moment from "moment";
 import WorkshopDatePickerInline from "./WorkshopDatePickerInline";
 
 /* =========================================
  * Utils
  * =======================================*/
-const COUNTRIES = ["Israel", "Thailand", "Greece", "USA", "UK"];
+const COUNTRIES = ["Israel", "Greece", "USA", "UK"];
 
 function formatMoney(n, currency = "ILS") {
   try {
@@ -80,7 +79,7 @@ function BookingSummary({ sel, onConfirm, submitting }) {
   const currency = sel?.currency ?? "ILS";
   const isRoom = sel?.type === "room";
 
-  // ✅ נציג את התאריך והשעה לפי Asia/Bangkok
+  // ✅ מציגים זמן מקומי בלבד (UTC → Local)
   let dateLine = "Select date/time";
   if (isRoom && sel?.dates?.checkIn && sel?.dates?.checkOut) {
     dateLine = `${new Date(
@@ -92,10 +91,8 @@ function BookingSummary({ sel, onConfirm, submitting }) {
     dateLine = sel.sessionLabel;
   } else if (sel?.sessionDate) {
     dateLine =
-      moment
-        .utc(sel.sessionDate)
-        .tz(sel?.tz || "Asia/Bangkok")
-        .format("DD.MM.YYYY, HH:mm") + (sel?.studio ? ` — ${sel.studio}` : "");
+      moment(sel.sessionDate).format("DD.MM.YYYY, HH:mm") +
+      (sel?.studio ? ` — ${sel.studio}` : "");
   }
 
   const totalFormatted = formatMoney(totalPrice, currency);
@@ -212,22 +209,23 @@ export default function BookingCheckout() {
     sessionLabel: "",
     price: selection?.item?.price ?? 0,
   });
-  // ✅ אם המשתמש הגיע מהכפתור BOOK – נכניס את התאריך והשעה שנבחרו
+
+  // ✅ הכנסת שעה מקומית (UTC → Local)
   React.useEffect(() => {
     if (
-      selection?.type === "workshop" && // רק אם מדובר בסדנה
-      selection?.sessionDate && // ויש תאריך נבחר
-      !bookingData.sessionDate // ורק אם עוד לא הוזן בצ'קאאוט
+      selection?.type === "workshop" &&
+      selection?.sessionDate &&
+      !bookingData.sessionDate
     ) {
       setBookingData((b) => ({
         ...b,
-        sessionDate: selection.sessionDate, // התאריך שנבחר
-        sessionId: selection.sessionId || "", // מזהה הסשן
-        ruleId: selection.ruleId || null, // החוק (אם יש)
-        sessionLabel: moment
-          .utc(selection.sessionDate)
-          .tz(selection?.tz || "Asia/Bangkok")
-          .format("DD/MM/YYYY — HH:mm"),
+        sessionDate: selection.sessionDate,
+        sessionId: selection.sessionId || "",
+        ruleId: selection.ruleId || null,
+        sessionLabel: moment(selection.sessionDate).format(
+          "DD/MM/YYYY — HH:mm"
+        ),
+        studio: selection?.studio || "",
       }));
     }
   }, [selection]);
@@ -282,10 +280,9 @@ export default function BookingCheckout() {
       setSubmitting(true);
       const fullName = `${form.firstName} ${form.lastName}`.trim();
 
-      // ✅ נוודא שהתאריך נשלח לפי Asia/Bangkok כ-UTC אמיתי
-      const tz = bookingData.tz || "Asia/Bangkok";
-      const dateInBangkokUTC = bookingData.sessionDate
-        ? moment.tz(bookingData.sessionDate, tz).utc().toISOString()
+      // ✅ ממירים ל־UTC לשליחה לשרת
+      const dateUTC = bookingData.sessionDate
+        ? moment(bookingData.sessionDate).utc().toISOString()
         : null;
 
       const payload = {
@@ -294,10 +291,9 @@ export default function BookingCheckout() {
         totalPrice: bookingData.price,
         guestCount: bookingData.guests,
         currency: selection?.currency || "ILS",
-        date: dateInBangkokUTC, // ✅ שמירה בפורמט UTC אמיתי של תאילנד
+        date: dateUTC,
         sessionId: bookingData.sessionId,
         ruleId: bookingData.ruleId || selection?.ruleId || null,
-        tz, // ✅ נשלח גם אזור זמן מפורש
         guestInfo: {
           fullName,
           email: form.email,
@@ -344,7 +340,6 @@ export default function BookingCheckout() {
         flexDirection: { xs: "column", md: "row" },
       }}
     >
-      {/* Left side - form */}
       <Grid item xs={12} md={7} lg={8}>
         <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
           <Typography variant="h5" gutterBottom>
@@ -357,36 +352,35 @@ export default function BookingCheckout() {
               guestSchedule={sessions}
               sessionDate={bookingData.sessionDate}
               onSelectDate={(date, id, session) => {
-                console.log("📅 onSelectDate called:", { date, id, session });
-
-                // ✅ חישוב נכון של זמן תאילנד
-                const tz = session?.tz || "Asia/Bangkok";
-                const startBangkok = moment.utc(session.start).tz(tz);
-                const sessionLabel = session
-                  ? `${startBangkok.format("DD/MM/YYYY, HH:mm")} — ${
-                      session.studio || "Studio"
-                    }`
-                  : "";
+                if (!session) {
+                  setBookingData((b) => ({
+                    ...b,
+                    sessionDate: date,
+                    sessionId: id || "",
+                    sessionLabel: "",
+                  }));
+                  return;
+                }
 
                 setBookingData((b) => ({
                   ...b,
-                  sessionDate: date,
+                  sessionDate: session.startLocal,
                   sessionId: id || "",
-                  sessionLabel,
-                  tz,
+                  sessionLabel: `${moment(session.startLocal).format(
+                    "DD/MM/YYYY, HH:mm"
+                  )} — ${session.studio || "Studio"}`,
                   studio: session?.studio || "",
                 }));
               }}
             />
           )}
 
-          {/* Form fields */}
+          {/* טופס פרטים */}
           <Box
             component="form"
             onSubmit={handleSubmit}
             sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2.5 }}
           >
-            {/* כל השדות נשארו בדיוק אותו דבר */}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
                 required
@@ -507,7 +501,7 @@ export default function BookingCheckout() {
         </Paper>
       </Grid>
 
-      {/* Right side - summary */}
+      {/* סיכום הזמנה */}
       <Grid item xs={12} md={5} lg={4}>
         <BookingSummary
           sel={{ ...selection, ...bookingData }}

@@ -62,8 +62,6 @@ const POS_OPTIONS = [
   { value: -1, label: "Last" },
 ];
 
-const TZ = "Asia/Bangkok";
-
 // modal style
 const style = {
   position: "absolute",
@@ -93,7 +91,7 @@ const buildRRule = ({ freq, dayKey, bySetPos }) => {
   return parts.join(";");
 };
 
-// Parse fields from an existing rrule (for edit mode)
+// Parse existing rule (for edit mode)
 const parseFromRRule = (rrule = "") => {
   const out = { freq: "WEEKLY", dayKey: "", bySetPos: "" };
   const r = String(rrule);
@@ -103,8 +101,8 @@ const parseFromRRule = (rrule = "") => {
 
   const byday = r.match(/BYDAY=([^;]+)/i);
   if (byday) {
-    const token = byday[1].split(",")[0].trim(); // we expect single day in this UI
-    const d2 = token.slice(-2).toUpperCase(); // handle "1MO" / "-1SU" too
+    const token = byday[1].split(",")[0].trim();
+    const d2 = token.slice(-2).toUpperCase();
     out.dayKey = RR_DAY_INV[d2] || "";
   }
 
@@ -120,29 +118,27 @@ const parseFromRRule = (rrule = "") => {
 export default function RuleFormModal({
   isOpen,
   handleClose,
-  ruleToEdit, // existing rule (or null)
-  workshops = [], // list of workshops (id + title)
-  onSuccess, // callback after successful save
+  ruleToEdit,
+  workshops = [],
+  onSuccess,
 }) {
   const { createRule, updateRule, error: contextError } = useRecurringRules();
   const isEditMode = !!ruleToEdit;
-
   const parsed = parseFromRRule(ruleToEdit?.rrule);
 
   const [formData, setFormData] = useState({
-    // UI fields
     day: parsed.dayKey || "",
-    startTime: ruleToEdit?.startTime || "08:00", // "HH:mm"
+    startTime: ruleToEdit?.startTime || "08:00",
     duration: Number(ruleToEdit?.durationMin ?? ruleToEdit?.duration ?? 60),
     studio: ruleToEdit?.studio || "Studio A",
     workshopId:
       typeof ruleToEdit?.workshopId === "object"
         ? String(ruleToEdit?.workshopId?._id || "")
         : String(ruleToEdit?.workshopId || ""),
-    freq: parsed.freq, // WEEKLY | MONTHLY
-    bySetPos: parsed.bySetPos === "" ? "" : parsed.bySetPos, // number | ""
+    freq: parsed.freq,
+    bySetPos: parsed.bySetPos === "" ? "" : parsed.bySetPos,
     effectiveFrom: ruleToEdit?.effectiveFrom
-      ? new Date(ruleToEdit.effectiveFrom).toISOString().slice(0, 10) // YYYY-MM-DD
+      ? new Date(ruleToEdit.effectiveFrom).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10),
     isActive: ruleToEdit?.isActive ?? true,
   });
@@ -150,7 +146,6 @@ export default function RuleFormModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // reset when ruleToEdit changes
   useEffect(() => {
     if (!isEditMode) return;
     const p = parseFromRRule(ruleToEdit?.rrule);
@@ -188,7 +183,6 @@ export default function RuleFormModal({
     setError("");
     setLoading(true);
 
-    // basic validation
     if (
       !formData.day ||
       !formData.startTime ||
@@ -201,7 +195,6 @@ export default function RuleFormModal({
     }
 
     try {
-      // verify workshop id exists in list (and stringify)
       const chosen = workshops.find(
         (w) => String(w._id) === String(formData.workshopId)
       );
@@ -209,23 +202,21 @@ export default function RuleFormModal({
         ? String(chosen._id)
         : String(formData.workshopId);
 
-      // build RRULE
       const rrule = buildRRule({
         freq: formData.freq,
         dayKey: formData.day,
         bySetPos: formData.freq === "MONTHLY" ? formData.bySetPos : "",
       });
 
-      // build payload exactly as server expects
+      // ✅ נקי מתאילנד – האתר מתנהל לפי זמן ישראל / UTC בלבד
       const payload = {
-        workshopId, // ObjectId as string
+        workshopId,
         studio: formData.studio,
-        timezone: TZ,
-        startTime: formData.startTime, // "HH:mm"
+        startTime: formData.startTime,
         durationMin: Number(formData.duration),
         rrule,
         effectiveFrom: new Date(
-          `${formData.effectiveFrom}T00:00:00.000Z`
+          `${formData.effectiveFrom}T00:00:00`
         ).toISOString(),
         exceptions: [],
         isActive: Boolean(formData.isActive),
@@ -240,7 +231,6 @@ export default function RuleFormModal({
       onSuccess?.();
       handleClose();
     } catch (err) {
-      // show server message if exists
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -266,7 +256,6 @@ export default function RuleFormModal({
         )}
 
         <Stack spacing={2}>
-          {/* Workshop */}
           <TextField
             select
             required
@@ -284,7 +273,6 @@ export default function RuleFormModal({
             ))}
           </TextField>
 
-          {/* Studio */}
           <TextField
             select
             required
@@ -301,7 +289,6 @@ export default function RuleFormModal({
             ))}
           </TextField>
 
-          {/* Frequency */}
           <TextField
             select
             label="Frequency"
@@ -314,7 +301,6 @@ export default function RuleFormModal({
             <MenuItem value="MONTHLY">Monthly</MenuItem>
           </TextField>
 
-          {/* Day (single) */}
           <TextField
             select
             required
@@ -331,7 +317,6 @@ export default function RuleFormModal({
             ))}
           </TextField>
 
-          {/* BYSETPOS only for MONTHLY */}
           {formData.freq === "MONTHLY" && (
             <TextField
               select
@@ -349,7 +334,6 @@ export default function RuleFormModal({
             </TextField>
           )}
 
-          {/* Time */}
           <TextField
             required
             label="Start Time (HH:mm)"
@@ -361,7 +345,6 @@ export default function RuleFormModal({
             inputProps={{ step: 300 }}
           />
 
-          {/* Duration */}
           <TextField
             required
             label="Duration (minutes)"
@@ -373,7 +356,6 @@ export default function RuleFormModal({
             inputProps={{ min: 15, step: 5 }}
           />
 
-          {/* Effective From */}
           <TextField
             label="Effective From"
             name="effectiveFrom"
@@ -384,7 +366,6 @@ export default function RuleFormModal({
             fullWidth
           />
 
-          {/* Active */}
           <FormControlLabel
             control={
               <Switch

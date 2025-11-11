@@ -1,26 +1,24 @@
+// 📁 src/context/SessionsContext.jsx
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { get } from "../config/api";
-import moment from "moment-timezone";
+import moment from "moment";
 
 const SessionsCtx = createContext(null);
-const TZ = "Asia/Bangkok";
 
 /* ============================================================
-    Provider
-    ============================================================ */
+   Provider
+   ============================================================ */
 export function SessionsProvider({ children }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] =
-    useState(
-      null
-    ); /* ============================================================
-      טעינת סשנים לפי טווח תאריכים / חוג / סטודיו
-  ============================================================ */
+  const [error, setError] = useState(null);
 
+  /* ============================================================
+     טעינת סשנים לפי טווח תאריכים / חוג / סטודיו
+     ============================================================ */
   const loadSessions = useCallback(async ({ from, to, workshopId, studio }) => {
     try {
-      // ✅ מפתח ייחודי למניעת לולאות
+      // ✅ מניעת קריאות כפולות
       const key = `${workshopId || "all"}_${moment(from).format(
         "YYYY-MM-DD"
       )}_${moment(to).format("YYYY-MM-DD")}_${studio || "any"}`;
@@ -31,10 +29,10 @@ export function SessionsProvider({ children }) {
       window.__lastSessionsKey = key;
 
       setLoading(true);
-      setError(null); // המרה לפורמט תקין
+      setError(null);
 
       const fromStr = moment(from).format("YYYY-MM-DD");
-      const toStr = moment(to).format("YYYY-MM-DD"); // 🟢 תיקון ה-URL: שינוי מ- /schedule ל- /sessions
+      const toStr = moment(to).format("YYYY-MM-DD");
 
       let url = `/sessions?from=${fromStr}&to=${toStr}`;
       if (workshopId) url += `&workshopId=${workshopId}`;
@@ -43,17 +41,14 @@ export function SessionsProvider({ children }) {
       console.log("🌐 Fetching sessions:", url);
 
       const res = await get(url);
-      console.log("✅ Sessions response:", res); // 🎯 התיקון הסופי (להצגת שעה נכונה ב-Frontend): // חותכים את המחרוזת ומפרשים אותה כזמן ב-Asia/Bangkok (TZ).
+      console.log("📦 Response from server:", res);
+      console.log("🕐 First session start:", res?.[0]?.start);
 
+      // 🟢 נורמליזציה: המרה מ-UTC לזמן מקומי (ישראל)
       const normalized = (res || []).map((s) => ({
         ...s,
-        startLocal: moment
-          .tz(s.start.substring(0, 19), TZ)
-          .format("YYYY-MM-DD HH:mm"),
-        endLocal: moment
-          .tz(s.end.substring(0, 19), TZ)
-          .format("YYYY-MM-DD HH:mm"),
-        tz: TZ,
+        startLocal: s.start ? moment.utc(s.start).local().toDate() : null,
+        endLocal: s.end ? moment.utc(s.end).local().toDate() : null,
       }));
 
       setSessions(normalized);
@@ -63,7 +58,7 @@ export function SessionsProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []); // ⚡ חשוב! ריק => יציב לעד
+  }, []);
 
   return (
     <SessionsCtx.Provider
@@ -74,14 +69,14 @@ export function SessionsProvider({ children }) {
         loadSessions,
       }}
     >
-            {children}   {" "}
+      {children}
     </SessionsCtx.Provider>
   );
 }
 
 /* ============================================================
-    Hook
-    ============================================================ */
+   Hook
+   ============================================================ */
 export function useSessions() {
   const ctx = useContext(SessionsCtx);
   if (!ctx)

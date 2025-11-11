@@ -1,9 +1,7 @@
+// 📁 src/components/booking/BookButton.jsx
 import { Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import moment from "moment-timezone";
 import { useBooking } from "../../context/BookingContext";
-
-const TZ = "Asia/Bangkok";
 
 export default function BookButton({
   type,
@@ -23,7 +21,7 @@ export default function BookButton({
       return;
     }
 
-    // ❌ אל תבצעי המרה כפולה – הנתון כבר UTC
+    // ✅ השעה נשלחת כמו שהיא (כבר בזמן המקומי של המשתמש)
     const sessionDate = selectedDate || null;
 
     const newSelection = {
@@ -35,13 +33,12 @@ export default function BookButton({
         description: item.description,
         location: item.location || "Ban Tao Resort",
       },
-      sessionDate, // ✅ נשמר כמו שהוא
+      sessionDate, // זמן מקומי — אין המרה ל־Bangkok
       sessionId: sessionId || null,
       guests,
       price,
       currency: "ILS",
       ruleId,
-      tz: TZ,
     };
 
     console.log("✅ Setting selection:", newSelection);

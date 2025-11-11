@@ -1,7 +1,8 @@
+// 📁 src/pages/guest/WorkshopDatePickerInline.jsx
 import * as React from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useCategories } from "../../context/CategoriesContext";
-import moment from "moment-timezone";
+import moment from "moment";
 
 /** כלי עזר: תאריך YYYY-MM-DD ללא השפעת time-zone */
 function isoLocal(y, m /*0-11*/, d) {
@@ -38,7 +39,8 @@ export default function WorkshopDatePickerInline({
   const sessionsByDate = React.useMemo(() => {
     const map = {};
     for (const s of sourceList) {
-      const dt = s.start ? new Date(s.start) : s.date ? new Date(s.date) : null;
+      // ✅ נשתמש בזמן המנורמל startLocal
+      const dt = s.startLocal ? new Date(s.startLocal) : null;
       if (!dt || isNaN(dt)) continue;
       const iso = toIsoLocalFromDate(dt);
       const catColor =
@@ -53,7 +55,10 @@ export default function WorkshopDatePickerInline({
   /** ✅ אם יש תאריך נבחר מבחוץ (למשל מהצ’קאאוט), נטען אותו כברירת מחדל */
   React.useEffect(() => {
     if (!sessionDate) return;
-    const onlyDate = sessionDate.slice(0, 10);
+
+    const d = sessionDate instanceof Date ? sessionDate : new Date(sessionDate);
+    const onlyDate = toIsoLocalFromDate(d);
+
     if (sessionsByDate[onlyDate]) {
       setSessionsForDay(sessionsByDate[onlyDate]);
     }
@@ -93,12 +98,16 @@ export default function WorkshopDatePickerInline({
         {daysOfMonth.map((iso) => {
           const dayNum = Number(iso.slice(-2));
           const hasSessions = !!sessionsByDate[iso]?.length;
-          const isActive = sessionDate?.startsWith(iso);
+          const isActive =
+            sessionDate &&
+            toIsoLocalFromDate(
+              sessionDate instanceof Date ? sessionDate : new Date(sessionDate)
+            ) === iso;
+
           const color = hasSessions
             ? sessionsByDate[iso][0]?.color || "#1976d2"
             : "#ccc";
 
-          // ✅ חדש: חסימת ימים שעברו
           const todayIso = toIsoLocalFromDate(new Date());
           const isPast = iso < todayIso;
 
@@ -151,9 +160,8 @@ export default function WorkshopDatePickerInline({
           </Typography>
           <Stack direction="row" flexWrap="wrap" gap={1}>
             {sessionsForDay.map((s) => {
-              const tz = s.tz || "Asia/Bangkok";
-              // ✅ כל השעות מוצגות לפי זמן בנגקוק
-              const timeLabel = moment.utc(s.start).tz(tz).format("HH:mm");
+              // ✅ משתמשים רק ב־startLocal שכבר לוקאלי (UTC → Local)
+              const timeLabel = moment(s.startLocal).format("HH:mm");
               const isSelected = activeSessionId === s._id;
 
               return (
@@ -162,7 +170,7 @@ export default function WorkshopDatePickerInline({
                   variant={isSelected ? "contained" : "outlined"}
                   onClick={() =>
                     handleSessionSelect(
-                      toIsoLocalFromDate(new Date(s.start)),
+                      toIsoLocalFromDate(new Date(s.startLocal)),
                       s
                     )
                   }
@@ -175,7 +183,7 @@ export default function WorkshopDatePickerInline({
                     },
                   }}
                 >
-                  {timeLabel} — {s.studio || "Studio"} (Bangkok)
+                  {timeLabel} — {s.studio || "Studio"}
                 </Button>
               );
             })}
