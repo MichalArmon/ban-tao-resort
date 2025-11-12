@@ -113,10 +113,17 @@ export function RecurringRulesProvider({ children }) {
   const createRule = useCallback(async (ruleData) => {
     setError(null);
     try {
+      // 🧩 1. צור חוק חדש
       const newRule = await post("/recurring-rules", ruleData);
       setRules((prev) => [...prev, newRule]);
+
+      // 🪄 2. הפעל מיד יצירת סשנים לחוק הזה
+      await post("/sessions/generate", { ruleId: newRule._id });
+
+      console.log("✅ Rule created and sessions generated successfully!");
       return newRule;
     } catch (e) {
+      console.error("❌ Failed to create rule or generate sessions:", e);
       setError(e.message || "Failed to create rule");
       throw e;
     }
