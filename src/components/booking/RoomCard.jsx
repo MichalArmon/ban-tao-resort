@@ -1,9 +1,9 @@
-// src/components/RoomCard.jsx
+// 📁 src/components/RoomCard.jsx
 import React from "react";
 import { Paper, Typography, Box, Button, Stack, Divider } from "@mui/material";
-import { useBooking } from "../../context/BookingContext";
 import { useNavigate } from "react-router-dom";
 import RoomPreviewDialog from "./RoomPreviewDialog";
+import BookButton from "./BookButton";
 
 const getImgUrl = (val) => {
   if (!val) return null;
@@ -17,48 +17,13 @@ const getImgUrl = (val) => {
 
 export default function RoomCard({ room }) {
   const navigate = useNavigate();
-  const {
-    setSelectedRoomId,
-    setFinalQuote,
-    fetchQuote,
-    checkIn,
-    checkOut,
-    selectedRoomId,
-    finalQuote,
-  } = useBooking();
-
   const [previewOpen, setPreviewOpen] = React.useState(false);
-
-  const isSelected = selectedRoomId === room._id;
 
   const img =
     room.heroUrl ||
-    room.imageUrl ||
     getImgUrl(room.hero) ||
     getImgUrl(room.images) ||
     "https://via.placeholder.com/800x600?text=Room+Image";
-
-  const handleSelectRoom = async () => {
-    if (isSelected) {
-      setSelectedRoomId(null);
-      setFinalQuote(null);
-      return;
-    }
-    setSelectedRoomId(room._id);
-    setFinalQuote(null);
-    try {
-      const quoteData = await fetchQuote(room.slug, checkIn, checkOut);
-      setFinalQuote({
-        price: quoteData.totalPrice,
-        isRetreat: quoteData.isRetreatPrice,
-        currency: quoteData.currency || room.currency || "USD",
-      });
-    } catch (err) {
-      console.error("Failed to get quote:", err);
-      setSelectedRoomId(null);
-      setFinalQuote(null);
-    }
-  };
 
   const goToRoomPage = () =>
     navigate(`/resort/rooms/${room.slug}`, { state: room });
@@ -66,169 +31,160 @@ export default function RoomCard({ room }) {
   return (
     <>
       <Paper
-        elevation={1}
+        elevation={2}
         sx={{
-          p: { xs: 1.5, sm: 2.5 },
-          mb: { xs: 2, sm: 3 },
+          p: { xs: 2.5, sm: 3 },
+          mb: { xs: 3, sm: 4 },
+          borderRadius: 3,
+          overflow: "hidden",
+          bgcolor: "background.paper",
           border: "1px solid",
-          borderColor: isSelected ? "primary.main" : "divider",
-          bgcolor: isSelected ? "action.hover" : "background.paper",
-          borderRadius: 2,
+          borderColor: "divider",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+          transition: "transform .2s ease, box-shadow .2s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+          },
         }}
       >
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1.5, sm: 2.5 }}
+          alignItems="stretch"
+          spacing={{ xs: 2, sm: 3 }}
         >
-          {/* תמונה */}
+          {/* 🖼️ תמונה */}
           <Box
             sx={{
-              width: { xs: "100%", sm: 320, md: 360 },
-              flexShrink: 0,
+              width: { xs: "100%", sm: 360, md: 400 },
               borderRadius: 2,
               overflow: "hidden",
+              flexShrink: 0,
+              cursor: "pointer",
             }}
+            onClick={goToRoomPage}
           >
             <Box
               component="img"
               src={img}
               alt={`${room.title} photo`}
               loading="lazy"
-              onClick={goToRoomPage}
               sx={{
                 display: "block",
                 width: "100%",
-                height: "auto",
-                aspectRatio: { xs: "16 / 9", sm: "3 / 2" },
+                height: 320, // 🟢 היה 100%/auto – עכשיו גובה קבוע וגבוה יותר
                 objectFit: "cover",
-                cursor: "pointer",
-                borderRadius: 2,
-                transition: "transform .2s ease",
-                "&:hover": { transform: "scale(1.01)" },
+                transition: "transform .25s ease",
+                "&:hover": { transform: "scale(1.02)" },
               }}
             />
           </Box>
 
-          {/* תוכן + לינק Learn more… מתחת לאמניטיז */}
-          <Stack spacing={1} sx={{ flexGrow: 1 }}>
-            <Typography
-              variant="h6"
-              component="h3"
-              onClick={goToRoomPage}
-              sx={{
-                fontWeight: 700,
-                cursor: "pointer",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-                "&:hover": { color: "primary.main" },
-              }}
-            >
-              {room.title}
-            </Typography>
-
-            {room.blurb && (
-              <Typography variant="body2" color="text.secondary">
-                {room.blurb}
-              </Typography>
-            )}
-
-            <Typography variant="body2" color="text.secondary">
-              Guests: {room.maxGuests ?? "-"} | Bed: {room.bedType ?? "-"} |
-              Size: {room.sizeM2 ?? "-"} m²
-            </Typography>
-
-            {Array.isArray(room.features) && room.features.length > 0 && (
-              <Typography variant="body2" color="text.secondary">
-                {room.features.join(", ")}
-              </Typography>
-            )}
-
-            {/* לינק learn more… בצד שמאל, קטן ואלגנטי */}
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => setPreviewOpen(true)}
-              sx={{
-                alignSelf: "flex-start",
-                px: 0,
-                minWidth: "auto",
-                textTransform: "none",
-
-                letterSpacing: 0.5,
-                color: "primary.main",
-                "&:hover": {
-                  backgroundColor: "transparent",
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              More info...
-            </Button>
-          </Stack>
-
-          {/* מפריד במובייל */}
-          <Divider sx={{ display: { xs: "block", sm: "none" }, my: 1 }} />
-
-          {/* מחיר + Select Room בלבד בצד ימין */}
+          {/* 📝 תוכן */}
           <Stack
-            spacing={1}
-            alignItems={{ xs: "stretch", sm: "flex-end" }}
+            spacing={1.2}
             justifyContent="space-between"
-            sx={{ minWidth: { sm: 200 } }}
+            sx={{ flexGrow: 1, py: { xs: 1, sm: 0.5 } }}
           >
             <Box>
-              {!isSelected || !finalQuote ? (
-                <>
-                  <Typography
-                    sx={{
-                      fontSize: { xs: "1.25rem", sm: "1.6rem" },
-                      fontWeight: 700,
-                    }}
-                  >
-                    {(room.currency || "USD") + " "}
-                    {room.priceBase ?? "-"}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Base price per night
-                  </Typography>
-                </>
-              ) : (
-                <>
-                  <Typography
-                    sx={{
-                      fontSize: { xs: "1.4rem", sm: "1.75rem" },
-                      fontWeight: 800,
-                      color: "secondary.main",
-                    }}
-                  >
-                    Total: {finalQuote.currency} {finalQuote.price}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Final Price
-                  </Typography>
-                </>
+              <Typography
+                variant="h6"
+                onClick={goToRoomPage}
+                sx={{
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  color: "text.primary",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                  "&:hover": { color: "primary.main" },
+                }}
+              >
+                {room.title}
+              </Typography>
+
+              {room.blurb && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.5 }}
+                >
+                  {room.blurb}
+                </Typography>
+              )}
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+              >
+                Guests: {room.maxGuests ?? "-"} | Bed: {room.bedType ?? "-"} |
+                Size: {room.sizeM2 ?? "-"} m²
+              </Typography>
+
+              {Array.isArray(room.features) && room.features.length > 0 && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
+                  {room.features.join(", ")}
+                </Typography>
               )}
             </Box>
 
-            <Button
-              variant="contained"
-              color={isSelected ? "success" : "primary"}
-              size="large"
-              onClick={handleSelectRoom}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                py: { xs: 1.2, sm: 0.75 },
-                borderRadius: { xs: 2, sm: 1 },
-                fontSize: { xs: "1rem", sm: ".95rem" },
-              }}
-            >
-              {isSelected ? "Selected — tap to deselect" : "Select Room"}
-            </Button>
+            <Box>
+              <Divider sx={{ my: 1.5 }} />
+
+              {/* 💰 מחיר + כפתור BOOK */}
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography
+                  sx={{
+                    fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                    fontWeight: 700,
+                    color: "text.primary",
+                  }}
+                >
+                  {room.currency || "USD"} {room.priceBase ?? "-"}
+                </Typography>
+                <BookButton
+                  type="room"
+                  item={room}
+                  selectedDate={room.checkIn}
+                  guests={room.maxGuests || 2}
+                  price={room.priceBase}
+                  ruleId={null}
+                  sessionId={null}
+                />
+              </Stack>
+
+              {/* 🔍 לינק Learn More */}
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => setPreviewOpen(true)}
+                sx={{
+                  alignSelf: "flex-start",
+                  mt: 1,
+                  textTransform: "none",
+                  color: "primary.main",
+                  "&:hover": {
+                    textDecoration: "underline",
+                    backgroundColor: "transparent",
+                  },
+                }}
+              >
+                View details
+              </Button>
+            </Box>
           </Stack>
         </Stack>
       </Paper>
 
-      {/* תצוגה מקדימה בדיאלוג */}
+      {/* 🪟 דיאלוג תצוגה מקדימה */}
       <RoomPreviewDialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}

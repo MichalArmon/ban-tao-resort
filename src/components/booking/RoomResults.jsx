@@ -78,13 +78,14 @@ const RoomResults = () => {
           {availableRooms.length} Available Room Offers
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Checking dates: {checkIn} to {checkOut}
+          Checking dates: {checkIn ? checkIn.format("YYYY-MM-DD") : "—"} to{" "}
+          {checkOut ? checkOut.format("YYYY-MM-DD") : "—"}
         </Typography>
         <Divider sx={{ mb: 3 }} />
 
         {/* Loop and display all available room units */}
-        {availableRooms.map((room) => (
-          <RoomCard key={room._id} room={room} />
+        {availableRooms.map((room, i) => (
+          <RoomCard key={room._id || room.room || i} room={room} />
         ))}
       </Box>
     );

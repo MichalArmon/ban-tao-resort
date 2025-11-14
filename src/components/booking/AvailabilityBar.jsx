@@ -1,4 +1,3 @@
-// 📁 src/components/AvailabilityBar.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Stack,
@@ -10,25 +9,23 @@ import {
 import Autocomplete from "@mui/material/Autocomplete";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { PickersDay } from "@mui/x-date-pickers/PickersDay";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import moment from "moment-timezone";
 import { useNavigate } from "react-router-dom";
 import GuestRoomPopover from "./GuestRoomPopover";
-import { alpha } from "@mui/material/styles";
-
-dayjs.extend(isSameOrBefore);
-
 import { useBooking } from "../../context/BookingContext";
-import { useRooms } from "../../context/RoomContext"; // ✅ שם מעודכן
+import { useRooms } from "../../context/RoomContext";
+
+// 🆕 הקומפוננטה החדשה
+import ColoredRetreatDay from "./ColoredRetreatDay";
+
+moment.tz.setDefault("Asia/Bangkok");
 
 /* ---------- Helpers ---------- */
 function getDayInfo(map, iso) {
   if (!map) return null;
-  const raw = map.days?.[iso] ?? map[iso];
-  if (!raw) return null;
-  return Array.isArray(raw) ? raw[0] : raw;
+  const arr = map[iso];
+  return Array.isArray(arr) ? arr[0] : null;
 }
 
 function slugify(str) {
@@ -62,20 +59,19 @@ const AvailabilityBar = () => {
     fetchAvailability,
     loading,
     fetchRetreatsCalendar,
+    retreatDates,
   } = useBooking();
 
-  // ✅ שמות מעודכנים מהקונטקסט החדש
   const { rooms: roomList, ensureRooms, loadingRooms, roomsError } = useRooms();
   const navigate = useNavigate();
 
-  const [retreatDates, setRetreatDates] = useState({});
   const [selectedType, setSelectedType] = useState(null);
 
-  const minCheckIn = useMemo(() => dayjs().startOf("day"), []);
-  const farFuture = useMemo(() => dayjs().add(3, "year").endOf("day"), []);
+  const minCheckIn = useMemo(() => moment().startOf("day"), []);
+  const farFuture = useMemo(() => moment().add(3, "year").endOf("day"), []);
   const minCheckOut = useMemo(
-    () => (checkIn ? dayjs(checkIn).add(1, "day") : minCheckIn.add(1, "day")),
-    [checkIn, minCheckIn]
+    () => (checkIn ? moment(checkIn).add(1, "day") : moment().add(1, "day")),
+    [checkIn]
   );
 
   const makeSlug = useCallback((info, key) => {
@@ -89,101 +85,10 @@ const AvailabilityBar = () => {
     return slugify(base);
   }, []);
 
-  // 🗓️ טוען מפה מאוחדת של ריטריטים (למשל שנה–שנתיים קדימה)
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (!fetchRetreatsCalendar) return;
-      try {
-        const map = await fetchRetreatsCalendar(24);
-        if (mounted) setRetreatDates(map || {});
-      } catch (e) {
-        console.error("Failed to load retreats calendar:", e);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [fetchRetreatsCalendar]);
-
   // 🏨 טוען רשימת חדרים
   useEffect(() => {
     ensureRooms().catch(() => {});
   }, [ensureRooms]);
-
-  /* ---------- Custom day renderer ---------- */
-  const ColoredDay = (props) => {
-    const { day, className, ...rest } = props;
-    if (!day || !dayjs.isDayjs(day)) {
-      return <PickersDay {...rest} day={day} className={className} />;
-    }
-
-    const iso = day.format("YYYY-MM-DD");
-    const info = getDayInfo(retreatDates, iso);
-    if (!info) {
-      return <PickersDay {...rest} day={day} className={className} />;
-    }
-
-    const base =
-      info?.color || TYPE_COLORS[(info?.type || "").toLowerCase()] || "#5f5f5f";
-    const fill = alpha(base, 0.55);
-    const hoverFill = alpha(base, 0.7);
-    const slug = info?.slug || makeSlug(info, iso);
-
-    const goToRetreat = () => {
-      navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
-    };
-
-    const node = (
-      <PickersDay
-        {...rest}
-        day={day}
-        className={className}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          goToRetreat();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.stopPropagation();
-            goToRetreat();
-          } else if (rest.onKeyDown) rest.onKeyDown(e);
-        }}
-        role="link"
-        aria-label={`Retreat: ${info.name || info.type}`}
-        sx={{
-          position: "relative",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            inset: 2,
-            borderRadius: "50%",
-            backgroundColor: fill,
-            pointerEvents: "none",
-            transition: "background-color 120ms ease",
-          },
-          cursor: "pointer",
-          "&:hover::before": { backgroundColor: hoverFill },
-          "&.Mui-selected": {
-            backgroundColor: "primary.main !important",
-            color: "primary.contrastText !important",
-          },
-        }}
-      />
-    );
-
-    return (
-      <Tooltip
-        title={info?.name || info?.type || "Retreat"}
-        arrow
-        placement="top"
-      >
-        <span>{node}</span>
-      </Tooltip>
-    );
-  };
 
   const handleSetGuests = useCallback(
     (v) => setGuests(Math.max(1, v)),
@@ -193,14 +98,17 @@ const AvailabilityBar = () => {
     (v) => setRooms(Math.max(1, v)),
     [setRooms]
   );
-
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
     const roomSlug = selectedType?.slug ?? null;
-    await fetchAvailability(roomSlug);
+    try {
+      const result = await fetchAvailability(roomSlug);
+      console.log("🏨 Search result:", result);
+    } catch (err) {
+      console.error("❌ handleSearch failed:", err);
+    }
   };
 
-  // 🏷️ אפשרויות לבורר סוג חדר
   const typeOptions = useMemo(() => {
     const list = Array.isArray(roomList) ? roomList : [];
     return list.map((r) => ({
@@ -211,19 +119,10 @@ const AvailabilityBar = () => {
   }, [roomList]);
 
   const isSearchDisabled =
-    !checkIn ||
-    !checkOut ||
-    dayjs(checkOut).isSameOrBefore(dayjs(checkIn), "day");
-
-  const renderColoredDay = useCallback(
-    (date, _valueOrProps, pickersDayProps) => (
-      <ColoredDay {...(pickersDayProps || _valueOrProps)} day={date} />
-    ),
-    []
-  );
+    !checkIn || !checkOut || moment(checkOut).isSameOrBefore(checkIn, "day");
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <LocalizationProvider dateAdapter={AdapterMoment}>
       <Stack
         direction={{ xs: "column", md: "row" }}
         sx={{
@@ -260,49 +159,69 @@ const AvailabilityBar = () => {
           )}
         />
 
-        {/* Check-In */}
         <DatePicker
           label="Check-In"
-          value={checkIn ? dayjs(checkIn) : null}
+          value={checkIn || null}
           onChange={(newValue) => {
-            const iso = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
-            const info = iso && getDayInfo(retreatDates, iso);
+            if (!moment.isMoment(newValue)) return;
+            const iso = newValue.format("YYYY-MM-DD");
+            const info = getDayInfo(retreatDates, iso);
             if (info) {
               const slug = info?.slug || makeSlug(info, iso);
               navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
               return;
             }
-            setCheckIn(newValue ? iso : "");
+            setCheckIn(newValue);
           }}
           minDate={minCheckIn}
           maxDate={farFuture}
-          renderDay={(date, value, props) =>
-            renderColoredDay(date, value, props)
-          }
-          slots={{ day: (props) => <ColoredDay {...props} /> }}
+          slotProps={{ textField: { InputLabelProps: { shrink: true } } }}
+          slots={{
+            day: (props) => (
+              <ColoredRetreatDay
+                {...props}
+                retreatDates={retreatDates}
+                onSelect={(info, iso) =>
+                  navigate(`/retreats/${info.slug}`, {
+                    state: { ...info, date: iso },
+                  })
+                }
+              />
+            ),
+          }}
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
 
-        {/* Check-Out */}
         <DatePicker
           label="Check-Out"
-          value={checkOut ? dayjs(checkOut) : null}
+          value={checkOut || null}
           onChange={(newValue) => {
-            const iso = newValue ? dayjs(newValue).format("YYYY-MM-DD") : "";
-            const info = iso && getDayInfo(retreatDates, iso);
+            if (!moment.isMoment(newValue)) return;
+            const iso = newValue.format("YYYY-MM-DD");
+            const info = getDayInfo(retreatDates, iso);
             if (info) {
               const slug = info?.slug || makeSlug(info, iso);
               navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
               return;
             }
-            setCheckOut(newValue ? iso : "");
+            setCheckOut(newValue);
           }}
           minDate={minCheckOut}
           maxDate={farFuture}
-          renderDay={(date, value, props) =>
-            renderColoredDay(date, value, props)
-          }
-          slots={{ day: (props) => <ColoredDay {...props} /> }}
+          slotProps={{ textField: { InputLabelProps: { shrink: true } } }}
+          slots={{
+            day: (props) => (
+              <ColoredRetreatDay
+                {...props}
+                retreatDates={retreatDates}
+                onSelect={(info, iso) =>
+                  navigate(`/retreats/${info.slug}`, {
+                    state: { ...info, date: iso },
+                  })
+                }
+              />
+            ),
+          }}
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
         />
 
