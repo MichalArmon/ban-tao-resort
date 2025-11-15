@@ -20,6 +20,7 @@ import { TreatmentsProvider } from "./context/TreatmentsContext.jsx";
 import { RecurringRulesProvider } from "./context/RecurringRulesContext.jsx";
 import { CategoriesProvider } from "./context/CategoriesContext.jsx";
 import { SessionsProvider } from "./context/SessionsContext.jsx";
+import { DateSelectionProvider } from "./context/DateSelectionContext.jsx";
 
 // 📁 src/main.jsx
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -33,19 +34,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <CategoriesProvider>
               <UploadProvider>
                 <TreatmentsProvider>
-                  <RoomsProvider>
-                    <RetreatsProvider>
-                      <WorkshopsProvider>
-                        <BookingProvider>
-                          <RecurringRulesProvider>
-                            <SessionsProvider>
-                              <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
-                            </SessionsProvider>
-                          </RecurringRulesProvider>
-                        </BookingProvider>
-                      </WorkshopsProvider>
-                    </RetreatsProvider>
-                  </RoomsProvider>
+                  <DateSelectionProvider>
+                    <RoomsProvider>
+                      <RetreatsProvider>
+                        <WorkshopsProvider>
+                          <BookingProvider>
+                            <RecurringRulesProvider>
+                              <SessionsProvider>
+                                <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
+                              </SessionsProvider>
+                            </RecurringRulesProvider>
+                          </BookingProvider>
+                        </WorkshopsProvider>
+                      </RetreatsProvider>
+                    </RoomsProvider>
+                  </DateSelectionProvider>
                 </TreatmentsProvider>
               </UploadProvider>
             </CategoriesProvider>

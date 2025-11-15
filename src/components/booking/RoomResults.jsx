@@ -7,21 +7,23 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { useBooking } from "../../context/BookingContext";
+
+import { useRooms } from "../../context/RoomContext"; // 👈 שינוי!
+import { useBooking } from "../../context/BookingContext"; // עדיין צריך תאריכים
+
 import RoomCard from "./RoomCard";
 
 const RoomResults = () => {
-  const {
-    availableRooms = [], // ✅ ברירת מחדל למערך ריק כדי למנוע undefined
-    loading,
-    error,
-    message,
-    checkIn,
-    checkOut,
-  } = useBooking();
+  const { checkIn, checkOut } = useBooking(); // תאריכים נשארים בבוקינג
 
-  // --- Handling Loading State ---
-  if (loading) {
+  const {
+    availableRooms = [],
+    availabilityLoading,
+    availabilityError,
+  } = useRooms(); // 👈 פה מגיעות התוצאות האמיתיות
+
+  // --- Loading ---
+  if (availabilityLoading) {
     return (
       <Box sx={{ textAlign: "center", py: 5 }}>
         <CircularProgress />
@@ -32,66 +34,45 @@ const RoomResults = () => {
     );
   }
 
-  // --- Handling Error State ---
-  if (error) {
+  // --- Error ---
+  if (availabilityError) {
     return (
       <Box sx={{ mt: 4 }}>
-        <Alert severity="error">
-          <Typography variant="body1">
-            Error checking availability: {error}
-          </Typography>
-        </Alert>
+        <Alert severity="error">Error: {availabilityError}</Alert>
       </Box>
     );
   }
 
-  // --- Handling No Results State ---
-  if (availableRooms?.length === 0 && message) {
-    return (
-      <Box sx={{ mt: 4 }}>
-        <Alert severity="info">
-          <Typography variant="body1">
-            {/* 🔑 Message from the server (e.g., "Resort is closed" or "Not enough rooms") */}
-            {message}
-          </Typography>
-        </Alert>
-      </Box>
-    );
-  }
-
-  // --- Handling Initial State (No search yet) ---
-  if (availableRooms?.length === 0 && !message && !error) {
+  // --- Initial state ---
+  if (availableRooms.length === 0) {
     return (
       <Box sx={{ textAlign: "center", py: 5 }}>
         <Typography variant="h6" color="text.secondary">
-          Please select dates, guests, and rooms to begin your search.
+          Select dates and room type to begin your search.
         </Typography>
       </Box>
     );
   }
 
-  // --- Displaying Results ---
-  if (availableRooms?.length > 0) {
-    return (
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
-          {availableRooms.length} Available Room Offers
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Checking dates: {checkIn ? checkIn.format("YYYY-MM-DD") : "—"} to{" "}
-          {checkOut ? checkOut.format("YYYY-MM-DD") : "—"}
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
+  // --- Results ---
+  return (
+    <Box sx={{ mt: 4 }}>
+      <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
+        {availableRooms.length} Available Room Offers
+      </Typography>
 
-        {/* Loop and display all available room units */}
-        {availableRooms.map((room, i) => (
-          <RoomCard key={room._id || room.room || i} room={room} />
-        ))}
-      </Box>
-    );
-  }
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Dates: {checkIn?.format("YYYY-MM-DD")} →{" "}
+        {checkOut?.format("YYYY-MM-DD")}
+      </Typography>
 
-  return null;
+      <Divider sx={{ mb: 3 }} />
+
+      {availableRooms.map((room) => (
+        <RoomCard key={room._id || room.slug} room={room} />
+      ))}
+    </Box>
+  );
 };
 
 export default RoomResults;

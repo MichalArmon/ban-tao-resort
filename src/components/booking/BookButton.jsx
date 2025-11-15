@@ -2,12 +2,14 @@
 import { Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../../context/BookingContext";
+import { useRooms } from "../../context/RoomContext";
+import { useSessions } from "../../context/SessionsContext";
 
 export default function BookButton({
   type,
   item,
   selectedDate,
-  guests = 2,
+  guests, // guests is optional now
   price = item?.price || 0,
   ruleId = null,
   sessionId = null,
@@ -15,13 +17,26 @@ export default function BookButton({
   const navigate = useNavigate();
   const { setSelection } = useBooking();
 
+  // Guests from contexts
+  const { guests: roomGuests } = useRooms();
+  const { sessionGuests } = useSessions();
+
+  // Final guests resolution
+  const finalGuests =
+    guests !== undefined
+      ? guests
+      : type === "workshop"
+      ? sessionGuests
+      : type === "room"
+      ? roomGuests
+      : 1; // for retreats or anything else
+
   const handleBook = () => {
     if (!item?._id) {
       console.error("❌ Missing item._id in BookButton");
       return;
     }
 
-    // ✅ השעה נשלחת כמו שהיא (כבר בזמן המקומי של המשתמש)
     const sessionDate = selectedDate || null;
 
     const newSelection = {
@@ -33,9 +48,14 @@ export default function BookButton({
         description: item.description,
         location: item.location || "Ban Tao Resort",
       },
-      sessionDate, // זמן מקומי — אין המרה ל־Bangkok
+
+      // DATE + TIME
+      sessionDate,
       sessionId: sessionId || null,
-      guests,
+
+      // GUESTS
+      guests: finalGuests,
+
       price,
       currency: "ILS",
       ruleId,

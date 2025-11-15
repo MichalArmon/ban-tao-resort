@@ -1,23 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Stack,
-  Button,
-  CircularProgress,
-  TextField,
-  Tooltip,
-} from "@mui/material";
+import { Stack, Button, CircularProgress, TextField } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment from "moment-timezone";
 import { useNavigate } from "react-router-dom";
+
 import GuestRoomPopover from "./GuestRoomPopover";
+import ColoredRetreatDay from "./ColoredRetreatDay";
+
 import { useBooking } from "../../context/BookingContext";
 import { useRooms } from "../../context/RoomContext";
-
-// 🆕 הקומפוננטה החדשה
-import ColoredRetreatDay from "./ColoredRetreatDay";
+import { useDateSelection } from "../../context/DateSelectionContext";
 
 moment.tz.setDefault("Asia/Bangkok");
 
@@ -36,17 +31,9 @@ function slugify(str) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-const TYPE_COLORS = {
-  yoga: "#a2868e",
-  detox: "#2196f3",
-  meditation: "#9c27b0",
-  workshop: "#ff9800",
-  skiing: "#03a9f4",
-  cooking: "#ffc107",
-  other: "#5f5f5f",
-};
-
 const AvailabilityBar = () => {
+  /* ---------------- Booking Context (Dates & Guests) ---------------- */
+  const { retreatDates } = useBooking();
   const {
     checkIn,
     setCheckIn,
@@ -54,19 +41,27 @@ const AvailabilityBar = () => {
     setCheckOut,
     guests,
     setGuests,
-    rooms,
-    setRooms,
-    fetchAvailability,
-    loading,
-    fetchRetreatsCalendar,
-    retreatDates,
-  } = useBooking();
+    roomsCount: rooms, // 💡 שינוי שם: ב-DateSelectionContext השם הוא roomsCount
+    setRoomsCount: setRooms, // 💡 שינוי שם: ב-DateSelectionContext השם הוא setRoomsCount
+  } = useDateSelection();
 
-  const { rooms: roomList, ensureRooms, loadingRooms, roomsError } = useRooms();
+  /* ----------------   Rooms Context (ROOMS + AVAILABILITY) ----------- */
+  const {
+    rooms: roomList,
+    ensureRooms,
+    loadingRooms,
+
+    // 🟢 זמינות
+    getRoomAvailability,
+    searchAvailableRooms,
+    availabilityLoading,
+    setAvailableRooms,
+  } = useRooms();
+
   const navigate = useNavigate();
-
   const [selectedType, setSelectedType] = useState(null);
 
+  /* ---------------- Dates ---------------- */
   const minCheckIn = useMemo(() => moment().startOf("day"), []);
   const farFuture = useMemo(() => moment().add(3, "year").endOf("day"), []);
   const minCheckOut = useMemo(
@@ -74,22 +69,12 @@ const AvailabilityBar = () => {
     [checkIn]
   );
 
-  const makeSlug = useCallback((info, key) => {
-    const base = (
-      info?.slug ||
-      info?.name ||
-      info?.type ||
-      key ||
-      ""
-    ).toString();
-    return slugify(base);
-  }, []);
-
-  // 🏨 טוען רשימת חדרים
+  /* ---------------- Load Rooms Once ---------------- */
   useEffect(() => {
     ensureRooms().catch(() => {});
   }, [ensureRooms]);
 
+  /* ---------------- Guests / Rooms ---------------- */
   const handleSetGuests = useCallback(
     (v) => setGuests(Math.max(1, v)),
     [setGuests]
@@ -98,29 +83,60 @@ const AvailabilityBar = () => {
     (v) => setRooms(Math.max(1, v)),
     [setRooms]
   );
+
+  /* ============================================================
+       🔍 Search Availability
+     ============================================================ */
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
+
+    const checkInISO = moment(checkIn).format("YYYY-MM-DD");
+    const checkOutISO = moment(checkOut).format("YYYY-MM-DD");
+
     const roomSlug = selectedType?.slug ?? null;
+
     try {
-      const result = await fetchAvailability(roomSlug);
-      console.log("🏨 Search result:", result);
+      if (!roomSlug) {
+        // 🟢 ANY — כל החדרים
+        const list = await searchAvailableRooms({
+          checkIn: checkInISO,
+          checkOut: checkOutISO,
+        });
+        console.log("🏨 ANY availability:", list);
+        setAvailableRooms(list);
+      } else {
+        // 🟢 חדר ספציפי
+        const result = await getRoomAvailability({
+          roomSlug,
+          checkIn: checkInISO,
+          checkOut: checkOutISO,
+        });
+        console.log("🏨 Specific room availability:", result);
+        setAvailableRooms(result ? [result] : []);
+      }
     } catch (err) {
       console.error("❌ handleSearch failed:", err);
     }
   };
 
+  /* ---------------- Options ---------------- */
   const typeOptions = useMemo(() => {
     const list = Array.isArray(roomList) ? roomList : [];
-    return list.map((r) => ({
+    const mapped = list.map((r) => ({
       slug: r.slug,
       label: r.label || r.title || r.slug,
       raw: r,
     }));
+    return [{ slug: null, label: "Any", raw: null }, ...mapped];
   }, [roomList]);
 
   const isSearchDisabled =
-    !checkIn || !checkOut || moment(checkOut).isSameOrBefore(checkIn, "day");
+    !checkIn ||
+    !checkOut ||
+    moment(checkOut).isSameOrBefore(checkIn, "day") ||
+    availabilityLoading;
 
+  /* ---------------- Render ---------------- */
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
       <Stack
@@ -136,8 +152,6 @@ const AvailabilityBar = () => {
           mb: 4,
           backgroundColor: "background.paper",
           boxShadow: 3,
-          justifyContent: "center",
-          flexWrap: { xs: "wrap", sm: "nowrap" },
         }}
       >
         {/* Room Type */}
@@ -153,96 +167,64 @@ const AvailabilityBar = () => {
             <TextField
               {...params}
               label="Room Type"
-              placeholder={roomsError ? "Failed to load" : "Any"}
               InputLabelProps={{ shrink: true }}
             />
           )}
         />
 
+        {/* Date Pickers — unchanged */}
         <DatePicker
           label="Check-In"
           value={checkIn || null}
-          onChange={(newValue) => {
-            if (!moment.isMoment(newValue)) return;
-            const iso = newValue.format("YYYY-MM-DD");
-            const info = getDayInfo(retreatDates, iso);
-            if (info) {
-              const slug = info?.slug || makeSlug(info, iso);
-              navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
-              return;
-            }
-            setCheckIn(newValue);
-          }}
+          onChange={(v) => setCheckIn(v)}
           minDate={minCheckIn}
           maxDate={farFuture}
           slotProps={{ textField: { InputLabelProps: { shrink: true } } }}
           slots={{
             day: (props) => (
-              <ColoredRetreatDay
-                {...props}
-                retreatDates={retreatDates}
-                onSelect={(info, iso) =>
-                  navigate(`/retreats/${info.slug}`, {
-                    state: { ...info, date: iso },
-                  })
-                }
-              />
+              <ColoredRetreatDay {...props} retreatDates={retreatDates} />
             ),
           }}
-          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
+          sx={{ flexGrow: 1 }}
         />
 
         <DatePicker
           label="Check-Out"
           value={checkOut || null}
-          onChange={(newValue) => {
-            if (!moment.isMoment(newValue)) return;
-            const iso = newValue.format("YYYY-MM-DD");
-            const info = getDayInfo(retreatDates, iso);
-            if (info) {
-              const slug = info?.slug || makeSlug(info, iso);
-              navigate(`/retreats/${slug}`, { state: { ...info, date: iso } });
-              return;
-            }
-            setCheckOut(newValue);
-          }}
+          onChange={(v) => setCheckOut(v)}
           minDate={minCheckOut}
           maxDate={farFuture}
           slotProps={{ textField: { InputLabelProps: { shrink: true } } }}
           slots={{
             day: (props) => (
-              <ColoredRetreatDay
-                {...props}
-                retreatDates={retreatDates}
-                onSelect={(info, iso) =>
-                  navigate(`/retreats/${info.slug}`, {
-                    state: { ...info, date: iso },
-                  })
-                }
-              />
+              <ColoredRetreatDay {...props} retreatDates={retreatDates} />
             ),
           }}
-          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 200 } }}
+          sx={{ flexGrow: 1 }}
         />
 
         {/* Guests & Rooms */}
         <GuestRoomPopover
-          sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 260 } }}
           guests={guests}
           rooms={rooms}
           setGuests={handleSetGuests}
           setRooms={handleSetRooms}
+          sx={{ flexGrow: 1 }}
         />
 
         {/* Search Button */}
         <Button
           variant="contained"
           size="large"
-          disabled={isSearchDisabled || loading}
+          disabled={isSearchDisabled}
           onClick={handleSearch}
-          sx={{ width: 140, height: 56, flexShrink: 0 }}
+          sx={{ width: 140, height: 56 }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : "Search"}
+          {availabilityLoading ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "Search"
+          )}
         </Button>
       </Stack>
     </LocalizationProvider>

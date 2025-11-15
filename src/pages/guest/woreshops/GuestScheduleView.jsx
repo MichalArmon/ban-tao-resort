@@ -59,7 +59,7 @@ export default function GuestScheduleView({
   const weekEnd = weekStart.clone().endOf("week");
 
   /* ---------------------------------------------
-     Load sessions for the selected week
+      Load sessions for the selected week
   --------------------------------------------- */
   React.useEffect(() => {
     if (!open || !workshop?._id) return;
@@ -69,7 +69,7 @@ export default function GuestScheduleView({
   }, [open, workshop?._id, weekStart, weekEnd, loadSessions]);
 
   /* ---------------------------------------------
-     Group sessions by day (using startLocal)
+      Group sessions by day (using startLocal)
   --------------------------------------------- */
   const days = React.useMemo(() => {
     if (!sessions?.length) return [];
@@ -97,6 +97,34 @@ export default function GuestScheduleView({
   const prevWeek = () => setWeekStart((m) => m.clone().subtract(7, "days"));
   const nextWeek = () => setWeekStart((m) => m.clone().add(7, "days"));
 
+  /* ---------------------------------------------
+      🆕 פונקציה ליצירת רכיב הסטטוס
+  --------------------------------------------- */
+  const createAvailabilityStatus = (occ) => {
+    const capacity = occ.availability?.capacity ?? 0;
+    const booked = occ.availability?.booked ?? 0;
+    const remaining = Math.max(capacity - booked, 0);
+    const isFull = remaining <= 0;
+
+    return (
+      <Typography
+        variant="caption"
+        component="span"
+        sx={{
+          color: isFull ? "error.main" : "success.main",
+          fontWeight: 600,
+          display: "block",
+          mt: isMobile ? 0 : 0.5,
+          mb: isMobile ? 1 : 0,
+        }}
+      >
+        {isFull
+          ? "Fully Booked"
+          : `${remaining} spots left! (${booked} booked)`}
+      </Typography>
+    );
+  };
+
   return (
     <Dialog
       open={open}
@@ -123,6 +151,7 @@ export default function GuestScheduleView({
         <Typography variant={isMobile ? "h6" : "h5"} fontWeight={800}>
           {workshop?.title ?? ""}
         </Typography>
+
         <IconButton
           onClick={onClose}
           size="small"
@@ -162,6 +191,7 @@ export default function GuestScheduleView({
             >
               PREVIOUS WEEK
             </Button>
+
             <Chip
               icon={<CalendarMonthRounded />}
               label={`${weekStart.format("MM/DD")} - ${weekEnd.format(
@@ -174,6 +204,7 @@ export default function GuestScheduleView({
                 fontSize: isMobile ? "0.75rem" : "inherit",
               }}
             />
+
             <Button
               size="small"
               onClick={nextWeek}
@@ -191,11 +222,13 @@ export default function GuestScheduleView({
             {error}
           </Alert>
         )}
+
         {loading && (
           <Box sx={{ textAlign: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         )}
+
         {!loading && !error && days.length === 0 && (
           <Alert severity="info">No sessions in this week.</Alert>
         )}
@@ -243,29 +276,68 @@ export default function GuestScheduleView({
                       </TableCell>
                     </TableRow>
                   </TableHead>
+
                   <TableBody>
                     {bucket.items.map((occ) => {
-                      // ✅ השעה כבר לוקאלית – אין צורך בהמרה
                       const start = moment(occ.startLocal);
                       const end = moment(occ.endLocal);
                       const range = `${start.format("HH:mm")} - ${end.format(
                         "HH:mm"
                       )}`;
 
+                      // 🆕 חישוב זמינות מתוקן
+                      const capacity = occ.availability?.capacity ?? 0;
+                      const booked = occ.availability?.booked ?? 0;
+                      const remaining = Math.max(capacity - booked, 0);
+                      const isFull = remaining <= 0;
+
                       return (
                         <TableRow key={occ._id}>
                           <TableCell>{range}</TableCell>
                           <TableCell>{workshop.title}</TableCell>
                           <TableCell>{occ.studio}</TableCell>
+
                           <TableCell align="right">
-                            <BookButton
-                              type="workshop"
-                              item={workshop}
-                              selectedDate={occ.startLocal}
-                              price={workshop.price}
-                              sessionId={occ._id}
-                              ruleId={occ.ruleId}
-                            />
+                            <Stack direction="column" alignItems="flex-end">
+                              <BookButton
+                                type="workshop"
+                                item={workshop}
+                                selectedDate={occ.startLocal}
+                                price={workshop.price}
+                                sessionId={occ._id}
+                                ruleId={occ.ruleId}
+                                disabled={isFull}
+                              />
+
+                              <Typography
+                                variant="caption"
+                                align="left"
+                                sx={{
+                                  color: isFull ? "text.main" : "text.main",
+                                  textAlign: "left",
+                                  fontWeight: 200,
+                                  mt: 0.5,
+                                  display: "block",
+                                }}
+                              >
+                                {isFull ? (
+                                  <strong>Fully Booked</strong>
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      mr: 0.5,
+                                    }}
+                                  >
+                                    <strong style={{ fontWeight: 800 }}>
+                                      {remaining}
+                                    </strong>
+                                    {"   "}
+
+                                    <span>spots left</span>
+                                  </Box>
+                                )}
+                              </Typography>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       );
@@ -281,6 +353,12 @@ export default function GuestScheduleView({
                     const range = `${start.format("HH:mm")} - ${end.format(
                       "HH:mm"
                     )}`;
+
+                    const capacity = occ.availability?.capacity ?? 0;
+                    const booked = occ.availability?.booked ?? 0;
+                    const remaining = Math.max(capacity - booked, 0);
+                    const isFull = remaining <= 0;
+
                     return (
                       <Card
                         key={occ._id}
@@ -299,9 +377,11 @@ export default function GuestScheduleView({
                           >
                             {range}
                           </Typography>
+
                           <Typography variant="body2" sx={{ mb: 0.5 }}>
                             <strong>{workshop.title}</strong>
                           </Typography>
+
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -309,7 +389,24 @@ export default function GuestScheduleView({
                           >
                             Studio: {occ.studio}
                           </Typography>
+
                           <Divider sx={{ mb: 1 }} />
+
+                          <Typography
+                            variant="caption"
+                            component="span"
+                            sx={{
+                              color: isFull ? "error.main" : "success.main",
+                              fontWeight: 600,
+                              display: "block",
+                              mb: 1,
+                            }}
+                          >
+                            {isFull
+                              ? "Fully Booked"
+                              : `${remaining} spots left`}
+                          </Typography>
+
                           <BookButton
                             type="workshop"
                             item={workshop}
@@ -317,6 +414,7 @@ export default function GuestScheduleView({
                             price={workshop.price}
                             sessionId={occ._id}
                             ruleId={occ.ruleId}
+                            disabled={isFull}
                           />
                         </CardContent>
                       </Card>
