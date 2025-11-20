@@ -5,203 +5,46 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
-  CardMedia,
-  Checkbox,
-  CircularProgress,
   Container,
-  Divider,
-  FormControlLabel,
-  Grid,
-  MenuItem,
   Paper,
-  Stack,
-  TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
-import GroupRounded from "@mui/icons-material/GroupRounded";
-import PaymentsRounded from "@mui/icons-material/PaymentsRounded";
-import PlaceRounded from "@mui/icons-material/PlaceRounded";
+import moment from "moment";
+
+// Hooks & Components
 import { useBooking } from "../../context/BookingContext";
 import { useSessions } from "../../context/SessionsContext";
-import moment from "moment";
-import WorkshopDatePickerInline from "./WorkshopDatePickerInline";
+import WorkshopDatePickerInline from "../../components/booking/WorkshopDatePickerInline";
+import BookingSummary from "../../components/booking/BookingSummary";
+import CheckoutForm from "../../components/booking/CheckoutForm";
+import AvailabilityBar from "../../components/booking/AvailabilityBar";
 
-/* =========================================
- * Utils
- * =======================================*/
-const COUNTRIES = ["Israel", "Greece", "USA", "UK"];
-
-function formatMoney(n, currency = "ILS") {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-    }).format(n ?? 0);
-  } catch {
-    return `${n} ${currency}`;
-  }
-}
-
-/* =========================================
- * Small pieces
- * =======================================*/
-function SummaryRow({ icon, label, value }) {
-  return (
-    <Stack
-      direction="row"
-      spacing={1.5}
-      alignItems="center"
-      justifyContent="space-between"
-    >
-      <Stack direction="row" spacing={1.2} alignItems="center">
-        {icon}
-        <Typography variant="body2" color="text.secondary">
-          {label}
-        </Typography>
-      </Stack>
-      <Typography variant="body2">{value}</Typography>
-    </Stack>
-  );
-}
-
-/* =========================================
- * Booking summary card
- * =======================================*/
-function BookingSummary({ sel, onConfirm, submitting }) {
-  const title = sel?.item?.title || "Selected item";
-  const img = sel?.item?.hero;
-  const basePrice = sel?.item?.price ?? sel?.price ?? 0;
-  const totalPrice = sel?.price ?? basePrice;
-  const guests = Number(sel?.guests) || 1;
-  const currency = sel?.currency ?? "ILS";
-  const isRoom = sel?.type === "room";
-
-  // ✅ מציגים זמן מקומי בלבד (UTC → Local)
-  let dateLine = "Select date/time";
-  if (isRoom && sel?.dates?.checkIn && sel?.dates?.checkOut) {
-    dateLine = `${new Date(
-      sel.dates.checkIn
-    ).toLocaleDateString()} → ${new Date(
-      sel.dates.checkOut
-    ).toLocaleDateString()}`;
-  } else if (sel?.sessionLabel) {
-    dateLine = sel.sessionLabel;
-  } else if (sel?.sessionDate) {
-    dateLine =
-      moment(sel.sessionDate).format("DD.MM.YYYY, HH:mm") +
-      (sel?.studio ? ` — ${sel.studio}` : "");
-  }
-
-  const totalFormatted = formatMoney(totalPrice, currency);
-  const baseFormatted = formatMoney(basePrice, currency);
-
-  return (
-    <Card
-      elevation={3}
-      sx={{
-        borderRadius: 2,
-        overflow: "hidden",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {img && (
-        <CardMedia
-          component="img"
-          image={img}
-          alt={title}
-          sx={{ height: "auto", objectFit: "cover" }}
-        />
-      )}
-      <CardContent
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          flexGrow: 1,
-          justifyContent: "space-between",
-        }}
-      >
-        <Box>
-          <Typography variant="h6">{title}</Typography>
-        </Box>
-
-        <Stack spacing={1.2} sx={{ my: 1.5 }}>
-          <SummaryRow
-            icon={<CalendarMonthRounded fontSize="small" />}
-            label={isRoom ? "Dates" : "Date"}
-            value={dateLine}
-          />
-          <SummaryRow
-            icon={<GroupRounded fontSize="small" />}
-            label="Guests"
-            value={guests}
-          />
-          <SummaryRow
-            icon={<PlaceRounded fontSize="small" />}
-            label="Location"
-            value={sel?.item?.location || "On site"}
-          />
-          <Divider sx={{ my: 1 }} />
-          <Stack spacing={0.3}>
-            <SummaryRow
-              icon={<PaymentsRounded fontSize="small" />}
-              label="Total price"
-              value={totalFormatted}
-            />
-            {guests > 1 && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ ml: 4 }}
-              >
-                {`${baseFormatted} × ${guests} guests`}
-              </Typography>
-            )}
-          </Stack>
-        </Stack>
-
-        <Alert severity="info" variant="outlined" sx={{ mt: 2, mb: 2 }}>
-          No payment is taken now. You’ll confirm on the next step.
-        </Alert>
-
-        <Button
-          onClick={onConfirm}
-          variant="contained"
-          disabled={submitting}
-          fullWidth
-          sx={{ mt: "auto" }}
-        >
-          {submitting ? <CircularProgress size={22} /> : "Confirm booking"}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* =========================================
- * MAIN COMPONENT
- * =======================================*/
 export default function BookingCheckout() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   const { selection, createBooking, clearSelection } = useBooking();
   const { sessions, loadSessions } = useSessions();
 
+  /* ------------------------------------------------------------
+   * Load workshop sessions
+   * ------------------------------------------------------------ */
   React.useEffect(() => {
     if (selection?.type === "workshop" && selection?.item?._id) {
-      const today = moment().startOf("day").toDate();
-      const nextMonth = moment().add(1, "month").endOf("month").toDate();
       loadSessions({
-        from: today,
-        to: nextMonth,
+        from: moment().startOf("day").toDate(),
+        to: moment().add(1, "month").endOf("month").toDate(),
         workshopId: selection.item._id,
       });
     }
   }, [selection, loadSessions]);
 
+  /* ------------------------------------------------------------
+   * Local booking data
+   * ------------------------------------------------------------ */
   const [bookingData, setBookingData] = React.useState({
     guests: 1,
     sessionDate: "",
@@ -210,7 +53,6 @@ export default function BookingCheckout() {
     price: selection?.item?.price ?? 0,
   });
 
-  // ✅ הכנסת שעה מקומית (UTC → Local)
   React.useEffect(() => {
     if (
       selection?.type === "workshop" &&
@@ -230,6 +72,9 @@ export default function BookingCheckout() {
     }
   }, [selection]);
 
+  /* ------------------------------------------------------------
+   * Customer form
+   * ------------------------------------------------------------ */
   const [form, setForm] = React.useState({
     firstName: "",
     lastName: "",
@@ -248,11 +93,13 @@ export default function BookingCheckout() {
 
   React.useEffect(() => {
     const basePrice = selection?.item?.price ?? selection?.price ?? 0;
-    const total = basePrice * bookingData.guests;
-    setBookingData((b) => ({ ...b, price: total }));
+    setBookingData((b) => ({ ...b, price: basePrice * b.guests }));
   }, [bookingData.guests, selection]);
 
-  const handleChange = (e) => {
+  /* ------------------------------------------------------------
+   * Handlers
+   * ------------------------------------------------------------ */
+  const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
@@ -263,27 +110,19 @@ export default function BookingCheckout() {
   };
 
   const handleSubmit = async (e) => {
-    e?.preventDefault?.();
+    e.preventDefault();
     setError("");
 
     if (!form.firstName || !form.lastName || !form.email || !form.agree) {
-      setError("Please fill the required fields and accept the terms.");
-      return;
+      return setError("Please fill the required fields and accept the terms.");
     }
 
     if (selection?.type === "workshop" && !bookingData.sessionId) {
-      setError("Please select a workshop date/time before confirming.");
-      return;
+      return setError("Please select a workshop date/time before confirming.");
     }
 
     try {
       setSubmitting(true);
-      const fullName = `${form.firstName} ${form.lastName}`.trim();
-
-      // ✅ ממירים ל־UTC לשליחה לשרת
-      const dateUTC = bookingData.sessionDate
-        ? moment(bookingData.sessionDate).utc().toISOString()
-        : null;
 
       const payload = {
         type: selection?.type,
@@ -291,18 +130,18 @@ export default function BookingCheckout() {
         totalPrice: bookingData.price,
         guestCount: bookingData.guests,
         currency: selection?.currency || "ILS",
-        date: dateUTC,
+        date: bookingData.sessionDate
+          ? moment(bookingData.sessionDate).utc().toISOString()
+          : null,
         sessionId: bookingData.sessionId,
         ruleId: bookingData.ruleId || selection?.ruleId || null,
         guestInfo: {
-          fullName,
+          fullName: `${form.firstName} ${form.lastName}`.trim(),
           email: form.email,
           phone: form.phone,
           notes: form.notes,
         },
       };
-
-      console.log("📤 Sending booking payload:", payload);
 
       const newBooking = await createBooking(payload);
       clearSelection();
@@ -317,6 +156,9 @@ export default function BookingCheckout() {
     }
   };
 
+  /* ------------------------------------------------------------
+   * Empty state
+   * ------------------------------------------------------------ */
   if (!selection)
     return (
       <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -329,186 +171,101 @@ export default function BookingCheckout() {
       </Container>
     );
 
+  /* ------------------------------------------------------------
+   * Render
+   * ------------------------------------------------------------ */
   return (
-    <Container
-      maxWidth="xl"
-      sx={{
-        py: { xs: 2, md: 4 },
-        display: "flex",
-        gap: 3,
-        alignItems: "stretch",
-        flexDirection: { xs: "column", md: "row" },
-      }}
-    >
-      <Grid item xs={12} md={7} lg={8}>
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "70% 30%" },
+          gap: 3,
+          alignItems: "stretch",
+        }}
+      >
+        {/* LEFT card */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2, md: 3 },
+            borderRadius: 2,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Typography variant="h5" gutterBottom>
             Fill in your details
           </Typography>
 
           {selection?.type === "workshop" && (
-            <WorkshopDatePickerInline
-              key={selection?._id || "picker"}
-              guestSchedule={sessions}
-              sessionDate={bookingData.sessionDate}
-              onSelectDate={(date, id, session) => {
-                if (!session) {
+            <Box sx={{ mb: 3 }}>
+              <WorkshopDatePickerInline
+                key={selection?._id || "picker"}
+                guestSchedule={sessions}
+                sessionDate={bookingData.sessionDate}
+                onSelectDate={(date, id, session) => {
+                  if (!session) {
+                    return setBookingData((b) => ({
+                      ...b,
+                      sessionDate: date,
+                      sessionId: id || "",
+                      sessionLabel: "",
+                    }));
+                  }
                   setBookingData((b) => ({
                     ...b,
-                    sessionDate: date,
+                    sessionDate: session.startLocal,
                     sessionId: id || "",
-                    sessionLabel: "",
+                    sessionLabel: `${moment(session.startLocal).format(
+                      "DD/MM/YYYY, HH:mm"
+                    )} — ${session.studio || "Studio"}`,
+                    studio: session?.studio || "",
                   }));
-                  return;
-                }
-
-                setBookingData((b) => ({
-                  ...b,
-                  sessionDate: session.startLocal,
-                  sessionId: id || "",
-                  sessionLabel: `${moment(session.startLocal).format(
-                    "DD/MM/YYYY, HH:mm"
-                  )} — ${session.studio || "Studio"}`,
-                  studio: session?.studio || "",
-                }));
-              }}
-            />
+                }}
+              />
+            </Box>
           )}
 
-          {/* טופס פרטים */}
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2.5 }}
-          >
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                required
-                name="firstName"
-                label="First name"
-                value={form.firstName}
-                onChange={handleChange}
-                fullWidth
-              />
-              <TextField
-                required
-                name="lastName"
-                label="Last name"
-                value={form.lastName}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Stack>
+          {selection?.type === "room" && (
+            <Box sx={{ mb: 3 }}>
+              <AvailabilityBar />
+            </Box>
+          )}
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                required
-                type="email"
-                name="email"
-                label="Email"
-                value={form.email}
-                onChange={handleChange}
-                fullWidth
-              />
-              <TextField
-                name="phone"
-                label="Phone"
-                value={form.phone}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Stack>
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                name="address"
-                label="Address"
-                value={form.address}
-                onChange={handleChange}
-                fullWidth
-              />
-              <TextField
-                name="city"
-                label="City"
-                value={form.city}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Stack>
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                name="zip"
-                label="ZIP"
-                value={form.zip}
-                onChange={handleChange}
-                fullWidth
-              />
-              <TextField
-                select
-                name="country"
-                label="Country"
-                value={form.country}
-                onChange={handleChange}
-                fullWidth
-              >
-                {COUNTRIES.map((c) => (
-                  <MenuItem key={c} value={c}>
-                    {c}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                type="number"
-                name="guests"
-                label="Guests"
-                value={bookingData.guests}
-                onChange={handleBookingChange}
-                inputProps={{ min: 1 }}
-                fullWidth
-              />
-              <TextField
-                multiline
-                minRows={2}
-                name="notes"
-                label="Notes (optional)"
-                value={form.notes}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Stack>
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="agree"
-                  checked={form.agree}
-                  onChange={handleChange}
-                />
-              }
-              label="I agree to the terms and privacy policy"
+          {/* Form grows to fill */}
+          <Box sx={{ flex: 1 }}>
+            <CheckoutForm
+              form={form}
+              bookingData={bookingData}
+              error={error}
+              onFormChange={handleFormChange}
+              onBookingChange={handleBookingChange}
+              onSubmit={handleSubmit}
+              onBack={() => navigate(-1)}
             />
-
-            {error && <Alert severity="error">{error}</Alert>}
-
-            <Button variant="text" onClick={() => navigate(-1)}>
-              Back
-            </Button>
           </Box>
         </Paper>
-      </Grid>
 
-      {/* סיכום הזמנה */}
-      <Grid item xs={12} md={5} lg={4}>
-        <BookingSummary
-          sel={{ ...selection, ...bookingData }}
-          onConfirm={handleSubmit}
-          submitting={submitting}
-        />
-      </Grid>
+        {/* RIGHT card */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2, md: 3 },
+            borderRadius: 2,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <BookingSummary
+            sel={{ ...selection, ...bookingData }}
+            onConfirm={handleSubmit}
+            submitting={submitting}
+          />
+        </Paper>
+      </Box>
     </Container>
   );
 }

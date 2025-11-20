@@ -12,6 +12,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import PersonIcon from "@mui/icons-material/Person";
 import { useBooking } from "../../context/BookingContext";
+import { useDateSelection } from "../../context/DateSelectionContext";
 
 /* ============================================================
    🧩 Counter Component (for Adults / Rooms)
@@ -62,13 +63,8 @@ const Counter = ({ label, count, setCount, min = 1, max = 10 }) => {
    🌿 Main GuestRoomPopover Component
    ============================================================ */
 const GuestRoomPopover = ({ sx }) => {
-  const {
-    guests,
-    setGuests,
-    rooms,
-    setRooms,
-    fetchAvailability, // פונקציה שמופעלת בלחיצה על Confirm
-  } = useBooking();
+  const { guests, setGuests, roomsCount, setRoomsCount, fetchAvailability } =
+    useDateSelection(); // במקום useBooking()
 
   // מצב הפתיחה של הפופאובר
   const [anchorEl, setAnchorEl] = useState(null);
@@ -104,7 +100,7 @@ const GuestRoomPopover = ({ sx }) => {
           "&:hover": { backgroundColor: "grey.50" },
         }}
       >
-        {guests} Guests, {rooms} Rooms
+        {guests} Guests, {roomsCount} Rooms
       </Button>
 
       {/* 🪄 הפופאובר עצמו */}
@@ -138,8 +134,8 @@ const GuestRoomPopover = ({ sx }) => {
           {/* 🏨 מונה חדרים */}
           <Counter
             label="Rooms"
-            count={rooms}
-            setCount={setRooms}
+            count={roomsCount}
+            setCount={setRoomsCount}
             min={1}
             max={5}
           />

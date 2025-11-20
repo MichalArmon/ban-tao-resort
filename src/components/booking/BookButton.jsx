@@ -6,22 +6,21 @@ import { useRooms } from "../../context/RoomContext";
 import { useSessions } from "../../context/SessionsContext";
 
 export default function BookButton({
-  type,
+  type = "room", // "room" | "workshop" | "retreat"
   item,
-  selectedDate,
-  guests, // guests is optional now
-  price = item?.price || 0,
+  selectedDate = null,
+  guests, // Optional override
+  price = item?.priceBase || item?.price || 0,
   ruleId = null,
   sessionId = null,
 }) {
   const navigate = useNavigate();
   const { setSelection } = useBooking();
 
-  // Guests from contexts
+  // Guests fallback by type
   const { guests: roomGuests } = useRooms();
   const { sessionGuests } = useSessions();
 
-  // Final guests resolution
   const finalGuests =
     guests !== undefined
       ? guests
@@ -29,40 +28,63 @@ export default function BookButton({
       ? sessionGuests
       : type === "room"
       ? roomGuests
-      : 1; // for retreats or anything else
+      : 1;
 
   const handleBook = () => {
-    if (!item?._id) {
-      console.error("❌ Missing item._id in BookButton");
+    if (!item?._id && !item?.id && !item?.slug) {
+      console.error(
+        "❌ Missing required item identifiers in BookButton:",
+        item
+      );
       return;
     }
 
     const sessionDate = selectedDate || null;
 
+    // 🧩 Build the selection object that Checkout will use
     const newSelection = {
       type,
       item: {
-        id: item._id,
+        id: item._id || item.id || null,
         title: item.title || item.name || "Untitled",
-        hero: item.hero?.url || item.heroUrl || null,
-        description: item.description,
+        slug: item.slug || null,
+
+        // Visual
+        hero:
+          item.hero?.url ||
+          item.heroUrl ||
+          item.image?.url ||
+          item.images?.[0]?.url ||
+          null,
+
+        // Informational
+        description: item.description || item.blurb || "",
         location: item.location || "Ban Tao Resort",
+        roomType: item.type || item.roomType || null,
+        maxGuests: item.maxGuests ?? null,
+        features: item.features ?? [],
+        priceBase: item.priceBase || price || 0,
       },
 
-      // DATE + TIME
+      // DATE + TIME (only relevant for workshops/retreats)
       sessionDate,
       sessionId: sessionId || null,
 
       // GUESTS
       guests: finalGuests,
 
-      price,
-      currency: "ILS",
+      // PRICE
+      priceBase: price,
+      currency: item.currency || "USD",
+
+      // RULE
       ruleId,
     };
 
-    console.log("✅ Setting selection:", newSelection);
+    console.log("🏁 Final Selection Saved:", newSelection);
     setSelection(newSelection);
+
+    // Navigate to Checkout
     navigate("/resort/guest/checkout");
   };
 

@@ -1,0 +1,134 @@
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Stack,
+  Box,
+  Typography,
+  Divider,
+  Alert,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
+import GroupRounded from "@mui/icons-material/GroupRounded";
+import PaymentsRounded from "@mui/icons-material/PaymentsRounded";
+import PlaceRounded from "@mui/icons-material/PlaceRounded";
+import moment from "moment";
+import SummaryRow from "./SummaryRow";
+
+function formatMoney(n, currency = "ILS") {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+    }).format(n ?? 0);
+  } catch {
+    return `${n} ${currency}`;
+  }
+}
+
+export default function BookingSummary({ sel, submitting, onConfirm }) {
+  const title = sel?.item?.title || "Selected item";
+  const img = sel?.item?.hero;
+  const basePrice = sel?.item?.price ?? sel?.price ?? 0;
+  const guests = Number(sel?.guests) || 1;
+  const currency = sel?.currency ?? "ILS";
+  const totalPrice = sel?.price ?? basePrice;
+  const isRoom = sel?.type === "room";
+
+  let dateLine = "Select date/time";
+  if (isRoom && sel?.dates?.checkIn && sel?.dates?.checkOut) {
+    dateLine = `${new Date(
+      sel.dates.checkIn
+    ).toLocaleDateString()} → ${new Date(
+      sel.dates.checkOut
+    ).toLocaleDateString()}`;
+  } else if (sel?.sessionLabel) {
+    dateLine = sel.sessionLabel;
+  } else if (sel?.sessionDate) {
+    dateLine =
+      moment(sel.sessionDate).format("DD.MM.YYYY, HH:mm") +
+      (sel?.studio ? ` — ${sel.studio}` : "");
+  }
+
+  const totalFormatted = formatMoney(totalPrice, currency);
+  const baseFormatted = formatMoney(basePrice, currency);
+
+  return (
+    <Card
+      elevation={3}
+      sx={{
+        borderRadius: 2,
+        overflow: "hidden",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {img && <CardMedia component="img" image={img} alt={title} />}
+
+      <CardContent
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+          justifyContent: "space-between",
+        }}
+      >
+        <Box>
+          <Typography variant="h6">{title}</Typography>
+        </Box>
+
+        <Stack spacing={1.2} sx={{ my: 1.5 }}>
+          <SummaryRow
+            icon={<CalendarMonthRounded fontSize="small" />}
+            label={isRoom ? "Dates" : "Date"}
+            value={dateLine}
+          />
+          <SummaryRow
+            icon={<GroupRounded fontSize="small" />}
+            label="Guests"
+            value={guests}
+          />
+          <SummaryRow
+            icon={<PlaceRounded fontSize="small" />}
+            label="Location"
+            value={sel?.item?.location || "On site"}
+          />
+          <Divider sx={{ my: 1 }} />
+          <Stack spacing={0.3}>
+            <SummaryRow
+              icon={<PaymentsRounded fontSize="small" />}
+              label="Total price"
+              value={totalFormatted}
+            />
+            {guests > 1 && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 4 }}
+              >
+                {`${baseFormatted} × ${guests} guests`}
+              </Typography>
+            )}
+          </Stack>
+        </Stack>
+
+        <Alert severity="info" variant="outlined" sx={{ mt: 2, mb: 2 }}>
+          No payment is taken now. You’ll confirm on the next step.
+        </Alert>
+
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          disabled={submitting}
+          fullWidth
+        >
+          {submitting ? <CircularProgress size={22} /> : "Confirm booking"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
