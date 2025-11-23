@@ -34,21 +34,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <CategoriesProvider>
               <UploadProvider>
                 <TreatmentsProvider>
-                  <DateSelectionProvider>
-                    <RoomsProvider>
-                      <RetreatsProvider>
-                        <WorkshopsProvider>
-                          <BookingProvider>
+                  <BookingProvider>
+                    <DateSelectionProvider>
+                      <RoomsProvider>
+                        <RetreatsProvider>
+                          <WorkshopsProvider>
                             <RecurringRulesProvider>
                               <SessionsProvider>
                                 <AppRoutes /> {/* 👈 עכשיו הכל עטוף! */}
                               </SessionsProvider>
                             </RecurringRulesProvider>
-                          </BookingProvider>
-                        </WorkshopsProvider>
-                      </RetreatsProvider>
-                    </RoomsProvider>
-                  </DateSelectionProvider>
+                          </WorkshopsProvider>
+                        </RetreatsProvider>
+                      </RoomsProvider>
+                    </DateSelectionProvider>
+                  </BookingProvider>
                 </TreatmentsProvider>
               </UploadProvider>
             </CategoriesProvider>

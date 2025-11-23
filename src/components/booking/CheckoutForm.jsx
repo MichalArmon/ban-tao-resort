@@ -9,6 +9,7 @@ import {
   Button,
   Alert,
 } from "@mui/material";
+import { useBooking } from "../../context/BookingContext";
 
 const COUNTRIES = ["Israel", "Greece", "USA", "UK"];
 
@@ -21,6 +22,7 @@ export default function CheckoutForm({
   onSubmit,
   onBack,
 }) {
+  const { selection } = useBooking();
   return (
     <Box
       component="form"
@@ -107,15 +109,17 @@ export default function CheckoutForm({
       </Stack>
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <TextField
-          type="number"
-          name="guests"
-          label="Guests"
-          value={bookingData.guests}
-          onChange={onBookingChange}
-          inputProps={{ min: 1 }}
-          fullWidth
-        />
+        {selection?.type !== "room" && (
+          <TextField
+            type="number"
+            name="guests"
+            label="Guests"
+            value={bookingData.guests}
+            onChange={onBookingChange}
+            inputProps={{ min: 1 }}
+            fullWidth
+          />
+        )}
         <TextField
           multiline
           minRows={2}

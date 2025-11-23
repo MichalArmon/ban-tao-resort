@@ -7,7 +7,6 @@ import React, {
   useMemo,
 } from "react";
 import { GLOBAL_API_BASE } from "../config/api";
-import { useDateSelection } from "./DateSelectionContext";
 
 const BookingContext = createContext();
 export const useBooking = () => useContext(BookingContext);
@@ -17,7 +16,6 @@ const RETREATS_API_URL = `${GLOBAL_API_BASE}/retreats`;
 
 export const BookingProvider = ({ children }) => {
   // 🆕 צריכת נתונים מהקונטקסט המרכזי
-  const { checkIn, checkOut, guests } = useDateSelection();
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);

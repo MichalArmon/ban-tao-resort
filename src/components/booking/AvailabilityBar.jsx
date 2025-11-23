@@ -16,7 +16,6 @@ import { useDateSelection } from "../../context/DateSelectionContext";
 
 moment.tz.setDefault("Asia/Bangkok");
 
-/* ---------- Helpers ---------- */
 function getDayInfo(map, iso) {
   if (!map) return null;
   const arr = map[iso];
@@ -32,7 +31,6 @@ function slugify(str) {
 }
 
 const AvailabilityBar = () => {
-  /* ---------------- Booking Context (Dates & Guests) ---------------- */
   const { retreatDates } = useBooking();
   const {
     checkIn,
@@ -41,27 +39,37 @@ const AvailabilityBar = () => {
     setCheckOut,
     guests,
     setGuests,
-    roomsCount: rooms, // 💡 שינוי שם: ב-DateSelectionContext השם הוא roomsCount
-    setRoomsCount: setRooms, // 💡 שינוי שם: ב-DateSelectionContext השם הוא setRoomsCount
+    roomsCount: rooms,
+    setRoomsCount: setRooms,
   } = useDateSelection();
 
-  /* ----------------   Rooms Context (ROOMS + AVAILABILITY) ----------- */
   const {
     rooms: roomList,
     ensureRooms,
     loadingRooms,
-
-    // 🟢 זמינות
-    getRoomAvailability,
-    searchAvailableRooms,
+    checkRoomAvailability,
     availabilityLoading,
     setAvailableRooms,
+    availableRooms,
   } = useRooms();
 
   const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState(null);
 
-  /* ---------------- Dates ---------------- */
+  useEffect(() => {
+    if (availableRooms.length === 1 && availableRooms[0].slug) {
+      const room = availableRooms[0];
+      const newSelectedType = {
+        slug: room.slug,
+        label: room.label || room.title || room.slug,
+        raw: room,
+      };
+      if (selectedType?.slug !== newSelectedType.slug) {
+        setSelectedType(newSelectedType);
+      }
+    }
+  }, [availableRooms, selectedType]);
+
   const minCheckIn = useMemo(() => moment().startOf("day"), []);
   const farFuture = useMemo(() => moment().add(3, "year").endOf("day"), []);
   const minCheckOut = useMemo(
@@ -69,44 +77,38 @@ const AvailabilityBar = () => {
     [checkIn]
   );
 
-  /* ---------------- Load Rooms Once ---------------- */
   useEffect(() => {
     ensureRooms().catch(() => {});
   }, [ensureRooms]);
 
-  /* ---------------- Guests / Rooms ---------------- */
   const handleSetGuests = useCallback(
     (v) => setGuests(Math.max(1, v)),
     [setGuests]
   );
+
   const handleSetRooms = useCallback(
     (v) => setRooms(Math.max(1, v)),
     [setRooms]
   );
 
-  /* ============================================================
-       🔍 Search Availability
-     ============================================================ */
   const handleSearch = async () => {
     if (!checkIn || !checkOut) return;
 
     const checkInISO = moment(checkIn).format("YYYY-MM-DD");
     const checkOutISO = moment(checkOut).format("YYYY-MM-DD");
 
-    const roomSlug = selectedType?.slug ?? null;
+    const roomSlug = selectedType?.slug ?? "any";
 
     try {
-      if (!roomSlug) {
-        // 🟢 ANY — כל החדרים
-        const list = await searchAvailableRooms({
+      if (roomSlug === "Any" || roomSlug === "any") {
+        const list = await checkRoomAvailability({
           checkIn: checkInISO,
           checkOut: checkOutISO,
         });
         console.log("🏨 ANY availability:", list);
         setAvailableRooms(list);
       } else {
-        // 🟢 חדר ספציפי
-        const result = await getRoomAvailability({
+        const result = await checkRoomAvailability({
           roomSlug,
           checkIn: checkInISO,
           checkOut: checkOutISO,
@@ -119,7 +121,6 @@ const AvailabilityBar = () => {
     }
   };
 
-  /* ---------------- Options ---------------- */
   const typeOptions = useMemo(() => {
     const list = Array.isArray(roomList) ? roomList : [];
     const mapped = list.map((r) => ({
@@ -127,7 +128,7 @@ const AvailabilityBar = () => {
       label: r.label || r.title || r.slug,
       raw: r,
     }));
-    return [{ slug: null, label: "Any", raw: null }, ...mapped];
+    return [{ slug: "any", label: "Any", raw: null }, ...mapped];
   }, [roomList]);
 
   const isSearchDisabled =
@@ -136,9 +137,9 @@ const AvailabilityBar = () => {
     moment(checkOut).isSameOrBefore(checkIn, "day") ||
     availabilityLoading;
 
-  /* ---------------- Render ---------------- */
   return (
     <LocalizationProvider dateAdapter={AdapterMoment}>
+      {" "}
       <Stack
         direction={{ xs: "column", md: "row" }}
         sx={{
@@ -154,7 +155,7 @@ const AvailabilityBar = () => {
           boxShadow: 3,
         }}
       >
-        {/* Room Type */}
+        {/* Room Type */}{" "}
         <Autocomplete
           sx={{ flexGrow: 1, minWidth: { xs: "100%", md: 220 } }}
           options={typeOptions}
@@ -171,8 +172,7 @@ const AvailabilityBar = () => {
             />
           )}
         />
-
-        {/* Date Pickers — unchanged */}
+        {/* Date Pickers */}{" "}
         <DatePicker
           label="Check-In"
           value={checkIn || null}
@@ -186,8 +186,7 @@ const AvailabilityBar = () => {
             ),
           }}
           sx={{ flexGrow: 1 }}
-        />
-
+        />{" "}
         <DatePicker
           label="Check-Out"
           value={checkOut || null}
@@ -202,8 +201,7 @@ const AvailabilityBar = () => {
           }}
           sx={{ flexGrow: 1 }}
         />
-
-        {/* Guests & Rooms */}
+        {/* Guests & Rooms */}{" "}
         <GuestRoomPopover
           guests={guests}
           rooms={rooms}
@@ -211,8 +209,7 @@ const AvailabilityBar = () => {
           setRooms={handleSetRooms}
           sx={{ flexGrow: 1 }}
         />
-
-        {/* Search Button */}
+        {/* Search Button */}{" "}
         <Button
           variant="contained"
           size="large"
@@ -220,13 +217,14 @@ const AvailabilityBar = () => {
           onClick={handleSearch}
           sx={{ width: 140, height: 56 }}
         >
+          {" "}
           {availabilityLoading ? (
             <CircularProgress size={24} color="inherit" />
           ) : (
             "Search"
-          )}
-        </Button>
-      </Stack>
+          )}{" "}
+        </Button>{" "}
+      </Stack>{" "}
     </LocalizationProvider>
   );
 };

@@ -23,22 +23,26 @@ export const RoomsProvider = ({ children }) => {
     setCheckOut,
   } = useDateSelection();
 
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState([]); // 👈 רשימת החדרים המלאה שנטענה מראש
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [roomsError, setRoomsError] = useState(null);
 
-  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedRoom, setSelectedRoom] =
+    useState(
+      null
+    ); /* ============================================================
+    🟢 זמינות חדרים
+    ============================================================ */
 
-  /* ============================================================
-    🟢 זמינות חדרים
-    ============================================================ */
   const [availableRooms, setAvailableRooms] = useState([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [availabilityError, setAvailabilityError] = useState(null);
+  const [availabilityError, setAvailabilityError] =
+    useState(
+      null
+    ); /* ============================================================
+    🔁 רענון רשימת חדרים (Refresh)
+    ============================================================ */
 
-  /* ============================================================
-    🔁 רענון רשימת חדרים (Refresh)
-    ============================================================ */
   const refreshRooms = useCallback(async () => {
     setLoadingRooms(true);
     setRoomsError(null);
@@ -51,19 +55,20 @@ export const RoomsProvider = ({ children }) => {
     } finally {
       setLoadingRooms(false);
     }
-  }, []);
+  }, []); /* ============================================================
+    ⚡ טוען את כל החדרים (פעם אחת)
+    ============================================================ */
 
-  /* ============================================================
-    ⚡ טוען את כל החדרים (פעם אחת)
-    ============================================================ */
   const ensureRooms = useCallback(async () => {
     if (rooms.length > 0) return;
     await refreshRooms();
-  }, [rooms, refreshRooms]);
+  }, [
+    rooms,
+    refreshRooms,
+  ]); /* ============================================================
+    🔍 שליפת חדר לפי ID (Admin)
+    ============================================================ */
 
-  /* ============================================================
-    🔍 שליפת חדר לפי ID (Admin)
-    ============================================================ */
   const getRoomById = useCallback(async (id) => {
     if (!id) return null;
     try {
@@ -74,116 +79,113 @@ export const RoomsProvider = ({ children }) => {
       console.error("❌ Failed to load room by ID:", err);
       throw err;
     }
-  }, []);
+  }, []); /* ============================================================
+    🔍 שליפת חדר לפי slug (Guests)
+    ============================================================ */ // פונקציה זו כבר לא רלוונטית כשיש לנו את רשימת החדרים המלאה (rooms) ב-state
 
-  /* ============================================================
-    🔍 שליפת חדר לפי slug (Guests)
-    ============================================================ */
-  const getRoomBySlug = useCallback(async (slug) => {
-    if (!slug) return null;
-    try {
-      const room = await get(`/rooms/slug/${slug}`);
-      return room;
-    } catch (err) {
-      console.error("❌ Failed to load room by slug:", err);
-      throw err;
-    }
-  }, []);
+  const getRoomBySlug = useCallback(
+    async (slug) => {
+      if (!slug) return null; // 💡 שימוש ברשימה הקיימת במקום קריאת API חדשה
+      const room = rooms.find((r) => r.slug === slug);
+      if (room) return room;
 
-  /* ============================================================
-    🧮 זמינות חדר ספציפי (Slug) - משתמש בתאריכים מהקונטקסט המרכזי
-    ============================================================ */
-  const getRoomAvailability = useCallback(
-    async ({ roomSlug, checkIn: ci, checkOut: co }) => {
-      // 🆕 שימוש בתאריכים מהסטייט המרכזי, אם לא סופקו כפרמטרים
+      try {
+        const apiRoom = await get(`/rooms/slug/${slug}`);
+        return apiRoom;
+      } catch (err) {
+        console.error("❌ Failed to load room by slug:", err);
+        throw err;
+      }
+    },
+    [rooms]
+  ); /* ============================================================ // 👈 הוספת rooms ל-dependencies
+    🔍 בדיקת זמינות חדרים (התיקון המרכזי)
+    ============================================================ */
+
+  const checkRoomAvailability = useCallback(
+    async ({ roomSlug = "any", checkIn: ci, checkOut: co }) => {
       const effectiveCheckIn = ci || checkIn;
       const effectiveCheckOut = co || checkOut;
 
-      if (!roomSlug || !effectiveCheckIn || !effectiveCheckOut) return null;
+      if (!effectiveCheckIn || !effectiveCheckOut) return null;
 
       try {
         setAvailabilityLoading(true);
-        setAvailabilityError(null);
+        setAvailabilityError(null); // --------------------------------------------------- // 1) בקשה לזמינות – מחזירה נתונים חלקיים (priceBase, availableUnits) // ---------------------------------------------------
 
-        // 🆕 שימוש במשתנים המעודכנים
-        const url = `/rooms/availability?room=${roomSlug}&checkIn=${effectiveCheckIn}&checkOut=${effectiveCheckOut}`;
-        console.log("🛏️ Checking room availability:", url);
+        const url = `/rooms/availability?checkIn=${effectiveCheckIn}&checkOut=${effectiveCheckOut}&guests=${guests}&rooms=${roomsCount}`;
+        const data = await get(url);
 
-        const res = await get(url);
-        return res; // מחזיר אובייקט חדר אחד עם זמינות
+        const raw = Array.isArray(data?.availableRooms)
+          ? data.availableRooms
+          : []; // --------------------------------------------------- // 2) סינון חדר ספציפי (אם נבחר) // ---------------------------------------------------
+
+        let filtered = raw;
+
+        if (roomSlug !== "any") {
+          filtered = raw.filter((r) => r.slug === roomSlug);
+        }
+
+        if (filtered.length === 0) {
+          setAvailableRooms([]);
+          return [];
+        } // --------------------------------------------------- // 3) 🟢 התיקון: איחוד נתונים מ-rooms שנטען מראש (ללא קריאת API נוספת) // ---------------------------------------------------
+
+        const finalList = filtered
+          .map((item) => {
+            // מצא את החדר המלא ברשימה הכללית לפי slug
+            const fullRoomDetails = rooms.find((r) => r.slug === item.slug);
+
+            if (!fullRoomDetails) {
+              console.warn(
+                `Room details not found in cache for slug: ${item.slug}`
+              );
+              return null; // מדלג על חדרים שלא נמצאו
+            } // שלב את נתוני החדר המלאים עם נתוני הזמינות
+
+            return {
+              ...fullRoomDetails, // 👈 מכיל title, heroUrl, maxGuests, sizeM2
+              availableUnits: item.availableUnits,
+              priceBase:
+                item.priceBase != null
+                  ? item.priceBase
+                  : fullRoomDetails.priceBase,
+              currency: item.currency || fullRoomDetails.currency,
+            };
+          })
+          .filter(Boolean); // הסרת תוצאות null (אם חדר לא נמצא ב-rooms)
+
+        setAvailableRooms(finalList);
+        return finalList;
       } catch (err) {
-        console.error("❌ Room availability failed:", err);
+        console.error("❌ Availability error:", err);
         setAvailabilityError(err?.message || "Failed to check availability");
+        setAvailableRooms([]);
         return null;
       } finally {
         setAvailabilityLoading(false);
       }
-    },
-    [checkIn, checkOut]
-  );
-
-  /* ============================================================
-    🧭 זמינות לכל החדרים — ANY - משתמש בתאריכים מהקונטקסט המרכזי
-    ============================================================ */
-  const searchAvailableRooms = useCallback(
-    async ({ checkIn: ci, checkOut: co }) => {
-      // 🆕 שימוש בתאריכים מהסטייט המרכזי, אם לא סופקו כפרמטרים
-      const effectiveCheckIn = ci || checkIn;
-      const effectiveCheckOut = co || checkOut;
-
-      if (!effectiveCheckIn || !effectiveCheckOut) return [];
-
-      setAvailabilityLoading(true);
-      setAvailabilityError(null);
-
-      try {
-        // 🆕 שימוש במשתנים המעודכנים
-        const url = `/rooms/availability?checkIn=${effectiveCheckIn}&checkOut=${effectiveCheckOut}`;
-        console.log("🌐 Checking ANY room availability:", url);
-
-        const data = await get(url);
-
-        // backend מחזיר "rooms" או "availableRooms"
-        const list =
-          data?.availableRooms ||
-          data?.rooms ||
-          (Array.isArray(data) ? data : []);
-
-        setAvailableRooms(list);
-        return list;
-      } catch (err) {
-        console.error("❌ Failed to search room availability:", err);
-        setAvailabilityError(err?.message || "Failed to load availability.");
-        setAvailableRooms([]);
-      } finally {
-        setAvailabilityLoading(false);
-      }
-    },
-    [checkIn, checkOut]
+    }, // ⚠️ חובה להוסיף את 'rooms' כ-dependency כי אנו משתמשים בו בפנים
+    [checkIn, checkOut, guests, roomsCount, rooms]
   );
 
   const value = {
-    /* Data */
-    rooms,
+    /* Data */ rooms,
     loadingRooms,
     roomsError,
-    selectedRoom,
+    selectedRoom /* Fetchers */,
 
-    /* Fetchers */
-    ensureRooms, // ➡️ מוגדר כעת למעלה
-    refreshRooms, // ➡️ מוגדר כעת למעלה
-    getRoomById, // ➡️ מוגדר כעת למעלה
-    getRoomBySlug, // ➡️ מוגדר כעת למעלה
+    ensureRooms,
+    refreshRooms,
+    getRoomById,
+    getRoomBySlug /* Availability */,
 
-    /* Availability */
     availableRooms,
     availabilityLoading,
     availabilityError,
-    getRoomAvailability,
-    searchAvailableRooms,
-    setAvailableRooms,
+    checkRoomAvailability,
+    setAvailableRooms, // נתונים נצרכים מה-DateSelectionContext:
 
-    // נתונים נצרכים מה-DateSelectionContext:
     checkIn,
     setCheckIn,
     checkOut,

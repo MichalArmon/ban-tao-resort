@@ -18,12 +18,19 @@ const getImgUrl = (val) => {
 export default function RoomCard({ room }) {
   const navigate = useNavigate();
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  console.log("room:", room);
 
   const img =
     room.heroUrl ||
     getImgUrl(room.hero) ||
     getImgUrl(room.images) ||
     "https://via.placeholder.com/800x600?text=Room+Image";
+  console.log("RoomCard Debug:", {
+    title: room.title,
+    heroUrl: room.heroUrl,
+    heroObj: room.hero,
+    finalImgUrl: img, // 👈 חשוב: מהו ה-URL הסופי?
+  });
 
   const goToRoomPage = () =>
     navigate(`/resort/rooms/${room.slug}`, { state: room });

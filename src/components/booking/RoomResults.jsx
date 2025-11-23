@@ -1,4 +1,3 @@
-// 📁 src/components/RoomResults.jsx
 import React from "react";
 import {
   Box,
@@ -8,21 +7,26 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import { useRooms } from "../../context/RoomContext"; // 👈 שינוי!
-import { useBooking } from "../../context/BookingContext"; // עדיין צריך תאריכים
-
+import { useRooms } from "../../context/RoomContext";
 import RoomCard from "./RoomCard";
+import { useDateSelection } from "../../context/DateSelectionContext";
 
 const RoomResults = () => {
-  const { checkIn, checkOut } = useBooking(); // תאריכים נשארים בבוקינג
+  const { checkIn, checkOut } = useDateSelection();
 
   const {
     availableRooms = [],
     availabilityLoading,
     availabilityError,
-  } = useRooms(); // 👈 פה מגיעות התוצאות האמיתיות
+  } = useRooms();
 
-  // --- Loading ---
+  const normalizedRooms = availableRooms.flatMap((item) => {
+    if (Array.isArray(item)) {
+      return item.filter((r) => r && typeof r === "object" && r.slug);
+    }
+    return item && typeof item === "object" && item.slug ? item : [];
+  });
+
   if (availabilityLoading) {
     return (
       <Box sx={{ textAlign: "center", py: 5 }}>
@@ -34,7 +38,6 @@ const RoomResults = () => {
     );
   }
 
-  // --- Error ---
   if (availabilityError) {
     return (
       <Box sx={{ mt: 4 }}>
@@ -43,8 +46,7 @@ const RoomResults = () => {
     );
   }
 
-  // --- Initial state ---
-  if (availableRooms.length === 0) {
+  if (normalizedRooms.length === 0) {
     return (
       <Box sx={{ textAlign: "center", py: 5 }}>
         <Typography variant="h6" color="text.secondary">
@@ -54,11 +56,10 @@ const RoomResults = () => {
     );
   }
 
-  // --- Results ---
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
-        {availableRooms.length} Available Room Offers
+        {normalizedRooms.length} Available Room Offers
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -68,7 +69,7 @@ const RoomResults = () => {
 
       <Divider sx={{ mb: 3 }} />
 
-      {availableRooms.map((room) => (
+      {normalizedRooms.map((room) => (
         <RoomCard key={room._id || room.slug} room={room} />
       ))}
     </Box>
