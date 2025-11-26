@@ -52,6 +52,7 @@ import AdminRooms from "./pages/admin/rooms/AdminRooms";
 import RoomForm from "./pages/admin/rooms/RoomForm";
 import AdminBookings from "./pages/admin/bookings/AdminBookings";
 import GuestHome from "./pages/guest/GuestHome";
+import ThankYouPage from "./pages/guest/ThankYouPage";
 
 function RequireAuth({ allow, fallback = "/enter" }) {
   const { user, role, loginGuest } = useAuth();
@@ -100,6 +101,7 @@ export default function AppRoutes() {
         <Route path="treatments" element={<TreatmentsLanding />} />
         <Route path="rooms" element={<RoomsAll />} />
         <Route path="checkout" element={<BookingCheckout />} />
+        <Route path="thank-you" element={<ThankYouPage />} />
         <Route
           path="rooms"
           element={<Navigate to="/resort/guest/rooms/bungalow" replace />}

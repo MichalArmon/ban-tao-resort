@@ -29,14 +29,23 @@ function formatMoney(n, currency = "ILS") {
   }
 }
 
-export default function BookingSummary({ sel, submitting, onConfirm }) {
+export default function BookingSummary({
+  sel,
+  submitting,
+  onConfirm,
+  guestsOverride,
+}) {
   const title = sel?.item?.title || "Selected item";
   const img = sel?.item?.hero;
   const basePrice = sel?.priceBase || 0;
-  const guests = Number(sel?.guests) || 1;
   const currency = sel?.currency ?? "USD";
   const totalPrice = sel?.price ?? 0;
   const isRoom = sel?.type === "room";
+
+  // 🟢 אם זה workshop נעדיף את guestsOverride (מה-TextField)
+  const guests = isRoom
+    ? Number(sel?.guests) || 1
+    : Number(guestsOverride ?? sel?.guests ?? 1);
 
   let dateLine = "Select date/time";
   if (isRoom && sel?.checkIn && sel?.checkOut) {
@@ -106,7 +115,25 @@ export default function BookingSummary({ sel, submitting, onConfirm }) {
               value={totalFormatted}
             />
 
-            {guests > 1 && basePrice > 0 && (
+            {/* 🏠 אם זה חדר — הצג לפי לילות */}
+            {isRoom && sel?.checkIn && sel?.checkOut && basePrice > 0 && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 4 }}
+              >
+                {`${baseFormatted} × ${
+                  moment(sel.checkOut).diff(moment(sel.checkIn), "days") || 1
+                } night${
+                  moment(sel.checkOut).diff(moment(sel.checkIn), "days") === 1
+                    ? ""
+                    : "s"
+                }`}
+              </Typography>
+            )}
+
+            {/* 🎟️ אם זו סדנה — הצג לפי מספר אורחים */}
+            {!isRoom && guests > 1 && basePrice > 0 && (
               <Typography
                 variant="caption"
                 color="text.secondary"

@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import moment from "moment";
 import { useMemo } from "react";
-
 import { useBooking } from "../../context/BookingContext";
 import { useSessions } from "../../context/SessionsContext";
 import WorkshopDatePickerInline from "../../components/booking/WorkshopDatePickerInline";
@@ -26,7 +25,6 @@ export default function BookingCheckout() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   const { selection, createBooking, clearSelection } = useBooking();
   const { sessions, loadSessions } = useSessions();
   const {
@@ -55,6 +53,16 @@ export default function BookingCheckout() {
     }
   }, [selection, loadSessions]);
 
+  const selectedFullRoom =
+    roomList?.find((r) => r.slug === selection?.item?.slug) || selection?.item;
+  const [bookingData, setBookingData] = React.useState({
+    guests: selection?.type === "room" ? liveGuests : selection?.guests || 1,
+    sessionDate: "",
+    sessionId: "",
+    sessionLabel: "",
+    price: 0,
+  });
+
   React.useEffect(() => {
     if (
       selection?.type === "room" &&
@@ -62,7 +70,6 @@ export default function BookingCheckout() {
       selection.item?.slug
     ) {
       const selectedRoom = roomList.find((r) => r.slug === selection.item.slug);
-
       if (selectedRoom) {
         if (selection.checkIn && selection.checkOut) {
           setCheckIn(moment(selection.checkIn).startOf("day"));
@@ -70,7 +77,6 @@ export default function BookingCheckout() {
         }
         setGuests(selection.guests || 1);
         setRoomsCount(selection.roomsCount || 1);
-
         const combinedRoom = {
           ...selectedRoom,
           priceBase: selection.priceBase,
@@ -90,28 +96,18 @@ export default function BookingCheckout() {
     setAvailableRooms,
   ]);
 
-  const [bookingData, setBookingData] = React.useState({
-    guests: selection?.guests || 1,
-    sessionDate: "",
-    sessionId: "",
-    sessionLabel: "",
-    price: 0,
-  });
-
   const synchronizedSelection = useMemo(() => {
     if (!selection) return null;
-    const isRoom = selection.type === "room";
-    const currentGuests = isRoom ? liveGuests : bookingData.guests;
 
-    const currentCheckIn = isRoom
-      ? liveCheckIn?.format("YYYY-MM-DD")
-      : selection.checkIn;
-    const currentCheckOut = isRoom
-      ? liveCheckOut?.format("YYYY-MM-DD")
-      : selection.checkOut;
+    const isRoom = selection.type === "room"; // ✅ משתמש באורחים החיים הנכונים
 
-    let calculatedPrice = 0;
+    const currentGuests = isRoom ? liveGuests : bookingData.guests; // ⚠️ חשוב: אנו משתמשים ב-CheckIn/Out רק לחדרים, ולכן לא דורסים את זה כאן לסדנאות. // שימו לב שהתאריכים הרגילים (checkIn/Out) עדיין מוגדרים כאן רק מ Live
+
+    const currentCheckIn = liveCheckIn?.format("YYYY-MM-DD");
+    const currentCheckOut = liveCheckOut?.format("YYYY-MM-DD");
+
     const basePrice = selection?.priceBase || 0;
+    let calculatedPrice = 0;
 
     if (isRoom) {
       const nights =
@@ -120,7 +116,8 @@ export default function BookingCheckout() {
           : 0;
       calculatedPrice = basePrice * (nights > 0 ? nights : 1);
     } else {
-      calculatedPrice = basePrice * currentGuests;
+      // סדנאות — המחיר לפי כמות אורחים
+      calculatedPrice = basePrice * (currentGuests || 1);
     }
 
     return {
@@ -129,8 +126,43 @@ export default function BookingCheckout() {
       checkIn: currentCheckIn,
       checkOut: currentCheckOut,
       price: calculatedPrice,
+
+      // 🟢 הוספה קריטית: דורסים את פרטי הסשן של הסדנה מה-State החי (bookingData)
+      // זה הופך את התאריך/שעה לעדכני ב-BookingSummary
+      sessionDate: bookingData.sessionDate || selection.sessionDate,
+      sessionId: bookingData.sessionId || selection.sessionId,
+      sessionLabel: bookingData.sessionLabel || selection.sessionLabel,
     };
-  }, [selection, bookingData.guests, liveGuests, liveCheckIn, liveCheckOut]);
+  }, [
+    selection,
+    liveGuests,
+    liveCheckIn,
+    liveCheckOut,
+    bookingData.guests,
+    // 🟢 הוספת תלויות: חובה לכלול את שדות הסשן כדי שה-useMemo ירוץ מחדש
+    bookingData.sessionDate,
+    bookingData.sessionId,
+    bookingData.sessionLabel,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      selection?.type === "workshop" &&
+      selection?.sessionDate &&
+      !bookingData.sessionDate
+    ) {
+      setBookingData((b) => ({
+        ...b,
+        sessionDate: selection.sessionDate,
+        sessionId: selection.sessionId || "",
+        ruleId: selection.ruleId || null,
+        sessionLabel: moment(selection.sessionDate).format(
+          "DD/MM/YYYY — HH:mm"
+        ),
+        studio: selection?.studio || "",
+      }));
+    }
+  }, [selection, bookingData.sessionDate]);
 
   React.useEffect(() => {
     if (
@@ -157,7 +189,6 @@ export default function BookingCheckout() {
     notes: "",
     agree: false,
   });
-
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -165,58 +196,51 @@ export default function BookingCheckout() {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
-
   const handleBookingChange = (e) => {
     const { name, value } = e.target;
-    if (name === "guests") {
-      const numValue = Number(value);
-      if (!isNaN(numValue) && numValue >= 1) {
-        setBookingData((b) => ({ ...b, [name]: numValue }));
-      }
-    } else {
-      setBookingData((b) => ({ ...b, [name]: value }));
-    }
+    setBookingData((b) => ({ ...b, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     const currentSel = synchronizedSelection || selection;
-
-    if (!form.firstName || !form.lastName || !form.email || !form.agree) {
+    if (!form.firstName || !form.lastName || !form.email || !form.agree)
       return setError("Please fill the required fields and accept the terms.");
-    }
-    if (currentSel?.type === "workshop" && !bookingData.sessionId) {
+    if (currentSel?.type === "workshop" && !bookingData.sessionId)
       return setError("Please select a workshop date/time before confirming.");
-    }
-    if (bookingData.price <= 0 && currentSel?.priceBase > 0) {
+    if (bookingData.price <= 0 && currentSel?.priceBase > 0)
       return setError(
         "Price calculation failed. Please check your dates and try again."
       );
-    }
-
     try {
       setSubmitting(true);
-
-      let payload = {
+      const payload = {
         type: currentSel?.type,
         itemId: currentSel?.item?._id || currentSel?.item?.id,
         totalPrice: bookingData.price,
         guestCount: bookingData.guests,
         currency: currentSel?.currency || "USD",
-        ...(currentSel?.type === "room"
-          ? {
-              checkInDate: moment(currentSel.checkIn).utc().toISOString(),
-              checkOutDate: moment(currentSel.checkOut).utc().toISOString(),
-              date: moment(currentSel.checkIn).utc().toISOString(),
-            }
-          : {
-              date: bookingData.sessionDate
-                ? moment(bookingData.sessionDate).utc().toISOString()
-                : null,
-              sessionId: bookingData.sessionId,
-            }),
+
+        // 🏠 אם מדובר בחדר — שולחים checkInDate ו-checkOutDate
+        checkInDate:
+          currentSel?.type === "room"
+            ? moment(currentSel.checkIn).utc().toISOString()
+            : null,
+        checkOutDate:
+          currentSel?.type === "room"
+            ? moment(currentSel.checkOut).utc().toISOString()
+            : null,
+
+        // 🎟️ אם מדובר בסדנה — שולחים date אחד (sessionDate)
+        date:
+          currentSel?.type === "workshop" && bookingData.sessionDate
+            ? moment(bookingData.sessionDate).utc().toISOString()
+            : null,
+
+        sessionId: bookingData.sessionId,
         ruleId: bookingData.ruleId || currentSel?.ruleId || null,
+
         guestInfo: {
           fullName: `${form.firstName} ${form.lastName}`.trim(),
           email: form.email,
@@ -224,16 +248,16 @@ export default function BookingCheckout() {
           notes: form.notes,
         },
       };
-
+      // 🧹 מנקה שדות ריקים לפני השליחה
       Object.keys(payload).forEach((key) => {
-        if (payload[key] === null || payload[key] === undefined) {
+        if (payload[key] === "" || payload[key] === null) {
           delete payload[key];
         }
       });
 
       const newBooking = await createBooking(payload);
       clearSelection();
-      navigate("/resort/checkout/thank-you", {
+      navigate("/resort/guest/thank-you", {
         state: { booking: newBooking, customer: form },
       });
     } catch (err) {
@@ -279,13 +303,16 @@ export default function BookingCheckout() {
           <Typography variant="h5" gutterBottom>
             Fill in your details
           </Typography>
-
           {selection?.type === "workshop" && (
             <Box sx={{ mb: 3 }}>
               <WorkshopDatePickerInline
                 key={selection?._id || "picker"}
-                guestSchedule={sessions}
+                sessions={sessions}
                 sessionDate={bookingData.sessionDate}
+                guests={bookingData.guests}
+                onGuestsChange={(val) =>
+                  setBookingData((b) => ({ ...b, guests: val }))
+                }
                 onSelectDate={(date, id, session) => {
                   if (!session) {
                     return setBookingData((b) => ({
@@ -308,13 +335,11 @@ export default function BookingCheckout() {
               />
             </Box>
           )}
-
           {selection?.type === "room" && (
             <Box sx={{ mb: 3 }}>
               <AvailabilityBar />
             </Box>
           )}
-
           <Box sx={{ flex: 1 }}>
             <CheckoutForm
               form={form}
@@ -327,7 +352,6 @@ export default function BookingCheckout() {
             />
           </Box>
         </Paper>
-
         <Paper
           variant="outlined"
           sx={{
@@ -342,6 +366,7 @@ export default function BookingCheckout() {
             sel={synchronizedSelection}
             onConfirm={handleSubmit}
             submitting={submitting}
+            guestsOverride={bookingData.guests}
           />
         </Paper>
       </Box>

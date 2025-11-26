@@ -1,4 +1,3 @@
-import { pub } from "../../../utils/publicPath";
 import Hero from "../../components/Hero";
 import IntroBlock from "../../components/IntroBlock";
 import Pblock from "../../components/Pblock";

@@ -66,12 +66,22 @@ export default function WorkshopDatePickerInline({
 
   /** כל ימי החודש הנוכחי */
   const daysOfMonth = React.useMemo(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
+    // 🟢 תיקון: אם sessionDate קיים, השתמש בו כבסיס לחודש
+    const baseDate = sessionDate
+      ? sessionDate instanceof Date
+        ? sessionDate
+        : new Date(sessionDate)
+      : new Date();
+
+    const y = baseDate.getFullYear();
+    const m = baseDate.getMonth();
+
+    // 🟢 תיקון: החישוב של totalDays כבר נכון, אבל עכשיו הוא משתמש ב-y ו-m מהתאריך הנבחר
     const totalDays = new Date(y, m + 1, 0).getDate();
+
+    // 🟢 תיקון: יש לוודא שה-map מופעל מחדש כשהתאריך משתנה
     return Array.from({ length: totalDays }, (_, i) => isoLocal(y, m, i + 1));
-  }, []);
+  }, [sessionDate]); // 👈 הוספת תלות ל-sessionDate
 
   /** בחירת יום */
   const handleDateSelect = (iso) => {

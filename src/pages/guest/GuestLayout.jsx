@@ -1,10 +1,11 @@
-// src/pages/guest/GuestLayout.jsx
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Box, Toolbar } from "@mui/material";
 import PublicNav from "../public/PublicNav";
-import ImageGallery from "../../components/ImageGallery";
 
 function GuestLayout() {
+  const location = useLocation();
+  const isThankYouPage = location.pathname.includes("/thank-you");
+
   return (
     <>
       <PublicNav sx={{ boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }} />
@@ -18,7 +19,8 @@ function GuestLayout() {
         sx={{
           minHeight: "calc(100dvh - var(--nav-h, 64px))",
           px: { xs: 2, md: 4 },
-          pb: { xs: 6, md: 8 },
+          pb: isThankYouPage ? 0 : { xs: 6, md: 8 }, // 🟢 בלי padding בדף תודה
+          overflow: isThankYouPage ? "hidden" : "auto", // 🟢 בלי גלילה בדף תודה
         }}
       >
         <Outlet />
