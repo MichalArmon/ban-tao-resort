@@ -1,6 +1,7 @@
 // src/pages/rooms/Room.jsx
 import { useMemo, useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
@@ -14,6 +15,7 @@ import {
 } from "@mui/material";
 import useRoomsConfig from "../../hooks/useRoomsConfig";
 import { Hotel, SquareFoot, People } from "@mui/icons-material";
+import FancyHeading from "../../components/FancyHeading";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dhje7hbxd";
 const FALLBACK_IMG = "https://via.placeholder.com/1600x900?text=Room+Image";
@@ -50,6 +52,7 @@ export default function Room({ slug: propSlug, embedded = false }) {
   const params = useParams();
   // אם הועבר slug כ־prop נשתמש בו; אחרת ניקח מה־route param (type)
   const roomSlug = (propSlug || params.type || "").toLowerCase();
+  const navigate = useNavigate();
 
   const { rooms, loading, error } = useRoomsConfig();
 
@@ -142,22 +145,18 @@ export default function Room({ slug: propSlug, embedded = false }) {
   return (
     <Container
       maxWidth="lg"
-      sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 4, md: 8 } }}
+      sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 4, md: 8 }, mt: 7 }}
     >
-      {/* כותרת */}
-      <Typography
+      <FancyHeading
         variant={titleVariant}
         component="h1"
-        sx={{
-          mb: { xs: 2, md: 3 },
-          fontWeight: 700,
-          textAlign: "left",
-          color: "primary.main",
-          fontSize: titleSize,
-        }}
+        mb={{ xs: 2, md: 3 }}
+        color="primary.main"
+        align="left"
+        fontFamily="Parisienne, cursive" // או כל פונט אחר
       >
         {data.title}
-      </Typography>
+      </FancyHeading>
 
       {/* ===== Hero + Gallery =====
           מובייל: טור (hero למעלה, גלריה מתחת, גלילה אופקית)
@@ -324,8 +323,11 @@ export default function Room({ slug: propSlug, embedded = false }) {
               variant="contained"
               size="large"
               sx={{ textTransform: "none" }}
-              href="https://wa.me/972502136623"
-              target="_blank"
+              onClick={() =>
+                navigate("/resort/guest", {
+                  state: { scrollToAvailability: true },
+                })
+              }
             >
               Check availability
             </Button>

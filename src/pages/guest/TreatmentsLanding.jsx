@@ -9,10 +9,20 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogContent,
+  IconButton,
 } from "@mui/material";
+
+import CloseIcon from "@mui/icons-material/Close";
+
+import TreatmentSchedule from "../../components/treatments/TreatmentSchedule";
+import { useTreatmentSessions } from "../../context/TreatmentSessionsContext";
 import { useTreatments } from "../../context/TreatmentsContext";
 
-/* ========== Hero ========== */
+/* ---------------------------------------------------------
+   HERO
+--------------------------------------------------------- */
 function TreatmentsHero() {
   return (
     <Box
@@ -30,7 +40,7 @@ function TreatmentsHero() {
     >
       <Box
         component="img"
-        src="https://images.unsplash.com/photo-1483137140003-ae073b395549?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170"
+        src="https://images.unsplash.com/photo-1483137140003-ae073b395549?auto=format&fit=crop&q=80&w=1170"
         alt="Treatments hero"
         sx={{
           position: "absolute",
@@ -41,6 +51,7 @@ function TreatmentsHero() {
           filter: "contrast(1.05) saturate(1.05)",
         }}
       />
+
       <Box
         sx={{
           position: "absolute",
@@ -49,6 +60,7 @@ function TreatmentsHero() {
             "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.45) 100%)",
         }}
       />
+
       <Container
         maxWidth="lg"
         sx={{
@@ -68,6 +80,7 @@ function TreatmentsHero() {
           >
             Ban Tao Village &gt; Treatments
           </Typography>
+
           <Typography
             variant="h2"
             sx={{
@@ -78,14 +91,17 @@ function TreatmentsHero() {
           >
             Discover Our Treatments
           </Typography>
+
           <Typography variant="h6" sx={{ opacity: 0.95 }}>
             Hands-on care to release tension, restore balance, and soften the
             body–mind.
           </Typography>
+
           <Stack direction="row" spacing={2}>
             <Button variant="contained" size="large">
               Book a Session
             </Button>
+
             <Button variant="outlined" size="large" color="inherit">
               Contact Us
             </Button>
@@ -96,8 +112,10 @@ function TreatmentsHero() {
   );
 }
 
-/* ========== Section ========== */
-function TreatmentSection({ item, reverse = false }) {
+/* ---------------------------------------------------------
+   TREATMENT SECTION
+--------------------------------------------------------- */
+function TreatmentSection({ item, reverse = false, onOpenSchedule }) {
   const imgSrc =
     item?.hero?.url ||
     item?.gallery?.[0]?.url ||
@@ -106,9 +124,11 @@ function TreatmentSection({ item, reverse = false }) {
   const levelLabel = (item?.level || "all")
     .toString()
     .replace(/^./, (c) => c.toUpperCase());
+
   const durationLabel =
     item?.duration ||
     (item?.durationMinutes ? `${item.durationMinutes} min` : "60 min");
+
   const bullets = Array.isArray(item?.bullets) ? item.bullets : [];
   const blurb = item?.description || item?.blurb || "";
   const priceLabel = item?.price
@@ -127,6 +147,7 @@ function TreatmentSection({ item, reverse = false }) {
           "@media (max-width:900px)": { flexWrap: "wrap" },
         }}
       >
+        {/* IMAGE */}
         <Grid
           item
           xs={12}
@@ -152,6 +173,7 @@ function TreatmentSection({ item, reverse = false }) {
           />
         </Grid>
 
+        {/* TEXT */}
         <Grid item xs={12} md={6}>
           <Stack spacing={2} sx={{ maxWidth: 500, mx: "auto" }}>
             <Stack direction="row" spacing={1}>
@@ -186,7 +208,11 @@ function TreatmentSection({ item, reverse = false }) {
 
             <Stack direction="row" spacing={2} sx={{ pt: 1 }}>
               <Button variant="contained">Book Now</Button>
-              <Button variant="text">Learn More</Button>
+
+              {/* 🟣 כפתור שפותח את הלו״ז */}
+              <Button variant="text" onClick={() => onOpenSchedule(item._id)}>
+                See Schedule
+              </Button>
             </Stack>
           </Stack>
         </Grid>
@@ -195,14 +221,25 @@ function TreatmentSection({ item, reverse = false }) {
   );
 }
 
-/* ========== Page ========== */
+/* ---------------------------------------------------------
+   PAGE
+--------------------------------------------------------- */
 export default function TreatmentsLanding() {
   const { items, loading, error } = useTreatments();
+
+  const [openSchedule, setOpenSchedule] = React.useState(false);
+  const [selectedTreatment, setSelectedTreatment] = React.useState(null);
+
+  const handleOpenSchedule = (id) => {
+    setSelectedTreatment(id);
+    setOpenSchedule(true);
+  };
 
   return (
     <Box sx={{ pb: { xs: 6, md: 10 } }}>
       <TreatmentsHero />
 
+      {/* LOADING */}
       {loading && (
         <Container maxWidth="lg" sx={{ py: 6 }}>
           <Stack alignItems="center" spacing={2}>
@@ -214,12 +251,14 @@ export default function TreatmentsLanding() {
         </Container>
       )}
 
+      {/* ERROR */}
       {error && (
         <Container maxWidth="lg" sx={{ py: 3 }}>
           <Alert severity="error">{String(error)}</Alert>
         </Container>
       )}
 
+      {/* EMPTY */}
       {!loading && !error && items?.length === 0 && (
         <Container maxWidth="lg" sx={{ py: 6 }}>
           <Typography variant="body1" color="text.secondary">
@@ -228,15 +267,38 @@ export default function TreatmentsLanding() {
         </Container>
       )}
 
+      {/* LIST */}
       {!loading &&
         !error &&
         items?.map((t, idx) => (
           <TreatmentSection
-            key={t._id || t.slug || idx}
+            key={t._id || idx}
             item={t}
             reverse={idx % 2 === 1}
+            onOpenSchedule={handleOpenSchedule}
           />
         ))}
+
+      {/* 🟣 DIALOG — לוח זמנים */}
+      <Dialog
+        open={openSchedule}
+        onClose={() => setOpenSchedule(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogContent sx={{ position: "relative", pt: 4 }}>
+          <IconButton
+            onClick={() => setOpenSchedule(false)}
+            sx={{ position: "absolute", top: 12, right: 12 }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {selectedTreatment && (
+            <TreatmentSchedule treatmentId={selectedTreatment} />
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

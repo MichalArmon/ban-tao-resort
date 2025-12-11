@@ -30,8 +30,9 @@ import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import moment from "moment";
 
-import BookButton from "../../../components/booking/BookButton";
 import { useSessions } from "../../../context/SessionsContext";
+import BookRetreatButton from "../../../components/booking/bookingButtons/BookRetreatButton";
+import BookWorkshopButton from "../../../components/booking/bookingButtons/BookWorkshopButton";
 
 const DOW_LABELS = [
   "Sunday",
@@ -73,11 +74,17 @@ export default function GuestScheduleView({
   --------------------------------------------- */
   const days = React.useMemo(() => {
     if (!sessions?.length) return [];
+
+    const today = moment().startOf("day");
+
     const relevant = sessions.filter(
-      (s) => String(s.workshopId) === String(workshop._id)
+      (s) =>
+        String(s.workshopId) === String(workshop._id) &&
+        moment(s.startLocal).isSameOrAfter(today)
     );
 
     const map = new Map();
+
     relevant.forEach((occ) => {
       const key = moment(occ.startLocal).format("YYYY-MM-DD");
       if (!map.has(key)) map.set(key, []);
@@ -299,11 +306,9 @@ export default function GuestScheduleView({
 
                           <TableCell align="right">
                             <Stack direction="column" alignItems="flex-end">
-                              <BookButton
-                                type="workshop"
-                                item={workshop}
-                                selectedDate={occ.startLocal}
-                                price={workshop.price}
+                              <BookWorkshopButton
+                                workshop={workshop}
+                                sessionDate={occ.startLocal}
                                 sessionId={occ._id}
                                 ruleId={occ.ruleId}
                                 disabled={isFull}

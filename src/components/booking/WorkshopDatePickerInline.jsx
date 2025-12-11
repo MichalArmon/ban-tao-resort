@@ -1,101 +1,107 @@
-// 📁 src/pages/guest/WorkshopDatePickerInline.jsx
+// 📁 src/components/booking/WorkshopDatePickerInline.jsx
 import * as React from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useCategories } from "../../context/CategoriesContext";
 import moment from "moment";
 
-/** כלי עזר: תאריך YYYY-MM-DD ללא השפעת time-zone */
-function isoLocal(y, m /*0-11*/, d) {
-  const mm = String(m + 1).padStart(2, "0");
-  const dd = String(d).padStart(2, "0");
-  return `${y}-${mm}-${dd}`;
-}
-function toIsoLocalFromDate(dateObj) {
-  return isoLocal(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-}
+/* ------------------------
+   Helpers
+------------------------- */
 
-/**
- * WorkshopDatePickerInline
- */
+// מחזיר YYYY-MM-DD מתאריך
+const toIso = (date) => moment(date).format("YYYY-MM-DD");
+
+// מחזיר YYYY-MM-DD מאובייקט או מחרוזת
+const normalizeDate = (val) => moment(val).startOf("day").format("YYYY-MM-DD");
+
+// האם יום מסוים עבר
+const isPastDay = (iso) => iso < moment().startOf("day").format("YYYY-MM-DD");
+
+/* ------------------------
+   Component
+------------------------- */
+
 export default function WorkshopDatePickerInline({
-  sessions,
+  sessions = [],
   guestSchedule = [],
   sessionDate,
   onSelectDate,
 }) {
   const { categories } = useCategories();
 
-  const sourceList =
-    Array.isArray(sessions) && sessions.length > 0
-      ? sessions
-      : Array.isArray(guestSchedule)
-      ? guestSchedule
-      : [];
+  // המקור: או sessions או guestSchedule
+  const items = sessions.length ? sessions : guestSchedule;
 
+  /* ------------------------
+     Map: date → sessions
+  ------------------------- */
+  const sessionsByDate = React.useMemo(() => {
+    const map = {};
+
+    items.forEach((s) => {
+      const d = moment(s.startLocal);
+      if (!d.isValid()) return;
+
+      const iso = d.format("YYYY-MM-DD");
+      const color =
+        categories.find((c) => c._id === s.categoryId)?.color || "#b8a798";
+
+      if (!map[iso]) map[iso] = [];
+      map[iso].push({ ...s, color });
+    });
+
+    return map;
+  }, [items, categories]);
+
+  /* ------------------------
+     Picked date → preload sessions
+  ------------------------- */
   const [sessionsForDay, setSessionsForDay] = React.useState([]);
   const [activeSessionId, setActiveSessionId] = React.useState(null);
 
-  /** מיפוי תאריך ← רשימת סשנים */
-  const sessionsByDate = React.useMemo(() => {
-    const map = {};
-    for (const s of sourceList) {
-      // ✅ נשתמש בזמן המנורמל startLocal
-      const dt = s.startLocal ? new Date(s.startLocal) : null;
-      if (!dt || isNaN(dt)) continue;
-      const iso = toIsoLocalFromDate(dt);
-      const catColor =
-        categories.find((c) => c._id === s.categoryId)?.color || "#b8a798ff";
-      const entry = { ...s, color: catColor, _id: s._id };
-      if (!map[iso]) map[iso] = [entry];
-      else map[iso].push(entry);
-    }
-    return map;
-  }, [sourceList, categories]);
-
-  /** ✅ אם יש תאריך נבחר מבחוץ (למשל מהצ’קאאוט), נטען אותו כברירת מחדל */
   React.useEffect(() => {
     if (!sessionDate) return;
 
-    const d = sessionDate instanceof Date ? sessionDate : new Date(sessionDate);
-    const onlyDate = toIsoLocalFromDate(d);
+    const iso = normalizeDate(sessionDate);
 
-    if (sessionsByDate[onlyDate]) {
-      setSessionsForDay(sessionsByDate[onlyDate]);
+    if (sessionsByDate[iso]) {
+      setSessionsForDay(sessionsByDate[iso]);
     }
   }, [sessionDate, sessionsByDate]);
 
-  /** כל ימי החודש הנוכחי */
+  /* ------------------------
+     Build list of month days
+  ------------------------- */
   const daysOfMonth = React.useMemo(() => {
-    // 🟢 תיקון: אם sessionDate קיים, השתמש בו כבסיס לחודש
-    const baseDate = sessionDate
-      ? sessionDate instanceof Date
-        ? sessionDate
-        : new Date(sessionDate)
-      : new Date();
+    const base = sessionDate ? moment(sessionDate) : moment();
+    const y = base.year();
+    const m = base.month();
+    const total = moment({ year: y, month: m }).daysInMonth();
 
-    const y = baseDate.getFullYear();
-    const m = baseDate.getMonth();
+    return Array.from({ length: total }, (_, i) =>
+      moment({ year: y, month: m, day: i + 1 }).format("YYYY-MM-DD")
+    );
+  }, [sessionDate]);
 
-    // 🟢 תיקון: החישוב של totalDays כבר נכון, אבל עכשיו הוא משתמש ב-y ו-m מהתאריך הנבחר
-    const totalDays = new Date(y, m + 1, 0).getDate();
+  /* ------------------------
+     Click handlers
+  ------------------------- */
 
-    // 🟢 תיקון: יש לוודא שה-map מופעל מחדש כשהתאריך משתנה
-    return Array.from({ length: totalDays }, (_, i) => isoLocal(y, m, i + 1));
-  }, [sessionDate]); // 👈 הוספת תלות ל-sessionDate
-
-  /** בחירת יום */
-  const handleDateSelect = (iso) => {
+  const handleSelectDay = (iso) => {
     const daySessions = sessionsByDate[iso] || [];
     setSessionsForDay(daySessions);
     setActiveSessionId(null);
     onSelectDate?.(iso, null, null);
   };
 
-  /** בחירת שעה */
-  const handleSessionSelect = (dateIso, s) => {
+  const handleSelectSession = (iso, s) => {
     setActiveSessionId(s._id);
-    onSelectDate?.(dateIso, s._id, s);
+    onSelectDate?.(iso, s._id, s);
   };
+
+  /* ------------------------
+     Render
+  ------------------------- */
 
   return (
     <Box sx={{ mt: 2 }}>
@@ -103,57 +109,41 @@ export default function WorkshopDatePickerInline({
         Select a date:
       </Typography>
 
-      {/* תאריכים */}
+      {/* Days */}
       <Stack direction="row" flexWrap="wrap" gap={1}>
         {daysOfMonth.map((iso) => {
-          const dayNum = Number(iso.slice(-2));
-          const hasSessions = !!sessionsByDate[iso]?.length;
-          const isActive =
-            sessionDate &&
-            toIsoLocalFromDate(
-              sessionDate instanceof Date ? sessionDate : new Date(sessionDate)
-            ) === iso;
+          const dayNum = iso.slice(-2);
+          const list = sessionsByDate[iso];
+          const has = !!list?.length;
+          const past = isPastDay(iso);
+          const active = sessionDate && normalizeDate(sessionDate) === iso;
 
-          const color = hasSessions
-            ? sessionsByDate[iso][0]?.color || "#1976d2"
-            : "#ccc";
-
-          const todayIso = toIsoLocalFromDate(new Date());
-          const isPast = iso < todayIso;
+          const color = has ? list[0].color : "#ccc";
 
           return (
             <Button
               key={iso}
-              variant={
-                isActive ? "contained" : hasSessions ? "outlined" : "text"
-              }
-              onClick={() => hasSessions && !isPast && handleDateSelect(iso)}
-              disabled={!hasSessions || isPast}
+              disabled={!has || past}
+              variant={active ? "contained" : has ? "outlined" : "text"}
+              onClick={() => !past && has && handleSelectDay(iso)}
               sx={{
+                borderWidth: 2,
                 minWidth: 44,
                 minHeight: 44,
-                bgcolor: !hasSessions
+                borderColor: has ? color : "transparent",
+                bgcolor: !has
                   ? "rgba(0,0,0,0.08)"
-                  : isPast
+                  : past
                   ? "rgba(0,0,0,0.05)"
-                  : isActive
+                  : active
                   ? color
                   : "transparent",
-                borderColor: hasSessions ? color : "transparent",
                 color:
-                  !hasSessions || isPast
+                  !has || past
                     ? "rgba(0,0,0,0.32)"
-                    : isActive
+                    : active
                     ? "#fff"
-                    : "inherit",
-                "&:hover": {
-                  bgcolor:
-                    hasSessions && !isPast
-                      ? isActive
-                        ? color
-                        : "rgba(0,0,0,0.05)"
-                      : "rgba(0,0,0,0.08)",
-                },
+                    : "primary.main",
               }}
             >
               {dayNum}
@@ -162,38 +152,32 @@ export default function WorkshopDatePickerInline({
         })}
       </Stack>
 
-      {/* שעות */}
+      {/* Time slots */}
       {sessionsForDay.length > 0 && (
         <Box sx={{ mt: 3 }}>
           <Typography variant="subtitle1" sx={{ mb: 1 }}>
             Select a time:
           </Typography>
+
           <Stack direction="row" flexWrap="wrap" gap={1}>
             {sessionsForDay.map((s) => {
-              // ✅ משתמשים רק ב־startLocal שכבר לוקאלי (UTC → Local)
-              const timeLabel = moment(s.startLocal).format("HH:mm");
-              const isSelected = activeSessionId === s._id;
+              const iso = normalizeDate(s.startLocal);
+              const label = moment(s.startLocal).format("HH:mm");
+              const active = activeSessionId === s._id;
 
               return (
                 <Button
                   key={s._id}
-                  variant={isSelected ? "contained" : "outlined"}
-                  onClick={() =>
-                    handleSessionSelect(
-                      toIsoLocalFromDate(new Date(s.startLocal)),
-                      s
-                    )
-                  }
+                  variant={active ? "contained" : "outlined"}
+                  onClick={() => handleSelectSession(iso, s)}
                   sx={{
                     borderColor: s.color,
-                    bgcolor: isSelected ? s.color : "transparent",
-                    color: isSelected ? "#fff" : "inherit",
-                    "&:hover": {
-                      bgcolor: isSelected ? s.color : "rgba(0,0,0,0.04)",
-                    },
+
+                    bgcolor: active ? s.color : "transparent",
+                    color: active ? "#fff" : "inherit",
                   }}
                 >
-                  {timeLabel} — {s.studio || "Studio"}
+                  {label} — {s.studio || "Studio"}
                 </Button>
               );
             })}

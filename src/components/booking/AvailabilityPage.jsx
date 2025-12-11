@@ -1,6 +1,7 @@
 import { Container, Typography } from "@mui/material";
 import AvailabilityBar from "./AvailabilityBar";
 import RoomResults from "./RoomResults";
+import FancyHeading from "../FancyHeading";
 
 function AvailabilityPage() {
   return (
@@ -8,7 +9,7 @@ function AvailabilityPage() {
       maxWidth="lg"
       sx={{ pt: { xs: 2, md: 4 }, pb: { xs: 6, md: 10 } }}
     >
-      <Typography
+      {/* <Typography
         variant="h3"
         component="h1"
         sx={{
@@ -20,11 +21,11 @@ function AvailabilityPage() {
         }}
       >
         Check Room Availability
-      </Typography>{" "}
-      {/* 🔑 עוטף את הכל ומגביל לרוחב MD (כ-900px) ומיישר למרכז */}
-      {/* ⬅️ ה-Box יושב עכשיו בתוך קונטיינר מוגבל רוחב */}
+      </Typography> */}
+      <FancyHeading size="2.8rem" delay={0.2} align="center">
+        Check Room Availability
+      </FancyHeading>
       <AvailabilityBar />
-      {/* תוצאות החדרים */}
       <RoomResults />
     </Container>
   );

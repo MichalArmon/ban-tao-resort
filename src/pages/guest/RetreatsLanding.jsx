@@ -17,6 +17,7 @@ import {
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import { useRetreats } from "../../context/RetreatsContext";
 import { useNavigate } from "react-router-dom";
+import FavoriteButton from "../../components/common/FavoriteButton";
 
 const YT_ID = "QU0oRjFPB8g";
 const FALLBACK_IMG =
@@ -136,7 +137,7 @@ function RetreatsHero() {
    =========================== */
 const RetreatCard = React.memo(function RetreatCard({ item }) {
   const navigate = useNavigate();
-  const { title, place, dateLabel, status, image, slug } = item;
+  const { title, place, dateLabel, status, image, slug, id } = item;
 
   const s = String(status || "").toLowerCase();
   const isSoon = s === "soon";
@@ -156,8 +157,21 @@ const RetreatCard = React.memo(function RetreatCard({ item }) {
         flexDirection: "column",
         height: "100%",
         width: { lg: "300px", md: 250, sm: "100%" },
+        position: "relative", // ← מאפשר overlay
       }}
     >
+      {/* ❤️ כפתור לייק בפינה */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          zIndex: 10,
+        }}
+      >
+        <FavoriteButton itemId={id} itemType="retreat" item={item} />
+      </Box>
+
       <CardMedia
         component="img"
         image={image}

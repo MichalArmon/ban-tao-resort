@@ -4,6 +4,8 @@ import { Paper, Typography, Box, Button, Stack, Divider } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import RoomPreviewDialog from "./RoomPreviewDialog";
 import BookButton from "./BookButton";
+import FavoriteButton from "../common/FavoriteButton";
+import BookRoomButton from "./bookingButtons/BookRoomButton";
 
 const getImgUrl = (val) => {
   if (!val) return null;
@@ -18,180 +20,183 @@ const getImgUrl = (val) => {
 export default function RoomCard({ room }) {
   const navigate = useNavigate();
   const [previewOpen, setPreviewOpen] = React.useState(false);
-  console.log("room:", room);
 
   const img =
     room.heroUrl ||
     getImgUrl(room.hero) ||
     getImgUrl(room.images) ||
     "https://via.placeholder.com/800x600?text=Room+Image";
-  console.log("RoomCard Debug:", {
-    title: room.title,
-    heroUrl: room.heroUrl,
-    heroObj: room.hero,
-    finalImgUrl: img, // 👈 חשוב: מהו ה-URL הסופי?
-  });
 
   const goToRoomPage = () =>
     navigate(`/resort/rooms/${room.slug}`, { state: room });
 
   return (
     <>
-      <Paper
-        elevation={2}
-        sx={{
-          p: { xs: 2.5, sm: 3 },
-          mb: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          overflow: "hidden",
-          bgcolor: "background.paper",
-          border: "1px solid",
-          borderColor: "divider",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          transition: "transform .2s ease, box-shadow .2s ease",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-          },
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          alignItems="stretch"
-          spacing={{ xs: 2, sm: 3 }}
+      {/* 🟣 עטיפה שמאפשרת להניח את הלייק בפינה */}
+      <Box sx={{ position: "relative" }}>
+        {/* ❤️ לייק בפינה הימנית העליונה */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 20,
+          }}
         >
-          {/* 🖼️ תמונה */}
-          <Box
-            sx={{
-              width: { xs: "100%", sm: 360, md: 400 },
-              borderRadius: 2,
-              overflow: "hidden",
-              flexShrink: 0,
-              cursor: "pointer",
-            }}
-            onClick={goToRoomPage}
-          >
-            <Box
-              component="img"
-              src={img}
-              alt={`${room.title} photo`}
-              loading="lazy"
-              sx={{
-                display: "block",
-                width: "100%",
-                height: 320, // 🟢 היה 100%/auto – עכשיו גובה קבוע וגבוה יותר
-                objectFit: "cover",
-                transition: "transform .25s ease",
-                "&:hover": { transform: "scale(1.02)" },
-              }}
-            />
-          </Box>
+          <FavoriteButton
+            itemId={room?._id?.toString()}
+            itemType="room"
+            item={room}
+          />
+        </Box>
 
-          {/* 📝 תוכן */}
+        <Paper
+          elevation={2}
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            mb: { xs: 3, sm: 4 },
+            borderRadius: 3,
+            overflow: "hidden",
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+            transition: "transform .2s ease, box-shadow .2s ease",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+            },
+          }}
+        >
           <Stack
-            spacing={1.2}
-            justifyContent="space-between"
-            sx={{ flexGrow: 1, py: { xs: 1, sm: 0.5 } }}
+            direction={{ xs: "column", sm: "row" }}
+            alignItems="stretch"
+            spacing={{ xs: 2, sm: 3 }}
           >
-            <Box>
-              <Typography
-                variant="h6"
-                onClick={goToRoomPage}
+            {/* 🖼️ תמונה */}
+            <Box
+              sx={{
+                width: { xs: "100%", sm: 360, md: 400 },
+                borderRadius: 2,
+                overflow: "hidden",
+                flexShrink: 0,
+                cursor: "pointer",
+                position: "relative",
+              }}
+              onClick={goToRoomPage}
+            >
+              <Box
+                component="img"
+                src={img}
+                alt={`${room.title} photo`}
+                loading="lazy"
                 sx={{
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  color: "text.primary",
-                  textDecoration: "underline",
-                  textUnderlineOffset: "3px",
-                  "&:hover": { color: "primary.main" },
+                  display: "block",
+                  width: "100%",
+                  height: 320,
+                  objectFit: "cover",
+                  transition: "transform .25s ease",
+                  "&:hover": { transform: "scale(1.02)" },
                 }}
-              >
-                {room.title}
-              </Typography>
+              />
+            </Box>
 
-              {room.blurb && (
+            {/* 📝 תוכן */}
+            <Stack
+              spacing={1.2}
+              justifyContent="space-between"
+              sx={{ flexGrow: 1, py: { xs: 1, sm: 0.5 } }}
+            >
+              <Box>
                 <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.5 }}
+                  variant="h6"
+                  onClick={goToRoomPage}
+                  sx={{
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    color: "text.primary",
+                    textDecoration: "underline",
+                    textUnderlineOffset: "3px",
+                    "&:hover": { color: "primary.main" },
+                  }}
                 >
-                  {room.blurb}
+                  {room.title}
                 </Typography>
-              )}
 
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 0.5 }}
-              >
-                Guests: {room.maxGuests ?? "-"} | Bed: {room.bedType ?? "-"} |
-                Size: {room.sizeM2 ?? "-"} m²
-              </Typography>
+                {room.blurb && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.5 }}
+                  >
+                    {room.blurb}
+                  </Typography>
+                )}
 
-              {Array.isArray(room.features) && room.features.length > 0 && (
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ mt: 0.5 }}
                 >
-                  {room.features.join(", ")}
+                  Guests: {room.maxGuests ?? "-"} | Bed: {room.bedType ?? "-"} |
+                  Size: {room.sizeM2 ?? "-"} m²
                 </Typography>
-              )}
-            </Box>
 
-            <Box>
-              <Divider sx={{ my: 1.5 }} />
+                {Array.isArray(room.features) && room.features.length > 0 && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    {room.features.join(", ")}
+                  </Typography>
+                )}
+              </Box>
 
-              {/* 💰 מחיר + כפתור BOOK */}
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography
+              <Box>
+                <Divider sx={{ my: 1.5 }} />
+
+                {/* 💰 מחיר + כפתור BOOK */}
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Typography
+                    sx={{
+                      fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                      fontWeight: 700,
+                      color: "text.primary",
+                    }}
+                  >
+                    {room.currency || "USD"} {room.priceBase ?? "-"}
+                  </Typography>
+                  <BookRoomButton room={room} />
+                </Stack>
+
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => setPreviewOpen(true)}
                   sx={{
-                    fontSize: { xs: "1.3rem", sm: "1.5rem" },
-                    fontWeight: 700,
-                    color: "text.primary",
+                    alignSelf: "flex-start",
+                    mt: 1,
+                    textTransform: "none",
+                    color: "primary.main",
+                    "&:hover": {
+                      textDecoration: "underline",
+                      backgroundColor: "transparent",
+                    },
                   }}
                 >
-                  {room.currency || "USD"} {room.priceBase ?? "-"}
-                </Typography>
-                <BookButton
-                  type="room"
-                  item={room}
-                  selectedDate={room.checkIn}
-                  guests={room.maxGuests || 2}
-                  price={room.priceBase}
-                  ruleId={null}
-                  sessionId={null}
-                />
-              </Stack>
-
-              {/* 🔍 לינק Learn More */}
-              <Button
-                variant="text"
-                size="small"
-                onClick={() => setPreviewOpen(true)}
-                sx={{
-                  alignSelf: "flex-start",
-                  mt: 1,
-                  textTransform: "none",
-                  color: "primary.main",
-                  "&:hover": {
-                    textDecoration: "underline",
-                    backgroundColor: "transparent",
-                  },
-                }}
-              >
-                View details
-              </Button>
-            </Box>
+                  View details
+                </Button>
+              </Box>
+            </Stack>
           </Stack>
-        </Stack>
-      </Paper>
+        </Paper>
+      </Box>
 
-      {/* 🪟 דיאלוג תצוגה מקדימה */}
       <RoomPreviewDialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}

@@ -35,9 +35,97 @@ const modalStyle = {
   outline: "none",
 };
 
-/* ==========  Hero (נשאר זהה)  ========== */
 function ClassesHero() {
-  // ... [הקוד של ClassesHero נשאר זהה] ...
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        width: "100vw",
+        left: "50%",
+        right: "50%",
+        ml: "-50vw",
+        mr: "-50vw",
+        height: { xs: "70vh", md: "68vh" },
+        overflow: "hidden",
+        mb: { xs: 4, md: 6 },
+        bgcolor: "black",
+      }}
+    >
+      {/* ===== וידאו רקע ===== */}
+      <Box sx={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        <Box
+          component="img"
+          src="https://images.unsplash.com/photo-1517363898874-737b62a7db91?q=80&w=1063&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+          alt="Treatments hero"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            filter: "contrast(1.05) saturate(1.05)",
+          }}
+        />
+      </Box>
+
+      {/* ===== שכבת גרדיאנט ===== */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.45) 100%)",
+        }}
+      />
+
+      {/* ===== טקסטים וכפתורים ===== */}
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: "relative",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <Stack
+          spacing={3}
+          sx={{ color: "#fff", maxWidth: { xs: "100%", md: "70%" } }}
+        >
+          <Typography
+            variant="overline"
+            sx={{ letterSpacing: 2, opacity: 0.9 }}
+          >
+            Ban Tao Village &gt; Workshops
+          </Typography>
+
+          <Typography
+            variant="h2"
+            sx={{
+              fontWeight: 800,
+              lineHeight: 1.1,
+              textShadow: "0 6px 24px rgba(0,0,0,0.45)",
+            }}
+          >
+            Discover Our Workshops
+          </Typography>
+
+          <Typography variant="h6" sx={{ opacity: 0.95 }}>
+            Transformative experiences designed to restore body, mind, and soul.
+          </Typography>
+
+          <Stack direction="row" spacing={2}>
+            <Button variant="contained" size="large" href="#upcoming">
+              Book a session
+            </Button>
+            <Button variant="outlined" size="large" color="inherit">
+              Contact Us
+            </Button>
+          </Stack>
+        </Stack>
+      </Container>
+    </Box>
+  );
 }
 
 /* ==========  Alternating section (ClassSection)  ========== */

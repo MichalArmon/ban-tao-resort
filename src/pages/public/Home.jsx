@@ -1,3 +1,4 @@
+import { pub } from "../../../utils/publicPath";
 import Hero from "../../components/Hero";
 import IntroBlock from "../../components/IntroBlock";
 import Pblock from "../../components/Pblock";
@@ -5,7 +6,6 @@ import TwinImages from "../../components/TwinImages";
 import TwoImageGrid from "../../components/TwoImageGrid";
 import { HashLink } from "react-router-hash-link";
 
-// קומפוננטת Home המנוקה:
 function Home() {
   return (
     <>

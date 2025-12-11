@@ -1,4 +1,3 @@
-// ✅ גרסה מעודכנת: רק מיפוי הנתיבים לאדמין עודכן
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -17,9 +16,21 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { pub } from "../../../utils/publicPath";
 import RoomsMenuButton from "../guest/RoomMenuButton";
+import { useUser } from "../../context/UserContext"; // ⭐ חדש – חשוב!
 
 const PAGES_PUBLIC = ["About", "Construction", "Location", "Atmosphere"];
-const PAGES_GUEST = ["Rooms", "Treatments", "Workshops", "Retreats"];
+const PAGES_GUEST = [
+  "Home",
+  "Rooms",
+  "Treatments",
+  "Workshops",
+  "Retreats",
+  "Invest",
+];
+const EXCEPTIONS = {
+  home: "/resort/guest",
+  invest: "/resort",
+};
 const PAGES_ADMIN = [
   "Rooms",
   "Retreats",
@@ -36,18 +47,29 @@ function PublicNav(props) {
   const { pathname } = useLocation();
 
   const ROOT = "/resort";
+
+  /* ⭐ שינוי חשוב:
+     במקום לזהות אדמין לפי ה-URL בלבד,
+     נזהה לפי ההרשאות האמיתיות מה-UserContext
+  */
+  const { isAdmin: userIsAdmin } = useUser(); // ⭐ החדש
+
   const isGuest = pathname.startsWith("/resort/guest");
-  const isAdmin = pathname.startsWith("/admin");
+  const isAdmin = pathname.startsWith("/admin") && userIsAdmin; // ⭐ מעודכן
 
   const basePath = isGuest ? `${ROOT}/guest` : isAdmin ? `/admin` : ROOT;
 
   const slug = (s) => s.trim().toLowerCase().replace(/\s+/g, "-");
-  const pages = isGuest ? PAGES_GUEST : isAdmin ? PAGES_ADMIN : PAGES_PUBLIC;
+
+  /* ⭐ שינוי שלישי – בחירת ה-pagess:
+     רק אם המשתמש באמת אדמין נציג את תפריט אדמין
+  */
+  const pages = isAdmin ? PAGES_ADMIN : isGuest ? PAGES_GUEST : PAGES_PUBLIC;
 
   const handleOpenNavMenu = (e) => setAnchorElNav(e.currentTarget);
   const handleCloseNavMenu = () => setAnchorElNav(null);
 
-  // ✅ עדכון נכון לנתיבי אדמין החדשים
+  // נתיבים נכונים לאדמין
   const adminPathFor = (page) => {
     const s = slug(page);
     switch (s) {
@@ -82,6 +104,7 @@ function PublicNav(props) {
         color: "text.primary",
         justifyContent: "center",
         height: "var(--nav-h)",
+        top: props.offsetTop || 0,
       })}
     >
       <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 5 } }}>
@@ -109,7 +132,7 @@ function PublicNav(props) {
             </IconButton>
           </Box>
 
-          {/* לוגו קטן במרכז (מובייל) */}
+          {/* לוגו קטן במרכז */}
           <Box sx={{ display: { xs: "block", md: "none" }, mr: "1px" }}>
             <HashLink to={`${ROOT}/#top`} smooth>
               <Box
@@ -130,7 +153,7 @@ function PublicNav(props) {
             </HashLink>
           </Box>
 
-          {/* ========= דסקטופ (md+) ========= */}
+          {/* ========= דסקטופ ========= */}
           <Box
             sx={{
               display: { xs: "none", md: "flex" },
@@ -143,9 +166,24 @@ function PublicNav(props) {
               const isRoomsGuest = isGuest && page === "Rooms";
               if (isRoomsGuest) return <RoomsMenuButton key="rooms-menu" />;
 
-              const to = isAdmin
-                ? adminPathFor(page)
-                : `${basePath}/${slug(page)}`;
+              const s = slug(page);
+
+              if (EXCEPTIONS[s]) {
+                return (
+                  <Button
+                    key={page}
+                    component={RouterLink}
+                    to={EXCEPTIONS[s]}
+                    onClick={handleCloseNavMenu}
+                    color="inherit"
+                    sx={{ textTransform: "none", fontSize: 16 }}
+                  >
+                    {page}
+                  </Button>
+                );
+              }
+
+              const to = isAdmin ? adminPathFor(page) : `${basePath}/${s}`;
 
               return (
                 <Button
@@ -162,7 +200,7 @@ function PublicNav(props) {
             })}
           </Box>
 
-          {/* מרכז: לוגו גדול */}
+          {/* ========= לוגו מרכזי ========= */}
           <Box
             component={HashLink}
             to={`${ROOT}/#top`}
@@ -237,8 +275,7 @@ function PublicNav(props) {
           </Box>
         </Toolbar>
 
-        {/* ========= תפריט מובייל ========= */}
-        {/* ✅ התפריט נשאר בדיוק אותו דבר, רק הנתיבים מתעדכנים */}
+        {/* ========= מובייל ========= */}
         <Menu
           id="menu-appbar"
           open={Boolean(anchorElNav)}
@@ -295,9 +332,14 @@ function PublicNav(props) {
           >
             <Stack spacing={6} alignItems="center" sx={{ width: "100%" }}>
               {pages.map((page) => {
-                const to = isAdmin
+                const s = slug(page);
+
+                const to = EXCEPTIONS[s]
+                  ? EXCEPTIONS[s]
+                  : isAdmin
                   ? adminPathFor(page)
-                  : `${basePath}/${slug(page)}`;
+                  : `${basePath}/${s}`;
+
                 return (
                   <MenuItem
                     key={page}

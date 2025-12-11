@@ -10,44 +10,73 @@ import {
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import AvailabilityPage from "../../components/booking/AvailabilityPage";
 import { pub } from "../../../utils/publicPath";
+import IntroBlock from "../../components/IntroBlock";
+import TwoImageFeature from "../../components/TwoImageGrid";
+import TwoImageGrid from "../../components/TwoImageGrid";
+import Pblock from "../../components/Pblock";
+import TwinImages from "../../components/TwinImages";
+import { useLocation } from "react-router-dom";
 
 // ✅ תמונות וקבצי וידאו
 const IMG_FULL = pub("landscape20.jpg");
 const LOGO_ANIM = pub("resortweb.webm");
 
 export default function GuestHome() {
+  const location = useLocation();
+
+  // ⭐ האם המשתמש כבר ראה את האנימציה בעבר?
+  const seenIntroBefore = localStorage.getItem("seenIntro") === "true";
+
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [showLoader, setShowLoader] = useState(true);
+
+  // ⭐ מציגים אנימציה רק אם המשתמש *לא* ראה אותה
+  const [showLoader, setShowLoader] = useState(!seenIntroBefore);
+
   const [fadeVideo, setFadeVideo] = useState(false);
 
-  // זמנים לשליטה מדויקת כמו ב-Hero.jsx
   const START_FADE_AFTER_MS = 3800;
   const VIDEO_FADE_MS = 450;
   const WHITE_LAG_AFTER_VIDEO_MS = 60;
 
+  // גלילה ל־Availability אם הגיע מעמוד אחר
   useEffect(() => {
+    if (location.state?.scrollToAvailability) {
+      const el = document.getElementById("availability-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location]);
+
+  // fallback שאם משהו נתקע – לא ייתקע מסך לבן
+  useEffect(() => {
+    if (!showLoader) return;
     const fallback = setTimeout(() => setShowLoader(false), 5000);
     return () => clearTimeout(fallback);
-  }, []);
+  }, [showLoader]);
 
+  // שליטה באנימציית הלוגו
   useEffect(() => {
-    if (!imgLoaded) return;
+    if (!imgLoaded || !showLoader) return;
 
     const t1 = setTimeout(() => setFadeVideo(true), START_FADE_AFTER_MS);
-    const t2 = setTimeout(
-      () => setShowLoader(false),
-      START_FADE_AFTER_MS + VIDEO_FADE_MS + WHITE_LAG_AFTER_VIDEO_MS
-    );
+
+    const t2 = setTimeout(() => {
+      setShowLoader(false);
+
+      // ⭐ מסמנים שהמשתמש ראה את האנימציה בפעם הראשונה
+      localStorage.setItem("seenIntro", "true");
+    }, START_FADE_AFTER_MS + VIDEO_FADE_MS + WHITE_LAG_AFTER_VIDEO_MS);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [imgLoaded]);
+  }, [imgLoaded, showLoader]);
 
   const handleScroll = () => {
     const section = document.getElementById("availability-section");
-    if (section) section.scrollIntoView({ behavior: "smooth" });
+    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const wipeIn = keyframes`
@@ -180,12 +209,12 @@ export default function GuestHome() {
           <Paper
             sx={{
               display: "flex",
-              px: { md: "34px", xs: "0" },
-              py: { md: "20px", xs: "0" },
+              px: { md: "16px", xs: "0" },
+              py: { md: "10px", xs: "0" },
               borderRadius: 15,
               alignItems: "center",
               justifyContent: "center",
-              gap: "30px",
+              gap: "10px",
               backgroundColor: "background.default",
               backdropFilter: "saturate(120%) blur(2px)",
             }}
@@ -222,13 +251,13 @@ export default function GuestHome() {
               variant="contained"
               onClick={handleScroll}
               sx={{
-                bgcolor: "#7a5a47",
-                borderRadius: 5,
-                px: 4,
+                bgcolor: "primary.main",
+                borderRadius: 7,
+                px: 3,
                 py: 1.2,
                 fontSize: "1rem",
                 textTransform: "uppercase",
-                "&:hover": { bgcolor: "#6a4a38" },
+                "&:hover": { bgcolor: "primary.dark" },
               }}
             >
               Check Availability
@@ -236,6 +265,8 @@ export default function GuestHome() {
           </Paper>
 
           <KeyboardArrowDownRoundedIcon
+            onClick={handleScroll}
+            cursor="pointer"
             sx={{
               mt: 4,
               fontSize: 36,
@@ -250,10 +281,41 @@ export default function GuestHome() {
         </Container>
       </Box>
 
+      {/* intro SECTION */}
+      <Container maxWidth={false}>
+        <IntroBlock />
+        <div
+          className="simpleParallax"
+          style={{ backgroundImage: `url(${pub("landscape2.jpg")})` }}
+        >
+          <div className="foregroundContent"></div>
+        </div>
+        <TwoImageGrid />
+        <Pblock
+          title="THOUGHTFUL DESIGN INSIDE AND OUT"
+          text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
+          align="left"
+        />
+        <TwinImages />
+
+        <div
+          className="simpleParallax"
+          style={{ backgroundImage: `url(${pub("landscape4.jpg")})` }}
+        >
+          <div className="foregroundContent">
+            <Pblock
+              title="THOUGHTFUL DESIGN INSIDE AND OUT"
+              text="SOL LIVING | PHANGAN sets a new standard for design . Every element of your villa has been meticulously crafted to combine beauty with functionality ."
+              align="left"
+            />
+          </div>
+        </div>
+      </Container>
+
       {/* ==============================
           🗓️ AVAILABILITY SECTION
       ============================== */}
-      <Box id="availability-section" sx={{ bgcolor: "#f9f5f0", py: 6 }}>
+      <Box id="availability-section" sx={{ bgcolor: "#f9f5f0", py: 12 }}>
         <Container maxWidth="xl">
           <AvailabilityPage />
         </Container>

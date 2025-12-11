@@ -20,8 +20,10 @@ import CheckoutForm from "../../components/booking/CheckoutForm";
 import AvailabilityBar from "../../components/booking/AvailabilityBar";
 import { useRooms } from "../../context/RoomContext";
 import { useDateSelection } from "../../context/DateSelectionContext";
+import { useUser } from "../../context/UserContext";
 
 export default function BookingCheckout() {
+  const { user } = useUser();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -189,6 +191,24 @@ export default function BookingCheckout() {
     notes: "",
     agree: false,
   });
+
+  // 🟢 טעינת פרטי משתמש אל תוך הטופס
+  React.useEffect(() => {
+    if (!user?._id) return;
+
+    setForm((prev) => ({
+      ...prev,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      address: user.address || "",
+      city: user.city || "",
+      zip: user.zip || "",
+      country: user.country || "Israel",
+    }));
+  }, [user]);
+
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -270,7 +290,7 @@ export default function BookingCheckout() {
 
   if (!selection)
     return (
-      <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Container maxWidth="lg" sx={{ py: 6, mt: 4 }}>
         <Alert severity="warning">
           No selection provided. Please choose an item and click BOOK again.
         </Alert>
@@ -281,7 +301,7 @@ export default function BookingCheckout() {
     );
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 }, mt: 6 }}>
       <Box
         sx={{
           display: "grid",
