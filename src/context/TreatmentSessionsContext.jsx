@@ -52,6 +52,7 @@ export function TreatmentSessionsProvider({ children }) {
       const arr = res.data?.sessions || res.data || res;
       console.log("RAW SESSIONS:", arr);
       setSessions(arr);
+      console.log("SESSION SAMPLE:", arr[0]);
     } catch (err) {
       console.error("Failed to load treatment schedule", err);
     } finally {
@@ -88,9 +89,14 @@ export function TreatmentSessionsProvider({ children }) {
   ---------------------------------------------------- */
   const sessionMap = {};
   sessions.forEach((s) => {
-    const d = moment(s.start);
+    // ⚠️ חובה לפרש כ-UTC ואז להמיר לאזור זמן מקומי
+    const d = moment.utc(s.start).tz("Asia/Bangkok");
+
     const key = `${d.format("YYYY-MM-DD")}-${d.hour()}`;
-    sessionMap[key] = s;
+    sessionMap[key] = {
+      ...s,
+      startLocal: d.toDate(), // 👈 אופציונלי אבל מאוד מומלץ ל-UI
+    };
   });
 
   console.log("SESSION MAP:", sessionMap);

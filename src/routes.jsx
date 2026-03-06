@@ -16,7 +16,7 @@ import RetreatsLanding from "./pages/guest/RetreatsLanding";
 import ClassesLanding from "./pages/guest/woreshops/ClassesLanding";
 import TreatmentsLanding from "./pages/guest/TreatmentsLanding";
 import Room from "./pages/rooms/Room";
-import BookingCheckout from "./components/booking/BookingCheckout";
+import BookingCheckout from "./pages/guest/checkout/BookingCheckout";
 import GuestHome from "./pages/guest/GuestHome";
 import ThankYouPage from "./pages/guest/ThankYouPage";
 import FavoritesPage from "./pages/guest/FavoritesPage";

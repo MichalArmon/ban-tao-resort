@@ -91,12 +91,21 @@ export default function WorkshopDatePickerInline({
     const daySessions = sessionsByDate[iso] || [];
     setSessionsForDay(daySessions);
     setActiveSessionId(null);
+
+    // 👈 יום בלבד (בלי שעה)
     onSelectDate?.(iso, null, null);
   };
 
   const handleSelectSession = (iso, s) => {
     setActiveSessionId(s._id);
-    onSelectDate?.(iso, s._id, s);
+
+    // ✅ תיקון קריטי:
+    // שולחים Date אמיתי עם שעה (startLocal)
+    onSelectDate?.(
+      s.startLocal, // 👈 זה כל הסיפור
+      s._id,
+      s
+    );
   };
 
   /* ------------------------
@@ -161,7 +170,6 @@ export default function WorkshopDatePickerInline({
 
           <Stack direction="row" flexWrap="wrap" gap={1}>
             {sessionsForDay.map((s) => {
-              const iso = normalizeDate(s.startLocal);
               const label = moment(s.startLocal).format("HH:mm");
               const active = activeSessionId === s._id;
 
@@ -169,10 +177,11 @@ export default function WorkshopDatePickerInline({
                 <Button
                   key={s._id}
                   variant={active ? "contained" : "outlined"}
-                  onClick={() => handleSelectSession(iso, s)}
+                  onClick={() =>
+                    handleSelectSession(normalizeDate(s.startLocal), s)
+                  }
                   sx={{
                     borderColor: s.color,
-
                     bgcolor: active ? s.color : "transparent",
                     color: active ? "#fff" : "inherit",
                   }}

@@ -5,9 +5,10 @@ import { useSessions } from "../../../context/SessionsContext";
 
 export default function BookWorkshopButton({
   workshop,
-  sessionDate,
+
   sessionId,
   ruleId,
+  sessionStart,
 }) {
   const navigate = useNavigate();
   const { setSelection } = useBooking();
@@ -29,7 +30,7 @@ export default function BookWorkshopButton({
         priceBase: workshop.price || 0,
       },
       guests: sessionGuests,
-      sessionDate: sessionDate || null,
+      sessionStart: sessionStart || null,
       sessionId: sessionId || null,
       ruleId: ruleId || null,
       priceBase: workshop.price || 0,

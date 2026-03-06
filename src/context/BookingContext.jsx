@@ -19,6 +19,7 @@ export const BookingProvider = ({ children }) => {
   const { token } = useUser(); // 🟢 חשוב!
 
   const [bookings, setBookings] = useState([]);
+  const [lastBooking, setLastBooking] = useState(null); // 🆕 חדש
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -41,7 +42,9 @@ export const BookingProvider = ({ children }) => {
       const data = await res.json();
 
       const flat = {};
-      for (const { date, items } of data.days || []) flat[date] = items;
+      for (const { date, items } of data.days || []) {
+        flat[date] = items;
+      }
 
       return flat;
     } catch (err) {
@@ -65,16 +68,19 @@ export const BookingProvider = ({ children }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }), // 🟢 במידה ודורש התחברות
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
+      console.log("BOOKING FROM SERVER:", data);
       if (!res.ok) throw new Error(data?.message);
 
       setBookings((prev) => [...prev, data]);
-      return data;
+      setLastBooking(data.booking); // 🆕 שומרים את ההזמנה האחרונה
+
+      return data.booking;
     },
     [token]
   );
@@ -83,13 +89,13 @@ export const BookingProvider = ({ children }) => {
   // 📋 FETCH ALL BOOKINGS — ADMIN
   // ------------------------------------------------------
   const fetchAllBookings = useCallback(async () => {
-    if (!token) return; // בלי טוקן אין גישה לאדמין
+    if (!token) return;
 
     setLoading(true);
     try {
       const res = await fetch(`${BOOKINGS_BASE_URL}/all`, {
         headers: {
-          Authorization: `Bearer ${token}`, // 🟢 חובה
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -113,7 +119,7 @@ export const BookingProvider = ({ children }) => {
       try {
         const res = await fetch(`${BOOKINGS_BASE_URL}/user?email=${email}`, {
           headers: {
-            Authorization: `Bearer ${token}`, // 🟢 חובה למשתמש מחובר
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -137,7 +143,7 @@ export const BookingProvider = ({ children }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // 🟢 חובה
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ status }),
       });
@@ -159,6 +165,7 @@ export const BookingProvider = ({ children }) => {
   // ------------------------------------------------------
   const value = {
     bookings,
+    lastBooking, // 🆕 חדש
     loading,
     error,
 

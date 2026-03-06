@@ -1,3 +1,4 @@
+// 📁 src/components/booking/CheckoutForm.jsx
 import React from "react";
 import {
   Box,
@@ -9,7 +10,6 @@ import {
   Button,
   Alert,
 } from "@mui/material";
-import { useBooking } from "../../context/BookingContext";
 
 const COUNTRIES = ["Israel", "Greece", "USA", "UK"];
 
@@ -18,11 +18,9 @@ export default function CheckoutForm({
   bookingData,
   error,
   onFormChange,
-  onBookingChange,
   onSubmit,
   onBack,
 }) {
-  const { selection } = useBooking();
   return (
     <Box
       component="form"
@@ -108,28 +106,15 @@ export default function CheckoutForm({
         </TextField>
       </Stack>
 
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        {selection?.type !== "room" && (
-          <TextField
-            type="number"
-            name="guests"
-            label="Guests"
-            value={bookingData.guests}
-            onChange={onBookingChange}
-            inputProps={{ min: 1 }}
-            fullWidth
-          />
-        )}
-        <TextField
-          multiline
-          minRows={2}
-          name="notes"
-          label="Notes (optional)"
-          value={form.notes}
-          onChange={onFormChange}
-          fullWidth
-        />
-      </Stack>
+      <TextField
+        multiline
+        minRows={2}
+        name="notes"
+        label="Notes (optional)"
+        value={form.notes}
+        onChange={onFormChange}
+        fullWidth
+      />
 
       <FormControlLabel
         control={
@@ -140,9 +125,11 @@ export default function CheckoutForm({
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Button variant="text" onClick={onBack}>
-        Back
-      </Button>
+      <Stack direction="row" justifyContent="space-between">
+        <Button variant="text" onClick={onBack}>
+          Back
+        </Button>
+      </Stack>
     </Box>
   );
 }

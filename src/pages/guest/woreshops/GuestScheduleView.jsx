@@ -31,7 +31,7 @@ import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import moment from "moment";
 
 import { useSessions } from "../../../context/SessionsContext";
-import BookRetreatButton from "../../../components/booking/bookingButtons/BookRetreatButton";
+
 import BookWorkshopButton from "../../../components/booking/bookingButtons/BookWorkshopButton";
 
 const DOW_LABELS = [
@@ -308,7 +308,7 @@ export default function GuestScheduleView({
                             <Stack direction="column" alignItems="flex-end">
                               <BookWorkshopButton
                                 workshop={workshop}
-                                sessionDate={occ.startLocal}
+                                sessionStart={occ.startLocal}
                                 sessionId={occ._id}
                                 ruleId={occ.ruleId}
                                 disabled={isFull}

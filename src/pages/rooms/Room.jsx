@@ -41,8 +41,8 @@ const normalizeImageUrls = (data) => {
   const raw = Array.isArray(data?.imageUrls)
     ? data.imageUrls
     : Array.isArray(data?.images)
-    ? data.images
-    : [];
+      ? data.images
+      : [];
   return raw
     .map((x) => (typeof x === "string" ? cldUrl(x) : x?.url || null))
     .filter(Boolean);
